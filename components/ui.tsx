@@ -59,6 +59,7 @@ const CHIP_CLASS: Record<string, string> = {
   assigned: 'chip-pending',
   accepted: 'chip-verified',
   declined: 'chip-rejected',
+  cancelled: 'chip-rejected',
   low: 'chip-sev-low',
   medium: 'chip-sev-med',
   high: 'chip-sev-high',

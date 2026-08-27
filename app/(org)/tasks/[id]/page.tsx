@@ -42,6 +42,32 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     }
   }
 
+  async function unassign(assignmentId: string) {
+    setActionError(null);
+    setBusy(true);
+    try {
+      await api.del(`/organisations/${activeOrgId}/tasks/${task!.id}/assignments/${assignmentId}`);
+      await mutate();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Could not remove volunteer');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function cancelTask() {
+    setActionError(null);
+    setBusy(true);
+    try {
+      await api.patch(`/organisations/${activeOrgId}/tasks/${task!.id}`, { status: 'cancelled' });
+      await mutate();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Could not cancel task');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const unassigned = (volunteers ?? []).filter(
     (v) => !task.assignments.some((a) => a.volunteerUserId === v.userId),
   );
@@ -52,14 +78,15 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         <Button variant="text" onClick={() => router.push('/tasks')} style={{ marginBottom: 10 }}>
           ← Back to tasks
         </Button>
-        <h1 style={{ fontSize: 19 }}>{task.description}</h1>
+        <h1 style={{ fontSize: 19 }}>{task.title}</h1>
+        <p style={{ fontSize: 13.5, color: 'var(--text-2)', margin: '4px 0 10px' }}>{task.description}</p>
         <div style={{ display: 'flex', gap: 6, margin: '10px 0 16px' }}>
           <Chip tone={task.priority}>{`${task.priority} priority`}</Chip>
           <Chip tone={task.status}>{task.status === 'pending' ? 'scheduled' : task.status}</Chip>
         </div>
         {task.scheduledAt && (
           <p style={{ fontSize: 13.5, color: 'var(--text-2)', marginBottom: 16 }}>
-            Scheduled: {new Date(task.scheduledAt).toLocaleString()}
+            Due: {new Date(task.scheduledAt).toLocaleString()}
           </p>
         )}
 
@@ -123,8 +150,12 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                 <Avatar name={a.volunteer.fullName} />
                 <span style={{ fontSize: 13.5, flex: 1 }}>{a.volunteer.fullName}</span>
                 <Chip tone={a.status}>{a.status}</Chip>
+                <Button variant="text" onClick={() => unassign(a.id)} disabled={busy}>
+                  Remove
+                </Button>
               </div>
             ))}
+            <p className="hint">Remove a volunteer, then assign a different one to reassign this task.</p>
           </div>
         )}
 
@@ -132,8 +163,16 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           + Assign volunteers
         </Button>
         <div style={{ borderTop: '1px solid var(--border)', margin: '18px 0' }} />
-        <Button variant="secondary" className="btn-block" onClick={() => setShowEdit(true)}>
+        <Button variant="secondary" className="btn-block" onClick={() => setShowEdit(true)} style={{ marginBottom: 10 }}>
           Edit priority &amp; date
+        </Button>
+        <Button
+          variant="destructive"
+          className="btn-block"
+          disabled={busy || task.status === 'completed' || task.status === 'cancelled'}
+          onClick={cancelTask}
+        >
+          Cancel task
         </Button>
       </Card>
 

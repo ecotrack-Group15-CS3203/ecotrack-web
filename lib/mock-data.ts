@@ -43,10 +43,10 @@ const MOCK_VOLUNTEERS: OrganisationMember[] = [
 ];
 
 const MOCK_TASKS: Task[] = [
-  { id: 'task-1', organisationId: MOCK_ORG_ID, incidentId: 'inc-1', incident: MOCK_INCIDENTS[0], description: 'Clear dumped waste from riverside path', priority: 'high', scheduledAt: daysAgo(21), status: 'completed', createdByUserId: 'user-admin', assignments: [{ id: 'asg-1', volunteerUserId: 'vol-1', volunteer: { id: 'vol-1', fullName: 'Amara Silva', email: 'amara@example.com' }, status: 'accepted', respondedAt: daysAgo(20) }], notes: [], photos: [], createdAt: daysAgo(22) },
-  { id: 'task-2', organisationId: MOCK_ORG_ID, incidentId: 'inc-2', incident: MOCK_INCIDENTS[1], description: 'Contain and report oil sheen to environmental authority', priority: 'high', scheduledAt: daysAgo(9), status: 'in_progress', createdByUserId: 'user-admin', assignments: [{ id: 'asg-2', volunteerUserId: 'vol-2', volunteer: { id: 'vol-2', fullName: 'Nadeem Fernando', email: 'nadeem@example.com' }, status: 'accepted', respondedAt: daysAgo(8) }], notes: [], photos: [], createdAt: daysAgo(10) },
-  { id: 'task-3', organisationId: MOCK_ORG_ID, incidentId: 'inc-3', incident: MOCK_INCIDENTS[2], description: 'Coordinate cleanup crew for burn site', priority: 'medium', scheduledAt: daysAgo(1), status: 'pending', createdByUserId: 'user-admin', assignments: [{ id: 'asg-3', volunteerUserId: 'vol-1', volunteer: { id: 'vol-1', fullName: 'Amara Silva', email: 'amara@example.com' }, status: 'assigned', respondedAt: null }], notes: [], photos: [], createdAt: daysAgo(5) },
-  { id: 'task-4', organisationId: MOCK_ORG_ID, incidentId: 'inc-1', incident: MOCK_INCIDENTS[0], description: 'Follow-up debris sweep', priority: 'low', scheduledAt: daysAgo(18), status: 'completed', createdByUserId: 'user-admin', assignments: [{ id: 'asg-4', volunteerUserId: 'vol-3', volunteer: { id: 'vol-3', fullName: 'Priya Jayasuriya', email: 'priya@example.com' }, status: 'accepted', respondedAt: daysAgo(17) }], notes: [], photos: [], createdAt: daysAgo(19) },
+  { id: 'task-1', organisationId: MOCK_ORG_ID, incidentId: 'inc-1', incident: MOCK_INCIDENTS[0], title: 'Clear dumped waste from riverside path', description: 'Clear dumped waste from riverside path', priority: 'high', scheduledAt: daysAgo(21), status: 'completed', createdByUserId: 'user-admin', assignments: [{ id: 'asg-1', volunteerUserId: 'vol-1', volunteer: { id: 'vol-1', fullName: 'Amara Silva', email: 'amara@example.com' }, status: 'accepted', respondedAt: daysAgo(20) }], notes: [], photos: [], createdAt: daysAgo(22) },
+  { id: 'task-2', organisationId: MOCK_ORG_ID, incidentId: 'inc-2', incident: MOCK_INCIDENTS[1], title: 'Contain and report oil sheen', description: 'Contain and report oil sheen to environmental authority', priority: 'high', scheduledAt: daysAgo(9), status: 'in_progress', createdByUserId: 'user-admin', assignments: [{ id: 'asg-2', volunteerUserId: 'vol-2', volunteer: { id: 'vol-2', fullName: 'Nadeem Fernando', email: 'nadeem@example.com' }, status: 'accepted', respondedAt: daysAgo(8) }], notes: [], photos: [], createdAt: daysAgo(10) },
+  { id: 'task-3', organisationId: MOCK_ORG_ID, incidentId: 'inc-3', incident: MOCK_INCIDENTS[2], title: 'Coordinate cleanup crew for burn site', description: 'Coordinate cleanup crew for burn site', priority: 'medium', scheduledAt: daysAgo(1), status: 'pending', createdByUserId: 'user-admin', assignments: [{ id: 'asg-3', volunteerUserId: 'vol-1', volunteer: { id: 'vol-1', fullName: 'Amara Silva', email: 'amara@example.com' }, status: 'assigned', respondedAt: null }], notes: [], photos: [], createdAt: daysAgo(5) },
+  { id: 'task-4', organisationId: MOCK_ORG_ID, incidentId: 'inc-1', incident: MOCK_INCIDENTS[0], title: 'Follow-up debris sweep', description: 'Follow-up debris sweep', priority: 'low', scheduledAt: daysAgo(18), status: 'completed', createdByUserId: 'user-admin', assignments: [{ id: 'asg-4', volunteerUserId: 'vol-3', volunteer: { id: 'vol-3', fullName: 'Priya Jayasuriya', email: 'priya@example.com' }, status: 'accepted', respondedAt: daysAgo(17) }], notes: [], photos: [], createdAt: daysAgo(19) },
 ];
 
 const MOCK_AUDIT_LOG: AuditLogEntry[] = [
@@ -81,7 +81,10 @@ export function getMockResponse(path: string): unknown | undefined {
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/dashboard/map`) return MOCK_INCIDENTS;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/audit-logs`) return MOCK_AUDIT_LOG;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/members`) return MOCK_VOLUNTEERS;
-  if (withoutQuery === `/organisations/${MOCK_ORG_ID}/tasks`) return MOCK_TASKS;
+  if (withoutQuery === `/organisations/${MOCK_ORG_ID}/tasks`) {
+    const status = query.get('status');
+    return status ? MOCK_TASKS.filter((t) => t.status === status) : MOCK_TASKS;
+  }
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/incidents`) {
     const status = query.get('status');
     return status ? MOCK_INCIDENTS.filter((i) => i.verificationStatus === status) : MOCK_INCIDENTS;
@@ -90,6 +93,9 @@ export function getMockResponse(path: string): unknown | undefined {
 
   const incidentMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/incidents/([^/]+)$`));
   if (incidentMatch) return MOCK_INCIDENTS.find((i) => i.id === incidentMatch[1]);
+
+  const taskMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/tasks/([^/]+)$`));
+  if (taskMatch) return MOCK_TASKS.find((t) => t.id === taskMatch[1]);
 
   return undefined;
 }
@@ -133,26 +139,83 @@ export function handleMockMutation(path: string, method: string, body: unknown):
   }
 
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/tasks` && method === 'POST') {
-    const input = (body ?? {}) as { incidentId: string; description: string; priority: Task['priority']; scheduledAt?: string };
+    const input = (body ?? {}) as {
+      incidentId: string;
+      title: string;
+      description: string;
+      priority: Task['priority'];
+      scheduledAt?: string;
+      assignedTo?: string;
+    };
     const incident = MOCK_INCIDENTS.find((i) => i.id === input.incidentId);
     if (!incident) return undefined;
+    const volunteer = input.assignedTo ? MOCK_VOLUNTEERS.find((v) => v.userId === input.assignedTo) : undefined;
     const task: Task = {
       id: `task-${MOCK_TASKS.length + 1}`,
       organisationId: MOCK_ORG_ID,
       incidentId: incident.id,
       incident,
+      title: input.title,
       description: input.description,
       priority: input.priority,
       scheduledAt: input.scheduledAt ?? null,
       status: 'pending',
       createdByUserId: 'dev-user',
-      assignments: [],
+      assignments: volunteer
+        ? [
+            {
+              id: `asg-${MOCK_TASKS.length + 1}`,
+              volunteerUserId: volunteer.userId,
+              volunteer: volunteer.user,
+              status: 'assigned',
+              respondedAt: null,
+            },
+          ]
+        : [],
       notes: [],
       photos: [],
       createdAt: new Date().toISOString(),
     };
     MOCK_TASKS.push(task);
     return { id: task.id };
+  }
+
+  const taskMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/tasks/([^/]+)$`));
+  if (taskMatch && method === 'PATCH') {
+    const task = MOCK_TASKS.find((t) => t.id === taskMatch[1]);
+    if (!task) return undefined;
+    const updates = (body ?? {}) as Partial<Pick<Task, 'priority' | 'scheduledAt' | 'status'>>;
+    Object.assign(task, updates);
+    return task;
+  }
+
+  const assignMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/tasks/([^/]+)/assignments$`));
+  if (assignMatch && method === 'POST') {
+    const task = MOCK_TASKS.find((t) => t.id === assignMatch[1]);
+    const { volunteerUserIds } = (body ?? {}) as { volunteerUserIds?: string[] };
+    if (!task || !volunteerUserIds) return undefined;
+    for (const userId of volunteerUserIds) {
+      const volunteer = MOCK_VOLUNTEERS.find((v) => v.userId === userId);
+      if (!volunteer) continue;
+      task.assignments.push({
+        id: `asg-${task.id}-${task.assignments.length + 1}`,
+        volunteerUserId: volunteer.userId,
+        volunteer: volunteer.user,
+        status: 'assigned',
+        respondedAt: null,
+      });
+    }
+    return task;
+  }
+
+  const unassignMatch = withoutQuery.match(
+    new RegExp(`^/organisations/${MOCK_ORG_ID}/tasks/([^/]+)/assignments/([^/]+)$`),
+  );
+  if (unassignMatch && method === 'DELETE') {
+    const task = MOCK_TASKS.find((t) => t.id === unassignMatch[1]);
+    if (!task) return undefined;
+    task.assignments = task.assignments.filter((a) => a.id !== unassignMatch[2]);
+    return task;
   }
 
   return undefined;

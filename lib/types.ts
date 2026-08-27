@@ -108,7 +108,7 @@ export interface Incident {
 }
 
 export type TaskPriority = 'low' | 'medium' | 'high';
-export type TaskStatus = 'pending' | 'in_progress' | 'completed';
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 export type AssignmentStatus = 'assigned' | 'accepted' | 'declined';
 
 export interface TaskAssignment {
@@ -137,6 +137,7 @@ export interface Task {
   organisationId: string;
   incidentId: string;
   incident: Incident;
+  title: string;
   description: string;
   priority: TaskPriority;
   scheduledAt: string | null;
