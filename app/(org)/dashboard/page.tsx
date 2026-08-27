@@ -13,18 +13,11 @@ import {
   Skeleton,
   Avatar,
 } from '@/components/ui';
-import { IconPin } from '@/components/icons';
 import type { AuditLogEntry, DashboardStats, Incident, OrganisationMember, Task } from '@/lib/types';
 import { ApiError } from '@/lib/api';
+import { IncidentMap } from '@/components/incident-map';
 
 const RECENT_ACTIVITY_LIMIT = 20;
-
-const PIN_TONE: Record<string, string> = {
-  pending: 'var(--pending)',
-  approved: 'var(--verified)',
-  rejected: 'var(--rejected)',
-  duplicate: 'var(--text-3)',
-};
 
 function humanizeAction(action: string): string {
   const [entity, verb] = action.split('.');
@@ -185,18 +178,7 @@ export default function DashboardPage() {
           {!incidents ? (
             <Skeleton height={260} />
           ) : (
-            <div className="map-placeholder" style={{ height: 260 }}>
-              {incidents.map((incident, i) => (
-                <IconPin
-                  key={incident.id}
-                  style={{
-                    top: 20 + ((i * 47) % 200),
-                    left: 20 + ((i * 83) % 380),
-                    color: PIN_TONE[incident.verificationStatus] ?? 'var(--text-3)',
-                  }}
-                />
-              ))}
-            </div>
+            <IncidentMap incidents={incidents} />
           )}
         </Card>
       </div>
