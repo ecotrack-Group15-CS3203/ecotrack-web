@@ -205,8 +205,16 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
             <>
               <SectionTitle>Actions</SectionTitle>
 
-              <Button className="btn-block" style={{ marginBottom: 16 }} onClick={() => router.push(`/tasks?incidentId=${incident.id}`)}>
+              <Button className="btn-block" style={{ marginBottom: 8 }} onClick={() => router.push(`/tasks?incidentId=${incident.id}`)}>
                 + Create task
+              </Button>
+              <Button
+                variant="secondary"
+                className="btn-block"
+                style={{ marginBottom: 16 }}
+                onClick={() => router.push(`/events?incidentId=${incident.id}`)}
+              >
+                + Create event
               </Button>
 
               <div className="field">

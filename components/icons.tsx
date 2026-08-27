@@ -25,6 +25,9 @@ export const IconVolunteers = (p: IconProps) => (
   />
 );
 export const IconWorkflow = (p: IconProps) => <Icon {...p} d="M4 6h16M4 12h10M4 18h6" />;
+export const IconEvents = (p: IconProps) => (
+  <Icon {...p} d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+);
 export const IconReports = (p: IconProps) => <Icon {...p} d="M3 3v18h18M7 15l4-4 3 3 5-6" />;
 export const IconSettings = (p: IconProps) => (
   <Icon

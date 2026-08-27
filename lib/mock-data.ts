@@ -4,6 +4,7 @@
 import type {
   AuditLogEntry,
   DashboardStats,
+  Event,
   Incident,
   OrganisationMember,
   Task,
@@ -49,6 +50,54 @@ const MOCK_TASKS: Task[] = [
   { id: 'task-4', organisationId: MOCK_ORG_ID, incidentId: 'inc-1', incident: MOCK_INCIDENTS[0], title: 'Follow-up debris sweep', description: 'Follow-up debris sweep', priority: 'low', scheduledAt: daysAgo(18), status: 'completed', createdByUserId: 'user-admin', assignments: [{ id: 'asg-4', volunteerUserId: 'vol-3', volunteer: { id: 'vol-3', fullName: 'Priya Jayasuriya', email: 'priya@example.com' }, status: 'accepted', respondedAt: daysAgo(17) }], notes: [], photos: [], createdAt: daysAgo(19) },
 ];
 
+function daysFromNow(n: number): string {
+  return new Date(Date.now() + n * 86_400_000).toISOString();
+}
+
+const MOCK_EVENTS: Event[] = [
+  {
+    id: 'evt-1',
+    organisationId: MOCK_ORG_ID,
+    incidentIds: ['inc-2'],
+    incidents: [MOCK_INCIDENTS[1]],
+    title: 'Canal cleanup and oil containment day',
+    description: 'Community cleanup event to contain the oil sheen and clear surrounding debris.',
+    latitude: 6.9147,
+    longitude: 79.8731,
+    address: 'Canal Rd',
+    scheduledAt: daysFromNow(3),
+    endsAt: daysFromNow(3),
+    maxAttendees: 20,
+    status: 'scheduled',
+    rsvps: [
+      { id: 'rsvp-1', volunteerUserId: 'vol-1', volunteer: { id: 'vol-1', fullName: 'Amara Silva', email: 'amara@example.com' }, rsvpedAt: daysAgo(2) },
+      { id: 'rsvp-2', volunteerUserId: 'vol-2', volunteer: { id: 'vol-2', fullName: 'Nadeem Fernando', email: 'nadeem@example.com' }, rsvpedAt: daysAgo(1) },
+    ],
+    createdByUserId: 'dev-user',
+    createdAt: daysAgo(4),
+  },
+  {
+    id: 'evt-2',
+    organisationId: MOCK_ORG_ID,
+    incidentIds: ['inc-1', 'inc-4'],
+    incidents: [MOCK_INCIDENTS[0], MOCK_INCIDENTS[3]],
+    title: 'Riverside and reserve boundary restoration',
+    description: 'Joint cleanup and replanting effort covering the riverside path and reserve boundary.',
+    latitude: 6.9271,
+    longitude: 79.8612,
+    address: 'Riverside Rd',
+    scheduledAt: daysAgo(20),
+    endsAt: daysAgo(20),
+    maxAttendees: null,
+    status: 'completed',
+    rsvps: [
+      { id: 'rsvp-3', volunteerUserId: 'vol-3', volunteer: { id: 'vol-3', fullName: 'Priya Jayasuriya', email: 'priya@example.com' }, rsvpedAt: daysAgo(22) },
+    ],
+    createdByUserId: 'dev-user',
+    createdAt: daysAgo(23),
+  },
+];
+
 const MOCK_AUDIT_LOG: AuditLogEntry[] = [
   { id: 'log-1', organisationId: MOCK_ORG_ID, actingUserId: 'user-6', action: 'incident.reported', entityType: 'incident', entityId: 'inc-6', metadata: null, createdAt: daysAgo(1) },
   { id: 'log-2', organisationId: MOCK_ORG_ID, actingUserId: 'user-admin', action: 'incident.verified', entityType: 'incident', entityId: 'inc-4', metadata: null, createdAt: daysAgo(3) },
@@ -90,12 +139,16 @@ export function getMockResponse(path: string): unknown | undefined {
     return status ? MOCK_INCIDENTS.filter((i) => i.verificationStatus === status) : MOCK_INCIDENTS;
   }
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/workflow-stages`) return STAGES;
+  if (withoutQuery === `/organisations/${MOCK_ORG_ID}/events`) return MOCK_EVENTS;
 
   const incidentMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/incidents/([^/]+)$`));
   if (incidentMatch) return MOCK_INCIDENTS.find((i) => i.id === incidentMatch[1]);
 
   const taskMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/tasks/([^/]+)$`));
   if (taskMatch) return MOCK_TASKS.find((t) => t.id === taskMatch[1]);
+
+  const eventMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/events/([^/]+)$`));
+  if (eventMatch) return MOCK_EVENTS.find((e) => e.id === eventMatch[1]);
 
   return undefined;
 }
@@ -216,6 +269,51 @@ export function handleMockMutation(path: string, method: string, body: unknown):
     if (!task) return undefined;
     task.assignments = task.assignments.filter((a) => a.id !== unassignMatch[2]);
     return task;
+  }
+
+  if (withoutQuery === `/organisations/${MOCK_ORG_ID}/events` && method === 'POST') {
+    const input = (body ?? {}) as {
+      incidentIds: string[];
+      title: string;
+      description: string;
+      latitude: number;
+      longitude: number;
+      address?: string;
+      scheduledAt: string;
+      endsAt?: string;
+      maxAttendees?: number;
+    };
+    const incidents = MOCK_INCIDENTS.filter((i) => input.incidentIds.includes(i.id));
+    if (incidents.length === 0) return undefined;
+    const event: Event = {
+      id: `evt-${MOCK_EVENTS.length + 1}`,
+      organisationId: MOCK_ORG_ID,
+      incidentIds: incidents.map((i) => i.id),
+      incidents,
+      title: input.title,
+      description: input.description,
+      latitude: input.latitude,
+      longitude: input.longitude,
+      address: input.address ?? null,
+      scheduledAt: input.scheduledAt,
+      endsAt: input.endsAt ?? null,
+      maxAttendees: input.maxAttendees ?? null,
+      status: 'scheduled',
+      rsvps: [],
+      createdByUserId: 'dev-user',
+      createdAt: new Date().toISOString(),
+    };
+    MOCK_EVENTS.push(event);
+    return { id: event.id };
+  }
+
+  const eventStatusMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/events/([^/]+)/status$`));
+  if (eventStatusMatch && method === 'PATCH') {
+    const event = MOCK_EVENTS.find((e) => e.id === eventStatusMatch[1]);
+    const { status } = (body ?? {}) as { status?: Event['status'] };
+    if (!event || !status) return undefined;
+    event.status = status;
+    return event;
   }
 
   return undefined;

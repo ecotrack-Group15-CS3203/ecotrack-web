@@ -149,6 +149,34 @@ export interface Task {
   createdAt: string;
 }
 
+export type EventStatus = 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+
+export interface EventRsvp {
+  id: string;
+  volunteerUserId: string;
+  volunteer: { id: string; fullName: string; email: string };
+  rsvpedAt: string;
+}
+
+export interface Event {
+  id: string;
+  organisationId: string;
+  incidentIds: string[];
+  incidents: Incident[];
+  title: string;
+  description: string;
+  latitude: number;
+  longitude: number;
+  address: string | null;
+  scheduledAt: string;
+  endsAt: string | null;
+  maxAttendees: number | null;
+  status: EventStatus;
+  rsvps: EventRsvp[];
+  createdByUserId: string;
+  createdAt: string;
+}
+
 export interface DashboardStats {
   totalIncidents: number;
   pendingIncidents: number;

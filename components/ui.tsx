@@ -52,6 +52,8 @@ const CHIP_CLASS: Record<string, string> = {
   rejected: 'chip-rejected',
   duplicate: 'chip-neutral',
   in_progress: 'chip-progress',
+  ongoing: 'chip-progress',
+  scheduled: 'chip-pending',
   completed: 'chip-resolved',
   resolved: 'chip-resolved',
   active: 'chip-resolved',

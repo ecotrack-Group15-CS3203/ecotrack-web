@@ -11,6 +11,7 @@ import {
   IconTasks,
   IconVolunteers,
   IconWorkflow,
+  IconEvents,
   IconReports,
   IconSettings,
 } from '@/components/icons';
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: IconDashboard },
   { href: '/incidents', label: 'Incidents', icon: IconIncidents },
   { href: '/tasks', label: 'Tasks', icon: IconTasks },
+  { href: '/events', label: 'Events', icon: IconEvents },
   { href: '/volunteers', label: 'Volunteers', icon: IconVolunteers },
   { href: '/workflow', label: 'Workflow', icon: IconWorkflow },
   { href: '/reports', label: 'Reports', icon: IconReports },
