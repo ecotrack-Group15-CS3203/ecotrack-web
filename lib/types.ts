@@ -15,11 +15,18 @@ export interface Profile {
   memberships: Membership[];
 }
 
+export interface ServiceArea {
+  latitude: number;
+  longitude: number;
+  radiusKm: number;
+}
+
 export interface Organisation {
   id: string;
   name: string;
   description: string | null;
   isActive: boolean;
+  serviceArea: ServiceArea | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -87,8 +94,11 @@ export interface IncidentImage {
 
 export interface Incident {
   id: string;
-  organisationId: string;
+  /** null while unclaimed in the cross-organisation incident pool. */
+  organisationId: string | null;
+  claimedAt: string | null;
   reportedByUserId: string;
+  reporter?: { id: string; fullName: string; email: string };
   title: string;
   description: string;
   category: IncidentCategory;

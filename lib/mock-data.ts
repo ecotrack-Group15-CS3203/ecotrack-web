@@ -6,10 +6,21 @@ import type {
   DashboardStats,
   Event,
   Incident,
+  Organisation,
   OrganisationMember,
   Task,
   WorkflowStage,
 } from './types';
+import { distanceKm } from './geo';
+
+export class MockHttpError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
 
 export const MOCK_ORG_ID = 'dev-org';
 
@@ -27,15 +38,23 @@ function daysAgo(n: number): string {
 }
 
 const MOCK_INCIDENTS: Incident[] = [
-  { id: 'inc-1', organisationId: MOCK_ORG_ID, reportedByUserId: 'user-1', title: 'Illegal dumping near river bank', description: 'Several bags of household waste dumped by the riverside path.', category: 'illegal_dumping', severity: 'high', latitude: 6.9271, longitude: 79.8612, address: 'Riverside Rd', verificationStatus: 'approved', currentStageId: 'stage-resolved', currentStage: STAGES[5], rejectionReason: null, duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(20), images: [], createdAt: daysAgo(25) },
-  { id: 'inc-2', organisationId: MOCK_ORG_ID, reportedByUserId: 'user-2', title: 'Oil sheen in canal water', description: 'Visible oil slick spreading near the storm drain outlet.', category: 'water_pollution', severity: 'critical', latitude: 6.9147, longitude: 79.8731, address: 'Canal Rd', verificationStatus: 'approved', currentStageId: 'stage-progress', currentStage: STAGES[4], rejectionReason: null, duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(10), images: [], createdAt: daysAgo(12) },
-  { id: 'inc-3', organisationId: MOCK_ORG_ID, reportedByUserId: 'user-3', title: 'Smoke from open burning', description: 'Thick smoke reported from a vacant lot, likely burning waste.', category: 'air_pollution', severity: 'medium', latitude: 6.9319, longitude: 79.8478, address: 'Lotus Rd', verificationStatus: 'approved', currentStageId: 'stage-scheduled', currentStage: STAGES[3], rejectionReason: null, duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(6), images: [], createdAt: daysAgo(7) },
-  { id: 'inc-4', organisationId: MOCK_ORG_ID, reportedByUserId: 'user-4', title: 'Tree clearing without permit', description: 'Multiple mature trees felled overnight near the reserve boundary.', category: 'deforestation', severity: 'high', latitude: 6.9022, longitude: 79.8607, address: 'Reserve Boundary Rd', verificationStatus: 'approved', currentStageId: 'stage-verified', currentStage: STAGES[2], rejectionReason: null, duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(3), images: [], createdAt: daysAgo(4) },
-  { id: 'inc-5', organisationId: MOCK_ORG_ID, reportedByUserId: 'user-5', title: 'Injured bird near wetland', description: 'A visibly injured heron seen tangled in discarded fishing line.', category: 'wildlife_hazard', severity: 'medium', latitude: 6.9098, longitude: 79.8556, address: 'Wetland Path', verificationStatus: 'pending', currentStageId: 'stage-review', currentStage: STAGES[1], rejectionReason: null, duplicateOfId: null, verifiedByUserId: null, verifiedAt: null, images: [], createdAt: daysAgo(2) },
-  { id: 'inc-6', organisationId: MOCK_ORG_ID, reportedByUserId: 'user-6', title: 'Overflowing public bin', description: 'Bin overflowing for several days, attracting pests.', category: 'other', severity: 'low', latitude: 6.9214, longitude: 79.8654, address: 'Market St', verificationStatus: 'pending', currentStageId: 'stage-reported', currentStage: STAGES[0], rejectionReason: null, duplicateOfId: null, verifiedByUserId: null, verifiedAt: null, images: [], createdAt: daysAgo(1) },
-  { id: 'inc-7', organisationId: MOCK_ORG_ID, reportedByUserId: 'user-7', title: 'Litter near beach access path', description: 'Scattered litter, looks like an earlier report already covers this stretch.', category: 'illegal_dumping', severity: 'low', latitude: 6.9182, longitude: 79.8503, address: 'Beach Access Rd', verificationStatus: 'duplicate', currentStageId: 'stage-reported', currentStage: STAGES[0], rejectionReason: null, duplicateOfId: 'inc-1', verifiedByUserId: 'user-admin', verifiedAt: daysAgo(8), images: [], createdAt: daysAgo(9) },
-  { id: 'inc-8', organisationId: MOCK_ORG_ID, reportedByUserId: 'user-8', title: 'Loud noise complaint', description: 'Reported as an environmental incident but is outside the org\'s scope.', category: 'other', severity: 'low', latitude: 6.9256, longitude: 79.8601, address: 'Temple Rd', verificationStatus: 'rejected', currentStageId: 'stage-reported', currentStage: STAGES[0], rejectionReason: 'Not an environmental incident.', duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(14), images: [], createdAt: daysAgo(15) },
+  { id: 'inc-1', organisationId: MOCK_ORG_ID, claimedAt: daysAgo(25), reportedByUserId: 'user-1', title: 'Illegal dumping near river bank', description: 'Several bags of household waste dumped by the riverside path.', category: 'illegal_dumping', severity: 'high', latitude: 6.9271, longitude: 79.8612, address: 'Riverside Rd', verificationStatus: 'approved', currentStageId: 'stage-resolved', currentStage: STAGES[5], rejectionReason: null, duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(20), images: [], createdAt: daysAgo(25) },
+  { id: 'inc-2', organisationId: MOCK_ORG_ID, claimedAt: daysAgo(12), reportedByUserId: 'user-2', title: 'Oil sheen in canal water', description: 'Visible oil slick spreading near the storm drain outlet.', category: 'water_pollution', severity: 'critical', latitude: 6.9147, longitude: 79.8731, address: 'Canal Rd', verificationStatus: 'approved', currentStageId: 'stage-progress', currentStage: STAGES[4], rejectionReason: null, duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(10), images: [], createdAt: daysAgo(12) },
+  { id: 'inc-3', organisationId: MOCK_ORG_ID, claimedAt: daysAgo(7), reportedByUserId: 'user-3', title: 'Smoke from open burning', description: 'Thick smoke reported from a vacant lot, likely burning waste.', category: 'air_pollution', severity: 'medium', latitude: 6.9319, longitude: 79.8478, address: 'Lotus Rd', verificationStatus: 'approved', currentStageId: 'stage-scheduled', currentStage: STAGES[3], rejectionReason: null, duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(6), images: [], createdAt: daysAgo(7) },
+  { id: 'inc-4', organisationId: MOCK_ORG_ID, claimedAt: daysAgo(4), reportedByUserId: 'user-4', title: 'Tree clearing without permit', description: 'Multiple mature trees felled overnight near the reserve boundary.', category: 'deforestation', severity: 'high', latitude: 6.9022, longitude: 79.8607, address: 'Reserve Boundary Rd', verificationStatus: 'approved', currentStageId: 'stage-verified', currentStage: STAGES[2], rejectionReason: null, duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(3), images: [], createdAt: daysAgo(4) },
+  { id: 'inc-5', organisationId: MOCK_ORG_ID, claimedAt: daysAgo(2), reportedByUserId: 'user-5', title: 'Injured bird near wetland', description: 'A visibly injured heron seen tangled in discarded fishing line.', category: 'wildlife_hazard', severity: 'medium', latitude: 6.9098, longitude: 79.8556, address: 'Wetland Path', verificationStatus: 'pending', currentStageId: 'stage-review', currentStage: STAGES[1], rejectionReason: null, duplicateOfId: null, verifiedByUserId: null, verifiedAt: null, images: [], createdAt: daysAgo(2) },
+  { id: 'inc-6', organisationId: MOCK_ORG_ID, claimedAt: daysAgo(1), reportedByUserId: 'user-6', title: 'Overflowing public bin', description: 'Bin overflowing for several days, attracting pests.', category: 'other', severity: 'low', latitude: 6.9214, longitude: 79.8654, address: 'Market St', verificationStatus: 'pending', currentStageId: 'stage-reported', currentStage: STAGES[0], rejectionReason: null, duplicateOfId: null, verifiedByUserId: null, verifiedAt: null, images: [], createdAt: daysAgo(1) },
+  { id: 'inc-7', organisationId: MOCK_ORG_ID, claimedAt: daysAgo(9), reportedByUserId: 'user-7', title: 'Litter near beach access path', description: 'Scattered litter, looks like an earlier report already covers this stretch.', category: 'illegal_dumping', severity: 'low', latitude: 6.9182, longitude: 79.8503, address: 'Beach Access Rd', verificationStatus: 'duplicate', currentStageId: 'stage-reported', currentStage: STAGES[0], rejectionReason: null, duplicateOfId: 'inc-1', verifiedByUserId: 'user-admin', verifiedAt: daysAgo(8), images: [], createdAt: daysAgo(9) },
+  { id: 'inc-8', organisationId: MOCK_ORG_ID, claimedAt: daysAgo(15), reportedByUserId: 'user-8', title: 'Loud noise complaint', description: 'Reported as an environmental incident but is outside the org\'s scope.', category: 'other', severity: 'low', latitude: 6.9256, longitude: 79.8601, address: 'Temple Rd', verificationStatus: 'rejected', currentStageId: 'stage-reported', currentStage: STAGES[0], rejectionReason: 'Not an environmental incident.', duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(14), images: [], createdAt: daysAgo(15) },
+  // Unclaimed pool incidents: organisationId is null until an org within range claims them.
+  { id: 'pool-1', organisationId: null, claimedAt: null, reportedByUserId: 'user-p1', reporter: { id: 'user-p1', fullName: 'Nimal Perera', email: 'nimal@example.com' }, title: 'Dumped construction debris on footpath', description: 'Broken tiles and cement bags blocking half the footpath near the junction.', category: 'illegal_dumping', severity: 'critical', latitude: 6.92, longitude: 79.865, address: 'Junction Rd', verificationStatus: 'pending', currentStageId: null, currentStage: null, rejectionReason: null, duplicateOfId: null, verifiedByUserId: null, verifiedAt: null, images: [], createdAt: daysAgo(0.2) },
+  { id: 'pool-2', organisationId: null, claimedAt: null, reportedByUserId: 'user-p2', reporter: { id: 'user-p2', fullName: 'Chamari Wickrama', email: 'chamari@example.com' }, title: 'Storm drain blocked with plastic waste', description: 'Drain backing up onto the road after light rain due to plastic bottle buildup.', category: 'water_pollution', severity: 'medium', latitude: 6.94, longitude: 79.89, address: 'Lakeside Ave', verificationStatus: 'pending', currentStageId: null, currentStage: null, rejectionReason: null, duplicateOfId: null, verifiedByUserId: null, verifiedAt: null, images: [], createdAt: daysAgo(0.4) },
+  { id: 'pool-3', organisationId: null, claimedAt: null, reportedByUserId: 'user-p3', reporter: { id: 'user-p3', fullName: 'Saman Kumara', email: 'saman@example.com' }, title: 'Roadside brush fire smoke', description: 'Ongoing smoke from a roadside brush fire, well outside the usual coverage area.', category: 'air_pollution', severity: 'low', latitude: 7.05, longitude: 79.98, address: 'Outer Ring Rd', verificationStatus: 'pending', currentStageId: null, currentStage: null, rejectionReason: null, duplicateOfId: null, verifiedByUserId: null, verifiedAt: null, images: [], createdAt: daysAgo(0.6) },
 ];
+
+const MOCK_ORGANISATION_SERVICE_AREA = { latitude: 6.9147, longitude: 79.8612, radiusKm: 5 };
+
+
 
 const MOCK_VOLUNTEERS: OrganisationMember[] = [
   { id: 'mem-1', organisationId: MOCK_ORG_ID, userId: 'vol-1', user: { id: 'vol-1', fullName: 'Amara Silva', email: 'amara@example.com' }, role: 'volunteer', isActive: true, invitedAt: daysAgo(60), joinedAt: daysAgo(58) },
@@ -107,15 +126,17 @@ const MOCK_AUDIT_LOG: AuditLogEntry[] = [
   { id: 'log-6', organisationId: MOCK_ORG_ID, actingUserId: 'vol-1', action: 'task.completed', entityType: 'task', entityId: 'task-1', metadata: null, createdAt: daysAgo(20) },
 ];
 
+const MOCK_ORG_INCIDENTS = MOCK_INCIDENTS.filter((i) => i.organisationId === MOCK_ORG_ID);
+
 const MOCK_STATS: DashboardStats = {
-  totalIncidents: MOCK_INCIDENTS.length,
-  pendingIncidents: MOCK_INCIDENTS.filter((i) => i.verificationStatus === 'pending').length,
-  verifiedIncidents: MOCK_INCIDENTS.filter((i) => i.verificationStatus === 'approved').length,
-  resolvedIncidents: MOCK_INCIDENTS.filter((i) => i.currentStage?.isFinal).length,
+  totalIncidents: MOCK_ORG_INCIDENTS.length,
+  pendingIncidents: MOCK_ORG_INCIDENTS.filter((i) => i.verificationStatus === 'pending').length,
+  verifiedIncidents: MOCK_ORG_INCIDENTS.filter((i) => i.verificationStatus === 'approved').length,
+  resolvedIncidents: MOCK_ORG_INCIDENTS.filter((i) => i.currentStage?.isFinal).length,
   activeVolunteers: MOCK_VOLUNTEERS.filter((v) => v.isActive).length,
   completedCleanupTasks: MOCK_TASKS.filter((t) => t.status === 'completed').length,
   incidentsByCategory: Object.entries(
-    MOCK_INCIDENTS.reduce<Record<string, number>>((acc, i) => {
+    MOCK_ORG_INCIDENTS.reduce<Record<string, number>>((acc, i) => {
       acc[i.category] = (acc[i.category] ?? 0) + 1;
       return acc;
     }, {}),
@@ -127,7 +148,7 @@ export function getMockResponse(path: string): unknown | undefined {
   const withoutQuery = path.split('?')[0];
   const query = new URLSearchParams(path.split('?')[1] ?? '');
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/dashboard/stats`) return MOCK_STATS;
-  if (withoutQuery === `/organisations/${MOCK_ORG_ID}/dashboard/map`) return MOCK_INCIDENTS;
+  if (withoutQuery === `/organisations/${MOCK_ORG_ID}/dashboard/map`) return MOCK_INCIDENTS.filter((i) => i.organisationId === MOCK_ORG_ID);
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/audit-logs`) return MOCK_AUDIT_LOG;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/members`) return MOCK_VOLUNTEERS;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/tasks`) {
@@ -136,10 +157,29 @@ export function getMockResponse(path: string): unknown | undefined {
   }
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/incidents`) {
     const status = query.get('status');
-    return status ? MOCK_INCIDENTS.filter((i) => i.verificationStatus === status) : MOCK_INCIDENTS;
+    const ownIncidents = MOCK_INCIDENTS.filter((i) => i.organisationId === MOCK_ORG_ID);
+    return status ? ownIncidents.filter((i) => i.verificationStatus === status) : ownIncidents;
+  }
+  if (withoutQuery === `/organisations/${MOCK_ORG_ID}/incident-pool`) {
+    const area = MOCK_ORGANISATION_SERVICE_AREA;
+    return MOCK_INCIDENTS.filter(
+      (i) => i.organisationId === null && distanceKm(area.latitude, area.longitude, i.latitude, i.longitude) <= area.radiusKm,
+    );
   }
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/workflow-stages`) return STAGES;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/events`) return MOCK_EVENTS;
+  if (withoutQuery === `/organisations/${MOCK_ORG_ID}`) {
+    const organisation: Organisation = {
+      id: MOCK_ORG_ID,
+      name: 'Dev Organisation',
+      description: 'Local development organisation seeded for mock data.',
+      isActive: true,
+      serviceArea: MOCK_ORGANISATION_SERVICE_AREA,
+      createdAt: daysAgo(90),
+      updatedAt: daysAgo(1),
+    };
+    return organisation;
+  }
 
   const incidentMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/incidents/([^/]+)$`));
   if (incidentMatch) return MOCK_INCIDENTS.find((i) => i.id === incidentMatch[1]);
@@ -314,6 +354,23 @@ export function handleMockMutation(path: string, method: string, body: unknown):
     if (!event || !status) return undefined;
     event.status = status;
     return event;
+  }
+
+  const claimMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/incidents/([^/]+)/claim$`));
+  if (claimMatch && method === 'POST') {
+    const incident = MOCK_INCIDENTS.find((i) => i.id === claimMatch[1]);
+    if (!incident) return undefined;
+    if (incident.organisationId !== null) {
+      throw new MockHttpError(409, 'This incident has already been claimed by another organisation.');
+    }
+    const area = MOCK_ORGANISATION_SERVICE_AREA;
+    const distance = distanceKm(area.latitude, area.longitude, incident.latitude, incident.longitude);
+    if (distance > area.radiusKm) {
+      throw new MockHttpError(422, "This incident is outside your organisation's registered service area.");
+    }
+    incident.organisationId = MOCK_ORG_ID;
+    incident.claimedAt = new Date().toISOString();
+    return incident;
   }
 
   return undefined;

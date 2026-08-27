@@ -72,6 +72,47 @@ export function Chip({ children, tone }: { children: string; tone: string }) {
   return <span className={`chip ${CHIP_CLASS[tone] ?? 'chip-neutral'}`}>{children.replace(/_/g, ' ')}</span>;
 }
 
+const URGENCY_CLASS: Record<string, string> = {
+  low: 'chip-urgency-low',
+  medium: 'chip-urgency-medium',
+  high: 'chip-urgency-high',
+  critical: 'chip-urgency-critical',
+};
+
+/** Green/yellow/orange/red urgency badge, distinct from the general-purpose Chip tones. */
+export function UrgencyBadge({ severity }: { severity: string }) {
+  return <span className={`chip ${URGENCY_CLASS[severity] ?? 'chip-neutral'}`}>{severity}</span>;
+}
+
+export function Toast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        bottom: 24,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: 'var(--text)',
+        color: '#fff',
+        padding: '12px 20px',
+        borderRadius: 'var(--radius-md)',
+        fontSize: 13.5,
+        boxShadow: 'var(--shadow-card)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        zIndex: 100,
+      }}
+    >
+      {message}
+      <button onClick={onDismiss} style={{ color: '#fff', opacity: 0.7 }}>
+        ✕
+      </button>
+    </div>
+  );
+}
+
+
 export function Avatar({ name, size }: { name: string; size?: number }) {
   const initials = name
     .split(' ')

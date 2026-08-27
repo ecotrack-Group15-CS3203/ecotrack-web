@@ -1,4 +1,4 @@
-import { getMockResponse, handleMockMutation } from './mock-data';
+import { getMockResponse, handleMockMutation, MockHttpError } from './mock-data';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 const USE_MOCK_API = process.env.NEXT_PUBLIC_USE_MOCK_API === 'true';
@@ -29,8 +29,13 @@ export async function apiFetch<T>(
       const mock = getMockResponse(path);
       if (mock !== undefined) return mock as T;
     } else {
-      const mock = handleMockMutation(path, method, body);
-      if (mock !== undefined) return mock as T;
+      try {
+        const mock = handleMockMutation(path, method, body);
+        if (mock !== undefined) return mock as T;
+      } catch (err) {
+        if (err instanceof MockHttpError) throw new ApiError(err.status, err.message);
+        throw err;
+      }
     }
   }
 

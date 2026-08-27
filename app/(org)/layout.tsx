@@ -18,6 +18,7 @@ import {
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: IconDashboard },
+  { href: '/incident-pool', label: 'Incident Pool', icon: IconIncidents },
   { href: '/incidents', label: 'Incidents', icon: IconIncidents },
   { href: '/tasks', label: 'Tasks', icon: IconTasks },
   { href: '/events', label: 'Events', icon: IconEvents },
