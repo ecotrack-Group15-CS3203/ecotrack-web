@@ -1,11 +1,23 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
-import { Card, KpiRow, KpiCard, PageHeader, Spinner, ErrorBanner, SectionTitle } from '@/components/ui';
+import {
+  Card,
+  KpiRow,
+  KpiCard,
+  PageHeader,
+  ErrorBanner,
+  SectionTitle,
+  Skeleton,
+  Avatar,
+} from '@/components/ui';
 import { IconPin } from '@/components/icons';
-import type { AuditLogEntry, DashboardStats, Incident } from '@/lib/types';
+import type { AuditLogEntry, DashboardStats, Incident, OrganisationMember, Task } from '@/lib/types';
 import { ApiError } from '@/lib/api';
+
+const RECENT_ACTIVITY_LIMIT = 20;
 
 const PIN_TONE: Record<string, string> = {
   pending: 'var(--pending)',
@@ -32,59 +44,223 @@ function timeAgo(iso: string): string {
   return `${days} day${days === 1 ? '' : 's'} ago`;
 }
 
+function formatDate(iso: string | null): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 export default function DashboardPage() {
   const { activeOrgId } = useAuth();
   const statsPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/stats` : null;
   const mapPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/map` : null;
   const auditPath = activeOrgId ? `/organisations/${activeOrgId}/audit-logs` : null;
+  const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer` : null;
+  const tasksPath = activeOrgId ? `/organisations/${activeOrgId}/tasks` : null;
 
   const { data: stats, error: statsError } = useApiGet<DashboardStats>(statsPath);
-  const { data: mapData, error: mapError } = useApiGet<Incident[]>(mapPath);
-  const { data: auditLog } = useApiGet<AuditLogEntry[]>(auditPath);
+  const { data: incidents, error: incidentsError } = useApiGet<Incident[]>(mapPath);
+  const { data: auditLog, error: auditError } = useApiGet<AuditLogEntry[]>(auditPath);
+  const { data: volunteers, error: volunteersError } = useApiGet<OrganisationMember[]>(volunteersPath);
+  const { data: tasks, error: tasksError } = useApiGet<Task[]>(tasksPath);
 
-  if (!activeOrgId) return <Spinner />;
+  const error = statsError || incidentsError || auditError || volunteersError || tasksError;
 
-  const error = statsError || mapError;
-  if (error) {
-    return <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load dashboard'} />;
+  const stageDistribution = useMemo(() => {
+    if (!incidents) return [];
+    const counts = new Map<string, number>();
+    for (const incident of incidents) {
+      const label = incident.currentStage?.name ?? 'Unstaged';
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+    return Array.from(counts.entries()).map(([stage, count]) => ({ stage, count }));
+  }, [incidents]);
+
+  const volunteerActivity = useMemo(() => {
+    if (!volunteers || !tasks) return [];
+    return volunteers.map((member) => {
+      const own = tasks.filter((t) => t.assignments.some((a) => a.volunteerUserId === member.userId));
+      const completed = own.filter((t) => t.status === 'completed').length;
+      const pending = own.filter((t) => t.status !== 'completed').length;
+      const lastActive =
+        own
+          .flatMap((t) =>
+            t.assignments.filter((a) => a.volunteerUserId === member.userId).map((a) => a.respondedAt ?? t.createdAt),
+          )
+          .sort()
+          .at(-1) ?? null;
+      return { member, completed, pending, lastActive };
+    });
+  }, [volunteers, tasks]);
+
+  const recentActivity = useMemo(() => {
+    if (!auditLog) return [];
+    return [...auditLog]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, RECENT_ACTIVITY_LIMIT);
+  }, [auditLog]);
+
+  if (!activeOrgId) {
+    return (
+      <div>
+        <PageHeader title="Dashboard" description="Overview for your organisation" />
+        <Skeleton height={96} style={{ marginBottom: 20 }} />
+      </div>
+    );
   }
-
-  if (!stats || !mapData) return <Spinner />;
 
   return (
     <div>
       <PageHeader title="Dashboard" description="Overview for your organisation" />
 
-      <KpiRow>
-        <KpiCard label="Total incidents" value={stats.totalIncidents} />
-        <KpiCard label="Pending verification" value={stats.pendingIncidents} tone="pending" />
-        <KpiCard label="Verified" value={stats.verifiedIncidents} tone="verified" />
-        <KpiCard label="Resolved" value={stats.resolvedIncidents} tone="resolved" />
-      </KpiRow>
+      {error && (
+        <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load some dashboard data'} />
+      )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 20 }}>
+      {!stats ? (
+        <KpiRow>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card className="kpi-card" key={i}>
+              <Skeleton height={26} width={48} style={{ marginBottom: 8 }} />
+              <Skeleton height={12} width={80} />
+            </Card>
+          ))}
+        </KpiRow>
+      ) : (
+        <KpiRow>
+          <KpiCard label="Total incidents" value={stats.totalIncidents} />
+          <KpiCard label="Pending verification" value={stats.pendingIncidents} tone="pending" />
+          <KpiCard label="Verified" value={stats.verifiedIncidents} tone="verified" />
+          <KpiCard label="Resolved" value={stats.resolvedIncidents} tone="resolved" />
+          <KpiCard label="Active volunteers" value={stats.activeVolunteers} />
+          <KpiCard label="Completed cleanup tasks" value={stats.completedCleanupTasks} tone="resolved" />
+        </KpiRow>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 20 }}>
         <Card style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 12 }}>Incident map</h3>
-          <div className="map-placeholder" style={{ height: 260 }}>
-            {mapData.map((incident, i) => (
-              <IconPin
-                key={incident.id}
-                style={{
-                  top: 20 + ((i * 47) % 200),
-                  left: 20 + ((i * 83) % 380),
-                  color: PIN_TONE[incident.verificationStatus] ?? 'var(--text-3)',
-                }}
-              />
-            ))}
-          </div>
+          <h3 style={{ fontSize: 14, marginBottom: 12 }}>Incidents by workflow stage</h3>
+          {!incidents ? (
+            <Skeleton height={120} />
+          ) : stageDistribution.length === 0 ? (
+            <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>No incidents recorded yet.</p>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, height: 120 }}>
+                {stageDistribution.map(({ stage, count }) => {
+                  const max = Math.max(1, ...stageDistribution.map((s) => s.count));
+                  return (
+                    <div
+                      key={stage}
+                      title={`${stage}: ${count}`}
+                      style={{
+                        width: 32,
+                        height: `${Math.max(6, (count / max) * 100)}%`,
+                        background: 'var(--progress)',
+                        borderRadius: '4px 4px 0 0',
+                      }}
+                    />
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: 14, marginTop: 8, fontSize: 11, color: 'var(--text-3)' }}>
+                {stageDistribution.map(({ stage }) => (
+                  <span key={stage} style={{ width: 32, textAlign: 'center' }}>
+                    {stage.split(' ')[0]}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
         </Card>
+
         <Card style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 12 }}>Recent activity</h3>
-          {!auditLog || auditLog.length === 0 ? (
+          <h3 style={{ fontSize: 14, marginBottom: 12 }}>Cleanup progress</h3>
+          {!stats ? <Skeleton height={16} /> : <ProgressBar stats={stats} />}
+        </Card>
+      </div>
+
+      <div style={{ marginTop: 20 }}>
+        <SectionTitle>Incident map</SectionTitle>
+        <Card style={{ padding: 20 }}>
+          {!incidents ? (
+            <Skeleton height={260} />
+          ) : (
+            <div className="map-placeholder" style={{ height: 260 }}>
+              {incidents.map((incident, i) => (
+                <IconPin
+                  key={incident.id}
+                  style={{
+                    top: 20 + ((i * 47) % 200),
+                    left: 20 + ((i * 83) % 380),
+                    color: PIN_TONE[incident.verificationStatus] ?? 'var(--text-3)',
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <div style={{ marginTop: 20 }}>
+        <SectionTitle>Volunteer activity</SectionTitle>
+        <Card>
+          {!volunteers || !tasks ? (
+            <div style={{ padding: 20 }}>
+              <Skeleton height={14} style={{ marginBottom: 12 }} />
+              <Skeleton height={14} style={{ marginBottom: 12 }} />
+              <Skeleton height={14} />
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Tasks completed</th>
+                  <th>Tasks pending</th>
+                  <th>Last active</th>
+                </tr>
+              </thead>
+              <tbody>
+                {volunteerActivity.map(({ member, completed, pending, lastActive }) => (
+                  <tr key={member.id}>
+                    <td>
+                      <div className="row-flex">
+                        <Avatar name={member.user.fullName} />
+                        {member.user.fullName}
+                      </div>
+                    </td>
+                    <td>{completed}</td>
+                    <td>{pending}</td>
+                    <td>{formatDate(lastActive)}</td>
+                  </tr>
+                ))}
+                {volunteerActivity.length === 0 && (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-3)', padding: '32px 0' }}>
+                      No volunteers yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </Card>
+      </div>
+
+      <div style={{ marginTop: 20 }}>
+        <SectionTitle>Recent activity</SectionTitle>
+        <Card style={{ padding: 20 }}>
+          {!auditLog ? (
+            <>
+              <Skeleton height={14} style={{ marginBottom: 12 }} />
+              <Skeleton height={14} style={{ marginBottom: 12 }} />
+              <Skeleton height={14} />
+            </>
+          ) : recentActivity.length === 0 ? (
             <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>No activity recorded yet.</p>
           ) : (
             <div className="timeline">
-              {auditLog.slice(0, 6).map((entry) => (
+              {recentActivity.map((entry) => (
                 <div className="timeline-item" key={entry.id}>
                   <div className="t-label">{humanizeAction(entry.action)}</div>
                   <div className="t-date">{timeAgo(entry.createdAt)}</div>
@@ -94,38 +270,38 @@ export default function DashboardPage() {
           )}
         </Card>
       </div>
-
-      {stats.incidentsByCategory.length > 0 && (
-        <div style={{ marginTop: 20 }}>
-          <SectionTitle>Incidents by category</SectionTitle>
-          <Card style={{ padding: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, height: 120 }}>
-              {stats.incidentsByCategory.map((c) => {
-                const max = Math.max(1, ...stats.incidentsByCategory.map((x) => x.count));
-                return (
-                  <div
-                    key={c.category}
-                    title={`${c.category}: ${c.count}`}
-                    style={{
-                      width: 32,
-                      height: `${Math.max(6, (c.count / max) * 100)}%`,
-                      background: 'var(--primary)',
-                      borderRadius: '4px 4px 0 0',
-                    }}
-                  />
-                );
-              })}
-            </div>
-            <div style={{ display: 'flex', gap: 14, marginTop: 8, fontSize: 11, color: 'var(--text-3)' }}>
-              {stats.incidentsByCategory.map((c) => (
-                <span key={c.category} style={{ width: 32, textAlign: 'center' }}>
-                  {c.category.split('_')[0]}
-                </span>
-              ))}
-            </div>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
+
+function ProgressBar({ stats }: { stats: DashboardStats }) {
+  const total = Math.max(1, stats.totalIncidents);
+  const resolvedPct = (stats.resolvedIncidents / total) * 100;
+  const inProgressPct = (Math.max(0, stats.verifiedIncidents - stats.resolvedIncidents) / total) * 100;
+  const pendingPct = (stats.pendingIncidents / total) * 100;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', background: '#F0EFE9' }}>
+        <div style={{ width: `${resolvedPct}%`, background: 'var(--resolved)' }} title={`Resolved: ${resolvedPct.toFixed(0)}%`} />
+        <div style={{ width: `${inProgressPct}%`, background: 'var(--progress)' }} title={`In progress: ${inProgressPct.toFixed(0)}%`} />
+        <div style={{ width: `${pendingPct}%`, background: 'var(--pending)' }} title={`Pending: ${pendingPct.toFixed(0)}%`} />
+      </div>
+      <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 12, color: 'var(--text-2)' }}>
+        <Legend color="var(--resolved)" label={`Resolved ${resolvedPct.toFixed(0)}%`} />
+        <Legend color="var(--progress)" label={`In progress ${inProgressPct.toFixed(0)}%`} />
+        <Legend color="var(--pending)" label={`Pending ${pendingPct.toFixed(0)}%`} />
+      </div>
+    </div>
+  );
+}
+
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+      {label}
+    </span>
+  );
+}
+

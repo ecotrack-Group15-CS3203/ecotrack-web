@@ -30,8 +30,10 @@ function AcceptInviteContent() {
 
   useEffect(() => {
     if (!token) {
-      setLoadError('This invite link is missing a token.');
-      setLoading(false);
+      setTimeout(() => {
+        setLoadError('This invite link is missing a token.');
+        setLoading(false);
+      }, 0);
       return;
     }
     apiFetch<InvitationInfo>(`/auth/invitations/${token}`)

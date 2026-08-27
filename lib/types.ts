@@ -15,13 +15,32 @@ export interface Profile {
   memberships: Membership[];
 }
 
+export interface ServiceArea {
+  latitude: number;
+  longitude: number;
+  radiusKm: number;
+}
+
 export interface Organisation {
   id: string;
   name: string;
   description: string | null;
+  contactEmail: string | null;
   isActive: boolean;
+  serviceArea: ServiceArea | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface InviteLink {
+  id: string;
+  organisationId: string;
+  token: string;
+  url: string;
+  maxUses: number | null;
+  usesCount: number;
+  expiresAt: string;
+  createdAt: string;
 }
 
 export interface OrganisationMember {
@@ -62,12 +81,37 @@ export interface InvitationInfo {
   emailAlreadyRegistered: boolean;
 }
 
+export type JoinRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface JoinRequest {
+  id: string;
+  organisationId: string;
+  requesterUserId: string;
+  requester: { id: string; fullName: string; email: string };
+  message: string | null;
+  status: JoinRequestStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface WorkflowStage {
   id: string;
   organisationId: string;
   name: string;
   position: number;
   isFinal: boolean;
+  slug?: string;
+  description?: string | null;
+  color?: string;
+  orderIndex?: number;
+  isFixed?: boolean;
+}
+
+export interface WorkflowStageRuleSettings {
+  taskCreation: { minimumStageId: string | null; targetStageId: string | null };
+  eventCreation: { minimumStageId: string | null; targetStageId: string | null };
+  taskCompletion: { targetStageId: string | null };
+  eventCompletion: { targetStageId: string | null };
 }
 
 export type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'duplicate';
@@ -87,8 +131,11 @@ export interface IncidentImage {
 
 export interface Incident {
   id: string;
-  organisationId: string;
+  /** null while unclaimed in the cross-organisation incident pool. */
+  organisationId: string | null;
+  claimedAt: string | null;
   reportedByUserId: string;
+  reporter?: { id: string; fullName: string; email: string };
   title: string;
   description: string;
   category: IncidentCategory;
@@ -108,7 +155,7 @@ export interface Incident {
 }
 
 export type TaskPriority = 'low' | 'medium' | 'high';
-export type TaskStatus = 'pending' | 'in_progress' | 'completed';
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 export type AssignmentStatus = 'assigned' | 'accepted' | 'declined';
 
 export interface TaskAssignment {
@@ -137,6 +184,7 @@ export interface Task {
   organisationId: string;
   incidentId: string;
   incident: Incident;
+  title: string;
   description: string;
   priority: TaskPriority;
   scheduledAt: string | null;
@@ -145,6 +193,34 @@ export interface Task {
   assignments: TaskAssignment[];
   notes: TaskNote[];
   photos: TaskPhoto[];
+  createdAt: string;
+}
+
+export type EventStatus = 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+
+export interface EventRsvp {
+  id: string;
+  volunteerUserId: string;
+  volunteer: { id: string; fullName: string; email: string };
+  rsvpedAt: string;
+}
+
+export interface Event {
+  id: string;
+  organisationId: string;
+  incidentIds: string[];
+  incidents: Incident[];
+  title: string;
+  description: string;
+  latitude: number;
+  longitude: number;
+  address: string | null;
+  scheduledAt: string;
+  endsAt: string | null;
+  maxAttendees: number | null;
+  status: EventStatus;
+  rsvps: EventRsvp[];
+  createdByUserId: string;
   createdAt: string;
 }
 
