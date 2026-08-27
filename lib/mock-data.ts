@@ -11,6 +11,7 @@ import type {
   Task,
   JoinRequest,
   WorkflowStage,
+  WorkflowStageRuleSettings,
 } from './types';
 import { distanceKm } from './geo';
 
@@ -26,13 +27,20 @@ export class MockHttpError extends Error {
 export const MOCK_ORG_ID = 'dev-org';
 
 const STAGES: WorkflowStage[] = [
-  { id: 'stage-reported', organisationId: MOCK_ORG_ID, name: 'Reported', position: 0, isFinal: false },
-  { id: 'stage-review', organisationId: MOCK_ORG_ID, name: 'Under Review', position: 1, isFinal: false },
-  { id: 'stage-verified', organisationId: MOCK_ORG_ID, name: 'Verified', position: 2, isFinal: false },
-  { id: 'stage-scheduled', organisationId: MOCK_ORG_ID, name: 'Cleanup Scheduled', position: 3, isFinal: false },
-  { id: 'stage-progress', organisationId: MOCK_ORG_ID, name: 'In Progress', position: 4, isFinal: false },
-  { id: 'stage-resolved', organisationId: MOCK_ORG_ID, name: 'Resolved', position: 5, isFinal: true },
+  { id: 'stage-reported', organisationId: MOCK_ORG_ID, name: 'Reported', slug: 'reported', description: 'New reports waiting to be reviewed.', color: '#64748B', position: 0, orderIndex: 0, isFinal: false, isFixed: true },
+  { id: 'stage-review', organisationId: MOCK_ORG_ID, name: 'Under Review', slug: 'under-review', description: 'A team member is checking the report.', color: '#E9B44C', position: 1, orderIndex: 1, isFinal: false },
+  { id: 'stage-verified', organisationId: MOCK_ORG_ID, name: 'Verified', slug: 'verified', description: 'The report has been verified.', color: '#2563EB', position: 2, orderIndex: 2, isFinal: false },
+  { id: 'stage-scheduled', organisationId: MOCK_ORG_ID, name: 'Cleanup Scheduled', slug: 'cleanup-scheduled', description: null, color: '#7C3AED', position: 3, orderIndex: 3, isFinal: false },
+  { id: 'stage-progress', organisationId: MOCK_ORG_ID, name: 'In Progress', slug: 'in-progress', description: null, color: '#F97316', position: 4, orderIndex: 4, isFinal: false },
+  { id: 'stage-resolved', organisationId: MOCK_ORG_ID, name: 'Resolved', slug: 'resolved', description: 'The work is complete.', color: '#0F6E56', position: 5, orderIndex: 5, isFinal: true },
 ];
+
+let MOCK_STAGE_RULES: WorkflowStageRuleSettings = {
+  taskCreation: { minimumStageId: 'stage-verified', targetStageId: 'stage-scheduled' },
+  eventCreation: { minimumStageId: 'stage-verified', targetStageId: null },
+  taskCompletion: { targetStageId: 'stage-resolved' },
+  eventCompletion: { targetStageId: 'stage-resolved' },
+};
 
 function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86_400_000).toISOString();
@@ -228,6 +236,8 @@ export function getMockResponse(path: string): unknown | undefined {
     );
   }
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/workflow-stages`) return STAGES;
+  if (withoutQuery === '/v1/workflows/stages') return STAGES;
+  if (withoutQuery === '/v1/workflows/stage-rules') return MOCK_STAGE_RULES;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/events`) return MOCK_EVENTS;
   if (withoutQuery === `/v1/organizations/${MOCK_ORG_ID}/join-requests`) return MOCK_JOIN_REQUESTS;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}`) {
@@ -457,6 +467,61 @@ export function handleMockMutation(path: string, method: string, body: unknown):
     request.status = status;
     request.updatedAt = new Date().toISOString();
     return request;
+  }
+
+  if (withoutQuery === '/v1/workflows/stages/reorder' && method === 'PATCH') {
+    const { orderedStageIds } = (body ?? {}) as { orderedStageIds?: string[] };
+    if (!orderedStageIds || orderedStageIds.length !== STAGES.length || orderedStageIds[0] !== 'stage-reported') {
+      throw new MockHttpError(400, 'The Reported stage must remain first.');
+    }
+    const reordered = orderedStageIds.map((id) => STAGES.find((stage) => stage.id === id));
+    if (reordered.some((stage) => !stage)) return undefined;
+    STAGES.splice(0, STAGES.length, ...(reordered as WorkflowStage[]));
+    STAGES.forEach((stage, index) => {
+      stage.position = index;
+      stage.orderIndex = index;
+    });
+    return STAGES;
+  }
+
+  if (withoutQuery === '/v1/workflows/stages' && method === 'POST') {
+    const input = (body ?? {}) as { name?: string; description?: string; color?: string; isFinal?: boolean };
+    if (!input.name?.trim()) return undefined;
+    const slugBase = input.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slug = `${slugBase || 'stage'}-${STAGES.length + 1}`;
+    const stage: WorkflowStage = {
+      id: `stage-${STAGES.length + 1}`, organisationId: MOCK_ORG_ID, name: input.name.trim(), slug,
+      description: input.description?.trim() || null, color: input.color || '#0F6E56',
+      position: STAGES.length, orderIndex: STAGES.length, isFinal: Boolean(input.isFinal),
+    };
+    STAGES.push(stage);
+    return stage;
+  }
+
+  if (withoutQuery === '/v1/workflows/stage-rules' && method === 'PATCH') {
+    MOCK_STAGE_RULES = body as WorkflowStageRuleSettings;
+    return MOCK_STAGE_RULES;
+  }
+
+  const modernStageMatch = withoutQuery.match(/^\/v1\/workflows\/stages\/([^/]+)$/);
+  if (modernStageMatch && method === 'PATCH') {
+    const stage = STAGES.find((item) => item.id === modernStageMatch[1]);
+    const updates = (body ?? {}) as Partial<Pick<WorkflowStage, 'name' | 'description' | 'color' | 'isFinal'>>;
+    if (!stage) return undefined;
+    Object.assign(stage, updates);
+    return stage;
+  }
+  if (modernStageMatch && method === 'DELETE') {
+    const stage = STAGES.find((item) => item.id === modernStageMatch[1]);
+    if (!stage) return undefined;
+    if (stage.isFixed) throw new MockHttpError(400, 'The Reported stage cannot be deleted.');
+    if (stage.id === 'stage-review') throw new MockHttpError(409, 'This stage cannot be deleted because incidents are currently in it.');
+    STAGES.splice(STAGES.indexOf(stage), 1);
+    STAGES.forEach((item, index) => {
+      item.position = index;
+      item.orderIndex = index;
+    });
+    return null;
   }
 
   return undefined;
