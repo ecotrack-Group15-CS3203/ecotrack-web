@@ -141,6 +141,24 @@ export function ErrorBanner({ message }: { message: string }) {
   );
 }
 
+export function Skeleton({ height = 16, width = '100%', style }: { height?: number; width?: number | string; style?: React.CSSProperties }) {
+  return (
+    <div
+      style={{
+        height,
+        width,
+        borderRadius: 6,
+        background: 'linear-gradient(90deg, #EFEEE7 25%, #F6F5F0 37%, #EFEEE7 63%)',
+        backgroundSize: '400% 100%',
+        animation: 'skeleton-pulse 1.4s ease infinite',
+        ...style,
+      }}
+    >
+      <style>{`@keyframes skeleton-pulse { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }`}</style>
+    </div>
+  );
+}
+
 export function PageHeader({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: description ? 4 : 20 }}>
