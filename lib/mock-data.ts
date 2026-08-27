@@ -6,6 +6,7 @@ import type {
   DashboardStats,
   Event,
   Incident,
+  InviteLink,
   Organisation,
   OrganisationMember,
   Task,
@@ -46,6 +47,10 @@ function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86_400_000).toISOString();
 }
 
+// Only ever read/written from the browser (mock mutations run client-side), so
+// window is always available here.
+const ORIGIN = typeof window !== 'undefined' ? window.location.origin : '';
+
 const MOCK_INCIDENTS: Incident[] = [
   { id: 'inc-1', organisationId: MOCK_ORG_ID, claimedAt: daysAgo(25), reportedByUserId: 'user-1', title: 'Illegal dumping near river bank', description: 'Several bags of household waste dumped by the riverside path.', category: 'illegal_dumping', severity: 'high', latitude: 6.9271, longitude: 79.8612, address: 'Riverside Rd', verificationStatus: 'approved', currentStageId: 'stage-resolved', currentStage: STAGES[5], rejectionReason: null, duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(20), images: [], createdAt: daysAgo(25) },
   { id: 'inc-2', organisationId: MOCK_ORG_ID, claimedAt: daysAgo(12), reportedByUserId: 'user-2', title: 'Oil sheen in canal water', description: 'Visible oil slick spreading near the storm drain outlet.', category: 'water_pollution', severity: 'critical', latitude: 6.9147, longitude: 79.8731, address: 'Canal Rd', verificationStatus: 'approved', currentStageId: 'stage-progress', currentStage: STAGES[4], rejectionReason: null, duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(10), images: [], createdAt: daysAgo(12) },
@@ -62,6 +67,23 @@ const MOCK_INCIDENTS: Incident[] = [
 ];
 
 const MOCK_ORGANISATION_SERVICE_AREA = { latitude: 6.9147, longitude: 79.8612, radiusKm: 5 };
+
+const MOCK_ORGANISATION: Organisation = {
+  id: MOCK_ORG_ID,
+  name: 'Dev Organisation',
+  description: 'Local development organisation seeded for mock data.',
+  contactEmail: 'contact@devorg.example',
+  isActive: true,
+  serviceArea: MOCK_ORGANISATION_SERVICE_AREA,
+  createdAt: daysAgo(90),
+  updatedAt: daysAgo(1),
+};
+
+const MOCK_INVITE_LINKS: InviteLink[] = [
+  { id: 'invite-1', organisationId: MOCK_ORG_ID, token: 'inv-tok-1', url: `${ORIGIN}/accept-invite?token=inv-tok-1`, maxUses: 10, usesCount: 3, expiresAt: daysFromNow(5), createdAt: daysAgo(2) },
+  { id: 'invite-2', organisationId: MOCK_ORG_ID, token: 'inv-tok-2', url: `${ORIGIN}/accept-invite?token=inv-tok-2`, maxUses: null, usesCount: 7, expiresAt: daysFromNow(20), createdAt: daysAgo(10) },
+  { id: 'invite-3', organisationId: MOCK_ORG_ID, token: 'inv-tok-3', url: `${ORIGIN}/accept-invite?token=inv-tok-3`, maxUses: 5, usesCount: 5, expiresAt: daysAgo(1), createdAt: daysAgo(15) },
+];
 
 
 
@@ -240,17 +262,9 @@ export function getMockResponse(path: string): unknown | undefined {
   if (withoutQuery === '/v1/workflows/stage-rules') return MOCK_STAGE_RULES;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/events`) return MOCK_EVENTS;
   if (withoutQuery === `/v1/organizations/${MOCK_ORG_ID}/join-requests`) return MOCK_JOIN_REQUESTS;
-  if (withoutQuery === `/organisations/${MOCK_ORG_ID}`) {
-    const organisation: Organisation = {
-      id: MOCK_ORG_ID,
-      name: 'Dev Organisation',
-      description: 'Local development organisation seeded for mock data.',
-      isActive: true,
-      serviceArea: MOCK_ORGANISATION_SERVICE_AREA,
-      createdAt: daysAgo(90),
-      updatedAt: daysAgo(1),
-    };
-    return organisation;
+  if (withoutQuery === `/v1/organizations/${MOCK_ORG_ID}/invites`) return MOCK_INVITE_LINKS;
+  if (withoutQuery === `/organisations/${MOCK_ORG_ID}` || withoutQuery === `/v1/organizations/${MOCK_ORG_ID}`) {
+    return MOCK_ORGANISATION;
   }
 
   const incidentMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/incidents/([^/]+)$`));
@@ -452,6 +466,30 @@ export function handleMockMutation(path: string, method: string, body: unknown):
     // Suspends the membership only — the underlying user account is untouched.
     member.isActive = false;
     return member;
+  }
+
+  const orgProfileMatch = withoutQuery.match(new RegExp(`^/(?:v1/)?organi[sz]ations/${MOCK_ORG_ID}$`));
+  if (orgProfileMatch && method === 'PATCH') {
+    const updates = (body ?? {}) as Partial<Pick<Organisation, 'name' | 'description' | 'contactEmail' | 'serviceArea'>>;
+    Object.assign(MOCK_ORGANISATION, updates, { updatedAt: new Date().toISOString() });
+    return MOCK_ORGANISATION;
+  }
+
+  if (withoutQuery === `/v1/organizations/${MOCK_ORG_ID}/invites` && method === 'POST') {
+    const input = (body ?? {}) as { maxUses?: number | null; expiresInDays?: number };
+    const token = `inv-${Math.random().toString(36).slice(2, 10)}`;
+    const link: InviteLink = {
+      id: `invite-${MOCK_INVITE_LINKS.length + 1}`,
+      organisationId: MOCK_ORG_ID,
+      token,
+      url: `${ORIGIN}/accept-invite?token=${token}`,
+      maxUses: input.maxUses ?? null,
+      usesCount: 0,
+      expiresAt: daysFromNow(input.expiresInDays ?? 7),
+      createdAt: new Date().toISOString(),
+    };
+    MOCK_INVITE_LINKS.unshift(link);
+    return link;
   }
 
   const joinRequestMatch = withoutQuery.match(

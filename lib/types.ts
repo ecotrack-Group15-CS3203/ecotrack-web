@@ -25,10 +25,22 @@ export interface Organisation {
   id: string;
   name: string;
   description: string | null;
+  contactEmail: string | null;
   isActive: boolean;
   serviceArea: ServiceArea | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface InviteLink {
+  id: string;
+  organisationId: string;
+  token: string;
+  url: string;
+  maxUses: number | null;
+  usesCount: number;
+  expiresAt: string;
+  createdAt: string;
 }
 
 export interface OrganisationMember {
