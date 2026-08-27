@@ -1,0 +1,275 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "loading": "Loading…",
+    "notifications": "Notifications",
+    "dismissNotification": "Dismiss notification",
+    "logOut": "Log out",
+    "search": "Search",
+    "unassigned": "Unassigned",
+    "unlimited": "unlimited",
+    "requiredField": "This field is required.",
+    "invalidEmail": "Enter a valid email address."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "incidentPool": "Incident Pool",
+    "incidents": "Incidents",
+    "tasks": "Tasks",
+    "events": "Events",
+    "volunteers": "Volunteers",
+    "joinRequests": "Join Requests",
+    "workflow": "Workflow",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Overview for your organisation",
+    "loadError": "Failed to load some dashboard data",
+    "kpi": {
+      "totalIncidents": "Total incidents",
+      "pendingVerification": "Pending verification",
+      "verified": "Verified",
+      "resolved": "Resolved",
+      "activeVolunteers": "Active volunteers",
+      "completedTasks": "Completed cleanup tasks"
+    },
+    "stagesChart": {
+      "title": "Incidents by workflow stage",
+      "empty": "No incidents recorded yet."
+    },
+    "progress": {
+      "title": "Cleanup progress",
+      "resolved": "Resolved {{pct}}%",
+      "inProgress": "In progress {{pct}}%",
+      "pending": "Pending {{pct}}%"
+    },
+    "map": {
+      "title": "Incident map",
+      "pinLabel": "{{status}} incident at {{lat}}, {{lng}}"
+    },
+    "volunteerActivity": {
+      "title": "Volunteer activity",
+      "name": "Name",
+      "tasksCompleted": "Tasks completed",
+      "tasksPending": "Tasks pending",
+      "lastActive": "Last active",
+      "empty": "No volunteers yet."
+    },
+    "recentActivity": {
+      "title": "Recent activity",
+      "empty": "No activity recorded yet."
+    }
+  },
+  "incidentsList": {
+    "title": "My organisation's incidents",
+    "description": "Reports submitted to your organisation",
+    "loadError": "Failed to load incidents",
+    "empty": "No incidents match these filters.",
+    "statusTabs": {
+      "all": "All statuses",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "duplicate": "Duplicate"
+    },
+    "filters": {
+      "allStages": "All workflow stages",
+      "allUrgency": "All urgency levels",
+      "from": "From",
+      "to": "To",
+      "newestFirst": "Newest first",
+      "oldestFirst": "Oldest first",
+      "sortLabel": "Sort incidents",
+      "dateFromLabel": "Filter by submission date, from",
+      "dateToLabel": "Filter by submission date, to"
+    },
+    "table": {
+      "thumbnail": "Thumbnail",
+      "title": "Title",
+      "category": "Category",
+      "severity": "Severity",
+      "stage": "Stage",
+      "status": "Status",
+      "submitted": "Submitted",
+      "rowLabel": "View incident: {{title}}"
+    }
+  },
+  "incidentDetail": {
+    "backToIncidents": "Back to incidents",
+    "loadError": "Failed to load incident",
+    "rejectionReason": "Rejection reason: {{reason}}",
+    "location": "Location",
+    "verification": {
+      "title": "Verification",
+      "decision": "Decision",
+      "approve": "Approve",
+      "reject": "Reject",
+      "markDuplicate": "Mark as duplicate",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Why is this being rejected?",
+      "reasonRequired": "Enter a reason for the rejection.",
+      "originalIncident": "Original incident",
+      "selectPlaceholder": "Select…",
+      "originalRequired": "Select the original incident.",
+      "submitting": "Submitting…",
+      "alreadyDecided": "This incident has already been {{status}}."
+    },
+    "actions": {
+      "title": "Actions",
+      "createTask": "+ Create task",
+      "createEvent": "+ Create event",
+      "updateStatus": "Update status",
+      "selectStage": "Select a workflow stage…",
+      "current": " (current)",
+      "updating": "Updating…",
+      "dismiss": "Dismiss incident",
+      "dismissing": "Dismissing…",
+      "dismissFinalHint": "This incident is in a final stage and can no longer be dismissed."
+    }
+  },
+  "tasksList": {
+    "title": "Cleanup tasks",
+    "description": "Tasks created from verified incidents",
+    "createTask": "+ Create task",
+    "loadError": "Failed to load tasks",
+    "empty": "No tasks match these filters.",
+    "statusTabs": {
+      "all": "All",
+      "pending": "Scheduled",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "filters": {
+      "allVolunteers": "All volunteers",
+      "dueFrom": "Due from",
+      "dueTo": "Due to"
+    },
+    "table": {
+      "task": "Task",
+      "linkedIncident": "Linked incident",
+      "assignedVolunteer": "Assigned volunteer",
+      "priority": "Priority",
+      "dueDate": "Due date",
+      "status": "Status",
+      "rowLabel": "View task: {{title}}"
+    },
+    "createModal": {
+      "title": "Create cleanup task",
+      "linkedIncident": "Linked incident",
+      "selectIncident": "Select an approved incident…",
+      "noIncidents": "No approved incidents available yet — verify an incident first.",
+      "incidentRequired": "Select the incident this task is for.",
+      "location": "Location: {{lat}}, {{lng}}",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Task title",
+      "titleRequired": "Enter a title for this task.",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "What needs to happen during this cleanup?",
+      "descriptionRequired": "Enter a description for this task.",
+      "assignTo": "Assign to",
+      "priority": "Priority",
+      "priorityLow": "Low",
+      "priorityMedium": "Medium",
+      "priorityHigh": "High",
+      "dueDate": "Due date",
+      "creating": "Creating…",
+      "submit": "Create task"
+    }
+  },
+  "workflow": {
+    "title": "Workflow",
+    "description": "Define the stages an incident moves through and what unlocks tasks and events.",
+    "addStage": "+ Add stage",
+    "loadError": "Failed to load workflow stages.",
+    "locked": "Locked",
+    "lockedHint": "This stage is fixed and cannot be reordered or deleted",
+    "moveUp": "Move {{name}} earlier",
+    "moveDown": "Move {{name}} later",
+    "final": "Final",
+    "toggleFinal": "Mark {{name}} as {{state}}",
+    "notFinal": "not final",
+    "isFinal": "final",
+    "edit": "Edit",
+    "editLabel": "Edit {{name}} stage",
+    "delete": "Delete",
+    "deleteLabel": "Delete {{name}} stage",
+    "deleteConfirm": "Delete the \"{{name}}\" stage? This cannot be undone.",
+    "rulesTitle": "Workflow Stage Rules",
+    "rulesLoadError": "Failed to load workflow rules.",
+    "saveRules": "Save rules",
+    "savingRules": "Saving…",
+    "rules": {
+      "taskCreation": { "label": "Task Creation", "hint": "Controls when staff can create a task for an incident, and what happens to the incident when they do." },
+      "eventCreation": { "label": "Event Creation", "hint": "Controls when staff can create an event for an incident, and what happens to the incident when they do." },
+      "taskCompletion": { "label": "Task Completion", "hint": "What happens to the incident when its task is marked complete." },
+      "eventCompletion": { "label": "Event Completion", "hint": "What happens to the incident when its event is marked complete." },
+      "minimumLabel": "Requires incident to have reached",
+      "anyStage": "Any stage",
+      "targetLabel": "Moves incident to",
+      "automatic": "Automatic"
+    },
+    "addModal": {
+      "title": "Add stage",
+      "nameLabel": "Name",
+      "nameRequired": "Enter a name for this stage.",
+      "descriptionLabel": "Description (optional)",
+      "colorLabel": "Color",
+      "adding": "Adding…",
+      "submit": "Add stage"
+    },
+    "editModal": {
+      "title": "Edit stage",
+      "slugLabel": "Slug",
+      "slugHint": "The slug is set when the stage is created and can't be changed.",
+      "savingChanges": "Saving…",
+      "submit": "Save changes"
+    }
+  },
+  "incidentPool": {
+    "title": "Incident pool",
+    "description": "Unclaimed reports within your organisation's service area",
+    "loadError": "Failed to load the incident pool",
+    "empty": "No unclaimed incidents in your service area right now.",
+    "claimed": "Incident claimed.",
+    "claim": "Claim incident",
+    "claiming": "Claiming…",
+    "viewLabel": "View incident: {{title}}",
+    "table": {
+      "thumbnail": "Thumbnail",
+      "title": "Title",
+      "urgency": "Urgency",
+      "submitted": "Submitted",
+      "distance": "Distance"
+    }
+  },
+  "events": {
+    "createEvent": "+ Create event",
+    "createModal": {
+      "title": "Create event",
+      "eligibleIncidents": "Eligible incidents",
+      "noIncidents": "No approved incidents available yet — verify an incident first.",
+      "incidentsRequired": "Select at least one incident.",
+      "creating": "Creating…",
+      "submit": "Create event",
+      "startRequired": "Choose a start date and time.",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Event title",
+      "titleRequired": "Enter a title for this event.",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "What will volunteers do at this event?",
+      "descriptionRequired": "Enter a description for this event.",
+      "locationLabel": "Location",
+      "locationHint": "Drag-to-place map pin isn't available in this build — enter coordinates directly.",
+      "latitudePlaceholder": "Latitude",
+      "longitudePlaceholder": "Longitude",
+      "addressPlaceholder": "Address (optional)"
+    }
+  }
+}

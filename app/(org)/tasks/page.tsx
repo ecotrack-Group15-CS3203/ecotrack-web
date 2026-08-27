@@ -1,12 +1,14 @@
 'use client';
 
 import { Suspense, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
-import { Button, Card, Chip, EmptyState, ErrorBanner, FilterBar, FilterPill, Modal, PageHeader, Spinner } from '@/components/ui';
+import { Button, Card, Chip, EmptyState, ErrorBanner, FieldError, FilterBar, FilterPill, Modal, PageHeader, Spinner } from '@/components/ui';
 import type { Incident, OrganisationMember, Task, TaskPriority, TaskStatus } from '@/lib/types';
 import { ApiError } from '@/lib/api';
+import { useFieldValidation, required } from '@/lib/use-field-validation';
 
 const STATUS_TABS: { label: string; value: TaskStatus | 'all' }[] = [
   { label: 'All', value: 'all' },
@@ -25,6 +27,7 @@ export default function TasksPage() {
 }
 
 function TasksPageInner() {
+  const { t } = useTranslation();
   const { activeOrgId } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -65,45 +68,46 @@ function TasksPageInner() {
   return (
     <div>
       <PageHeader
-        title="Cleanup tasks"
-        description="Tasks created from verified incidents"
-        action={<Button onClick={() => setShowCreate(true)}>+ Create task</Button>}
+        title={t('tasksList.title')}
+        description={t('tasksList.description')}
+        action={<Button onClick={() => setShowCreate(true)}>{t('tasksList.createTask')}</Button>}
       />
 
       <FilterBar>
         {STATUS_TABS.map((tab) => (
           <FilterPill key={tab.value} active={statusFilter === tab.value} onClick={() => setStatusFilter(tab.value)}>
-            {tab.label}
+            {t(`tasksList.statusTabs.${tab.value}`)}
           </FilterPill>
         ))}
       </FilterBar>
 
       <FilterBar>
-        <select value={volunteerFilter} onChange={(e) => setVolunteerFilter(e.target.value)}>
-          <option value="all">All volunteers</option>
+        <label className="filter-control" htmlFor="task-volunteer-filter"><span className="sr-only">{t('tasksList.filters.allVolunteers')}</span>
+        <select id="task-volunteer-filter" aria-label={t('tasksList.filters.allVolunteers')} value={volunteerFilter} onChange={(e) => setVolunteerFilter(e.target.value)}>
+          <option value="all">{t('tasksList.filters.allVolunteers')}</option>
           {(volunteers ?? []).map((v) => (
             <option key={v.userId} value={v.userId}>
               {v.user.fullName}
             </option>
           ))}
-        </select>
+        </select></label>
         <label style={{ fontSize: 13, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          Due from
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          {t('tasksList.filters.dueFrom')}
+          <input id="task-due-from" aria-label={t('tasksList.filters.dueFrom')} type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
         </label>
         <label style={{ fontSize: 13, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          Due to
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          {t('tasksList.filters.dueTo')}
+          <input id="task-due-to" aria-label={t('tasksList.filters.dueTo')} type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         </label>
       </FilterBar>
 
-      {error && <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load tasks'} />}
+      {error && <ErrorBanner message={error instanceof ApiError ? error.message : t('tasksList.loadError')} />}
       {!tasks && !error && <Spinner />}
 
       {tasks && filteredTasks.length === 0 && (
         <Card>
           <EmptyState>
-            <p>No tasks match these filters.</p>
+            <p>{t('tasksList.empty')}</p>
           </EmptyState>
         </Card>
       )}
@@ -182,6 +186,7 @@ function CreateTaskModal({
   onCreated: (taskId: string) => void;
   api: ReturnType<typeof useAuthedFetch>;
 }) {
+  const { t } = useTranslation();
   const initialIncident = approvedIncidents.find((i) => i.id === initialIncidentId);
   const [incidentId, setIncidentId] = useState(initialIncidentId ?? '');
   const [title, setTitle] = useState(initialIncident?.title ?? '');
@@ -191,6 +196,9 @@ function CreateTaskModal({
   const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const incidentValidation = useFieldValidation(required(t('tasksList.createModal.incidentRequired')));
+  const titleValidation = useFieldValidation(required(t('tasksList.createModal.titleRequired')));
+  const descriptionValidation = useFieldValidation(required(t('tasksList.createModal.descriptionRequired')));
 
   const selectedIncident = approvedIncidents.find((i) => i.id === incidentId);
 
@@ -233,14 +241,14 @@ function CreateTaskModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Create cleanup task"
+      title={t('tasksList.createModal.title')}
       actions={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button disabled={submitting || !incidentId || !title.trim() || !description.trim()} onClick={handleSubmit}>
-            {submitting ? 'Creating…' : 'Create task'}
+            {submitting ? t('tasksList.createModal.creating') : t('tasksList.createModal.submit')}
           </Button>
         </>
       }
@@ -251,9 +259,9 @@ function CreateTaskModal({
         </div>
       )}
       <div className="field">
-        <label>Linked incident</label>
-        <select value={incidentId} onChange={(e) => selectIncident(e.target.value)}>
-          <option value="">Select an approved incident…</option>
+        <label htmlFor="create-task-incident">{t('tasksList.createModal.linkedIncident')}</label>
+        <select id="create-task-incident" aria-invalid={Boolean(incidentValidation.error)} aria-describedby={incidentValidation.error ? 'create-task-incident-error' : undefined} value={incidentId} onChange={(e) => selectIncident(e.target.value)} onBlur={(e) => incidentValidation.onBlur(e.target.value)}>
+          <option value="">{t('tasksList.createModal.selectIncident')}</option>
           {approvedIncidents.map((i) => (
             <option key={i.id} value={i.id}>
               {i.title}
@@ -261,31 +269,37 @@ function CreateTaskModal({
           ))}
         </select>
         {approvedIncidents.length === 0 && (
-          <p className="hint">No approved incidents available yet — verify an incident first.</p>
+          <p className="hint">{t('tasksList.createModal.noIncidents')}</p>
         )}
         {selectedIncident && (
           <p className="hint">
-            Location: {selectedIncident.latitude.toFixed(5)}, {selectedIncident.longitude.toFixed(5)}
+            {t('tasksList.createModal.location', { lat: selectedIncident.latitude.toFixed(5), lng: selectedIncident.longitude.toFixed(5) })}
             {selectedIncident.address && ` — ${selectedIncident.address}`}
           </p>
         )}
       </div>
       <div className="field">
-        <label>Title</label>
-        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Task title" />
+        <label htmlFor="create-task-title">{t('tasksList.createModal.titleLabel')}</label>
+        <input id="create-task-title" type="text" aria-invalid={Boolean(titleValidation.error)} aria-describedby={titleValidation.error ? 'create-task-title-error' : undefined} value={title} onChange={(e) => { setTitle(e.target.value); titleValidation.revalidate(e.target.value); }} onBlur={(e) => titleValidation.onBlur(e.target.value)} placeholder={t('tasksList.createModal.titlePlaceholder')} />
+        <FieldError id="create-task-title-error" message={titleValidation.error} />
       </div>
       <div className="field">
-        <label>Description</label>
+        <label htmlFor="create-task-description">{t('tasksList.createModal.descriptionLabel')}</label>
         <textarea
+          id="create-task-description"
+          aria-invalid={Boolean(descriptionValidation.error)}
+          aria-describedby={descriptionValidation.error ? 'create-task-description-error' : undefined}
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="What needs to happen during this cleanup?"
+          onChange={(e) => { setDescription(e.target.value); descriptionValidation.revalidate(e.target.value); }}
+          onBlur={(e) => descriptionValidation.onBlur(e.target.value)}
+          placeholder={t('tasksList.createModal.descriptionPlaceholder')}
         />
+        <FieldError id="create-task-description-error" message={descriptionValidation.error} />
       </div>
       <div className="field">
-        <label>Assign to</label>
-        <select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}>
-          <option value="">Unassigned</option>
+        <label htmlFor="create-task-assignee">{t('tasksList.createModal.assignTo')}</label>
+        <select id="create-task-assignee" value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}>
+          <option value="">{t('common.unassigned')}</option>
           {volunteers.map((v) => (
             <option key={v.userId} value={v.userId}>
               {v.user.fullName}
@@ -294,16 +308,16 @@ function CreateTaskModal({
         </select>
       </div>
       <div className="field">
-        <label>Priority</label>
-        <select value={priority} onChange={(e) => setPriority(e.target.value as TaskPriority)}>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
+        <label htmlFor="create-task-priority">{t('tasksList.createModal.priority')}</label>
+        <select id="create-task-priority" value={priority} onChange={(e) => setPriority(e.target.value as TaskPriority)}>
+          <option value="low">{t('tasksList.createModal.priorityLow')}</option>
+          <option value="medium">{t('tasksList.createModal.priorityMedium')}</option>
+          <option value="high">{t('tasksList.createModal.priorityHigh')}</option>
         </select>
       </div>
       <div className="field">
-        <label>Due date &amp; time</label>
-        <input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+        <label htmlFor="create-task-due">{t('tasksList.createModal.dueDate')}</label>
+        <input id="create-task-due" type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
       </div>
     </Modal>
   );

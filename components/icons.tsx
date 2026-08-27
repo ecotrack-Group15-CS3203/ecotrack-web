@@ -5,7 +5,7 @@ interface IconProps {
 
 function Icon({ d, className, style }: { d: string; className?: string; style?: React.CSSProperties }) {
   return (
-    <svg className={`icon ${className ?? ''}`} style={style} viewBox="0 0 24 24">
+    <svg aria-hidden="true" className={`icon ${className ?? ''}`} style={style} viewBox="0 0 24 24">
       <path d={d} />
     </svg>
   );
@@ -53,14 +53,17 @@ export const IconDrag = (p: IconProps) => (
 );
 export const IconTrash = (p: IconProps) => <Icon {...p} d="M4 6h16M8 6V4h8v2M6 6l1 14h10l1-14" />;
 export const IconPlus = (p: IconProps) => <Icon {...p} d="M12 5v14M5 12h14" />;
-export const IconPin = ({ className, style }: IconProps & { style?: React.CSSProperties }) => (
+export const IconPin = ({ className, style, label }: IconProps & { style?: React.CSSProperties; label?: string }) => (
   <svg
     className={`map-pin ${className ?? ''}`}
     style={style}
     viewBox="0 0 24 24"
     fill="currentColor"
     stroke="none"
+    role={label ? 'img' : undefined}
+    aria-hidden={label ? undefined : true}
   >
+    {label && <title>{label}</title>}
     <path d="M12 2C8 6 4 9 4 14a8 8 0 0 0 16 0c0-5-4-8-8-12z" />
   </svg>
 );

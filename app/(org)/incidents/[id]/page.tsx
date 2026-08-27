@@ -4,13 +4,16 @@ import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
-import { Button, Card, Chip, ErrorBanner, SectionTitle, Spinner } from '@/components/ui';
+import { Button, Card, Chip, ErrorBanner, FieldError, SectionTitle, Spinner } from '@/components/ui';
 import type { Incident, WorkflowStage } from '@/lib/types';
 import { ApiError, absoluteUrl } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
+import { useFieldValidation, required } from '@/lib/use-field-validation';
 
 type Decision = 'approve' | 'reject' | 'duplicate';
 
 export default function IncidentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { t } = useTranslation();
   const { id } = use(params);
   const { activeOrgId } = useAuth();
   const router = useRouter();
@@ -34,9 +37,11 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   const [stageError, setStageError] = useState<string | null>(null);
   const [dismissBusy, setDismissBusy] = useState(false);
   const [dismissError, setDismissError] = useState<string | null>(null);
+  const reasonValidation = useFieldValidation(required(t('incidentDetail.verification.reasonRequired')));
+  const duplicateValidation = useFieldValidation(required(t('incidentDetail.verification.originalRequired')));
 
   if (error) {
-    return <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load incident'} />;
+    return <ErrorBanner message={error instanceof ApiError ? error.message : t('incidentDetail.loadError')} />;
   }
   if (!incident || !activeOrgId) return <Spinner />;
 
@@ -97,15 +102,15 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 22, alignItems: 'start' }}>
       <div>
-        <Button variant="text" onClick={() => router.push('/incidents')} style={{ marginBottom: 10 }}>
-          ← Back to incidents
+          <Button variant="text" onClick={() => router.push('/incidents')} style={{ marginBottom: 10 }}>
+          {t('incidentDetail.backToIncidents')}
         </Button>
 
         {incident.images[0] && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={absoluteUrl(incident.images[0].url)}
-            alt=""
+            alt={incident.title}
             style={{ width: '100%', height: 220, borderRadius: 10, objectFit: 'cover', marginBottom: 16 }}
           />
         )}
@@ -116,7 +121,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
               <img
                 key={img.id}
                 src={absoluteUrl(img.url)}
-                alt=""
+                alt={`${incident.title} evidence`}
                 style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover' }}
               />
             ))}
@@ -147,7 +152,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
 
       {incident.verificationStatus === 'pending' ? (
         <Card style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 15, marginBottom: 14 }}>Verification</h3>
+          <h3 style={{ fontSize: 15, marginBottom: 14 }}>{t('incidentDetail.verification.title')}</h3>
 
           {actionError && (
             <div style={{ marginBottom: 12 }}>
@@ -156,12 +161,12 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
           )}
 
           <div className="field">
-            <label>Decision</label>
+            <span className="field-label">{t('incidentDetail.verification.decision')}</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {(['approve', 'reject', 'duplicate'] as Decision[]).map((d) => (
                 <label key={d} style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 400, fontSize: 13.5 }}>
                   <input type="radio" name="decision" checked={decision === d} onChange={() => setDecision(d)} />
-                  {d === 'approve' ? 'Approve' : d === 'reject' ? 'Reject' : 'Mark as duplicate'}
+                  {d === 'approve' ? t('incidentDetail.verification.approve') : d === 'reject' ? t('incidentDetail.verification.reject') : t('incidentDetail.verification.markDuplicate')}
                 </label>
               ))}
             </div>
@@ -169,16 +174,17 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
 
           {decision === 'reject' && (
             <div className="field">
-              <label>Reason</label>
-              <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why is this being rejected?" />
+              <label htmlFor="rejection-reason">{t('incidentDetail.verification.reasonLabel')}</label>
+              <textarea id="rejection-reason" aria-invalid={Boolean(reasonValidation.error)} aria-describedby={reasonValidation.error ? 'rejection-reason-error' : undefined} value={reason} onChange={(e) => { setReason(e.target.value); reasonValidation.revalidate(e.target.value); }} onBlur={(e) => reasonValidation.onBlur(e.target.value)} placeholder={t('incidentDetail.verification.reasonPlaceholder')} />
+              <FieldError id="rejection-reason-error" message={reasonValidation.error} />
             </div>
           )}
 
           {decision === 'duplicate' && (
             <div className="field">
-              <label>Original incident</label>
-              <select value={duplicateOfId} onChange={(e) => setDuplicateOfId(e.target.value)}>
-                <option value="">Select…</option>
+              <label htmlFor="duplicate-incident">{t('incidentDetail.verification.originalIncident')}</label>
+              <select id="duplicate-incident" aria-invalid={Boolean(duplicateValidation.error)} aria-describedby={duplicateValidation.error ? 'duplicate-incident-error' : undefined} value={duplicateOfId} onChange={(e) => { setDuplicateOfId(e.target.value); duplicateValidation.revalidate(e.target.value); }} onBlur={(e) => duplicateValidation.onBlur(e.target.value)}>
+                <option value="">{t('incidentDetail.verification.selectPlaceholder')}</option>
                 {(allIncidents ?? [])
                   .filter((i) => i.id !== incident.id)
                   .map((i) => (
@@ -187,6 +193,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
                     </option>
                   ))}
               </select>
+              <FieldError id="duplicate-incident-error" message={duplicateValidation.error} />
             </div>
           )}
 

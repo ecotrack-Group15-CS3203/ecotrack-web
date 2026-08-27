@@ -4,9 +4,11 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
-import { Button, Card, Chip, EmptyState, ErrorBanner, Modal, PageHeader, Spinner } from '@/components/ui';
+import { Button, Card, Chip, EmptyState, ErrorBanner, FieldError, Modal, PageHeader, Spinner } from '@/components/ui';
 import type { Event, Incident } from '@/lib/types';
 import { ApiError } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
+import { useFieldValidation, required } from '@/lib/use-field-validation';
 
 export default function EventsPage() {
   return (
@@ -109,6 +111,7 @@ function CreateEventModal({
   onCreated: (eventId: string) => void;
   api: ReturnType<typeof useAuthedFetch>;
 }) {
+  const { t } = useTranslation();
   const initialIncident = approvedIncidents.find((i) => i.id === initialIncidentId);
   const [incidentIds, setIncidentIds] = useState<string[]>(initialIncidentId ? [initialIncidentId] : []);
   const [title, setTitle] = useState('');
@@ -121,6 +124,10 @@ function CreateEventModal({
   const [maxAttendees, setMaxAttendees] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const incidentsValidation = useFieldValidation(required(t('events.createModal.incidentsRequired')));
+  const titleValidation = useFieldValidation(required(t('events.createModal.titleRequired')));
+  const descriptionValidation = useFieldValidation(required(t('events.createModal.descriptionRequired')));
+  const startValidation = useFieldValidation(required(t('events.createModal.startRequired')));
 
   function toggleIncident(id: string) {
     setIncidentIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -160,17 +167,17 @@ function CreateEventModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Create event"
+      title={t('events.createModal.title')}
       actions={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             disabled={submitting || incidentIds.length === 0 || !title.trim() || !description.trim() || !scheduledAt}
             onClick={handleSubmit}
           >
-            {submitting ? 'Creating…' : 'Create event'}
+            {submitting ? t('events.createModal.creating') : t('events.createModal.submit')}
           </Button>
         </>
       }
@@ -181,31 +188,38 @@ function CreateEventModal({
         </div>
       )}
       <div className="field">
-        <label>Eligible incidents</label>
+        <span className="field-label">{t('events.createModal.eligibleIncidents')}</span>
         {approvedIncidents.length === 0 ? (
-          <p className="hint">No approved incidents available yet — verify an incident first.</p>
+          <p className="hint">{t('events.createModal.noIncidents')}</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 140, overflowY: 'auto' }}>
             {approvedIncidents.map((i) => (
               <label key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 400, fontSize: 13.5 }}>
-                <input type="checkbox" checked={incidentIds.includes(i.id)} onChange={() => toggleIncident(i.id)} />
+                <input type="checkbox" checked={incidentIds.includes(i.id)} aria-describedby={incidentsValidation.error ? 'event-incidents-error' : undefined} onChange={() => toggleIncident(i.id)} onBlur={() => incidentsValidation.onBlur(incidentIds.join(','))} />
                 {i.title}
               </label>
             ))}
           </div>
         )}
+        <FieldError id="event-incidents-error" message={incidentsValidation.error} />
       </div>
       <div className="field">
-        <label>Title</label>
-        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Event title" />
+        <label htmlFor="create-event-title">{t('events.createModal.titleLabel')}</label>
+        <input id="create-event-title" aria-invalid={Boolean(titleValidation.error)} aria-describedby={titleValidation.error ? 'event-title-error' : undefined} type="text" value={title} onChange={(e) => { setTitle(e.target.value); titleValidation.revalidate(e.target.value); }} onBlur={(e) => titleValidation.onBlur(e.target.value)} placeholder={t('events.createModal.titlePlaceholder')} />
+        <FieldError id="event-title-error" message={titleValidation.error} />
       </div>
       <div className="field">
-        <label>Description</label>
+        <label htmlFor="create-event-description">{t('events.createModal.descriptionLabel')}</label>
         <textarea
+          id="create-event-description"
+          aria-invalid={Boolean(descriptionValidation.error)}
+          aria-describedby={descriptionValidation.error ? 'event-description-error' : undefined}
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="What will volunteers do at this event?"
+          onChange={(e) => { setDescription(e.target.value); descriptionValidation.revalidate(e.target.value); }}
+          onBlur={(e) => descriptionValidation.onBlur(e.target.value)}
+          placeholder={t('events.createModal.descriptionPlaceholder')}
         />
+        <FieldError id="event-description-error" message={descriptionValidation.error} />
       </div>
       <div className="field">
         <label>Location</label>
@@ -243,8 +257,9 @@ function CreateEventModal({
         />
       </div>
       <div className="field">
-        <label>Starts</label>
-        <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+        <label htmlFor="create-event-start">Starts</label>
+        <input id="create-event-start" aria-invalid={Boolean(startValidation.error)} aria-describedby={startValidation.error ? 'event-start-error' : undefined} type="datetime-local" value={scheduledAt} onChange={(e) => { setScheduledAt(e.target.value); startValidation.revalidate(e.target.value); }} onBlur={(e) => startValidation.onBlur(e.target.value)} />
+        <FieldError id="event-start-error" message={startValidation.error} />
       </div>
       <div className="field">
         <label>Ends</label>

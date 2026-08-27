@@ -5,8 +5,10 @@ import { ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import type { WorkflowStage, WorkflowStageRuleSettings } from '@/lib/types';
-import { Button, Card, ErrorBanner, PageHeader, Spinner, Toast } from '@/components/ui';
+import { Button, Card, ErrorBanner, FieldError, PageHeader, Spinner, Toast } from '@/components/ui';
 import { IconDrag, IconTrash } from '@/components/icons';
+import { useTranslation } from 'react-i18next';
+import { useFieldValidation, required } from '@/lib/use-field-validation';
 
 const DEFAULT_COLOR = '#0F6E56';
 const EMPTY_RULES: WorkflowStageRuleSettings = {
@@ -21,6 +23,7 @@ const isReported = (stage: WorkflowStage) => stage.isFixed || stage.slug === 're
 const isColorHex = (value: string) => /^#[0-9a-fA-F]{6}$/.test(value);
 
 export default function WorkflowPage() {
+  const { t } = useTranslation();
   const { activeOrgId } = useAuth();
   const api = useAuthedFetch();
   const stagesPath = activeOrgId ? `/v1/workflows/stages?organizationId=${activeOrgId}` : null;
@@ -36,6 +39,8 @@ export default function WorkflowPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const orderedStages = useMemo(() => sortStages(stages ?? []), [stages]);
+  const newStageValidation = useFieldValidation(required(t('workflow.addModal.nameRequired')));
+  const editStageValidation = useFieldValidation(required(t('workflow.addModal.nameRequired')));
 
   useEffect(() => {
     if (savedRules) {
@@ -95,6 +100,18 @@ export default function WorkflowPage() {
     } catch (error) { showError(error, 'Unable to reorder stages.'); } finally { setBusy(false); setDragId(null); }
   }
 
+  async function moveStage(stageId: string, direction: -1 | 1) {
+    const index = orderedStages.findIndex((stage) => stage.id === stageId);
+    const targetIndex = index + direction;
+    if (index < 0 || targetIndex < 0 || targetIndex >= orderedStages.length || isReported(orderedStages[index]) || isReported(orderedStages[targetIndex])) return;
+    const next = [...orderedStages];
+    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+    setBusy(true); setActionError(null);
+    try { await api.patch('/v1/workflows/stages/reorder', { organizationId: activeOrgId, orderedStageIds: next.map((stage) => stage.id) }); await mutateStages(); }
+    catch (error) { showError(error, t('workflow.loadError')); }
+    finally { setBusy(false); }
+  }
+
   async function saveRules() {
     setBusy(true); setActionError(null);
     try {
@@ -108,7 +125,7 @@ export default function WorkflowPage() {
     {orderedStages.map((stage) => <option key={stage.id} value={stage.id}>{stage.name}</option>)}
   </>;
 
-  if (stagesError) return <ErrorBanner message={stagesError instanceof ApiError ? stagesError.message : 'Unable to load stages.'} />;
+  if (stagesError) return <ErrorBanner message={stagesError instanceof ApiError ? stagesError.message : t('workflow.loadError')} />;
   if (!stages) return <Spinner />;
 
   return <div style={{ maxWidth: 860 }}>
@@ -127,23 +144,27 @@ export default function WorkflowPage() {
               <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 3 }}>{stage.slug ?? stage.name.toLowerCase().replace(/\s+/g, '-')}</div>
               {stage.description && <div style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 5 }}>{stage.description}</div>}
             </div>
-            {!locked && <Button size="sm" variant="secondary" disabled={busy} onClick={() => openEdit(stage)}>Edit</Button>}
-            {!locked && <button title="Delete stage" aria-label={`Delete ${stage.name}`} disabled={busy} onClick={() => deleteStage(stage)} style={{ color: 'var(--text-2)' }}><IconTrash style={{ width: 18, height: 18 }} /></button>}
+            {!locked && <div role="group" aria-label={`${stage.name} controls`} style={{ display: 'flex', gap: 6 }}>
+              <Button size="sm" variant="secondary" disabled={busy || orderedStages.findIndex((item) => item.id === stage.id) <= 1} aria-label={t('workflow.moveUp', { name: stage.name })} onClick={() => moveStage(stage.id, -1)}>↑</Button>
+              <Button size="sm" variant="secondary" disabled={busy || orderedStages.findIndex((item) => item.id === stage.id) === orderedStages.length - 1} aria-label={t('workflow.moveDown', { name: stage.name })} onClick={() => moveStage(stage.id, 1)}>↓</Button>
+              <Button size="sm" variant="secondary" disabled={busy} onClick={() => openEdit(stage)}>{t('workflow.edit')}</Button>
+              <button type="button" title={t('workflow.deleteLabel', { name: stage.name })} aria-label={t('workflow.deleteLabel', { name: stage.name })} disabled={busy} onClick={() => deleteStage(stage)} style={{ color: 'var(--text-2)' }}><IconTrash style={{ width: 18, height: 18 }} /></button>
+            </div>}
           </div>
         </Card>;
       })}
     </div>
 
     <Card style={{ marginTop: 16, padding: 18 }}>
-      <h2 style={{ fontSize: 16, marginBottom: 14 }}>Add a stage</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 210px', gap: 12 }}><div className="field"><label>Name</label><input value={newStage.name} onChange={(event) => setNewStage({ ...newStage, name: event.target.value })} placeholder="e.g. Awaiting approval" /></div><div className="field"><label>Colour</label><div style={{ display: 'flex', gap: 6 }}><input type="color" value={isColorHex(newStage.color) ? newStage.color : DEFAULT_COLOR} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} style={{ width: 42, height: 42, padding: 3 }} /><input value={newStage.color} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} aria-label="Colour hex" /></div></div></div>
+      <h2 style={{ fontSize: 16, marginBottom: 14 }}>{t('workflow.addModal.title')}</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 210px', gap: 12 }}><div className="field"><label htmlFor="new-stage-name">{t('workflow.addModal.nameLabel')}</label><input id="new-stage-name" aria-invalid={Boolean(newStageValidation.error)} aria-describedby={newStageValidation.error ? 'new-stage-error' : undefined} value={newStage.name} onChange={(event) => { setNewStage({ ...newStage, name: event.target.value }); newStageValidation.revalidate(event.target.value); }} onBlur={(event) => newStageValidation.onBlur(event.target.value)} placeholder="e.g. Awaiting approval" /><FieldError id="new-stage-error" message={newStageValidation.error} /></div><div className="field"><label htmlFor="new-stage-color">{t('workflow.addModal.colorLabel')}</label><div style={{ display: 'flex', gap: 6 }}><input id="new-stage-color" type="color" value={isColorHex(newStage.color) ? newStage.color : DEFAULT_COLOR} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} style={{ width: 42, height: 42, padding: 3 }} /><input value={newStage.color} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} aria-label="Colour hex" /></div></div></div>
       <div className="field"><label>Description (optional)</label><textarea value={newStage.description} onChange={(event) => setNewStage({ ...newStage, description: event.target.value })} /></div>
-      <Button disabled={busy || !newStage.name.trim() || !isColorHex(newStage.color)} onClick={addStage}>Add stage</Button>
+      <Button disabled={busy || !newStage.name.trim() || !isColorHex(newStage.color)} onClick={addStage}>{t('workflow.addModal.submit')}</Button>
     </Card>
 
     {editing && <Card style={{ marginTop: 16, padding: 18, borderColor: 'var(--primary)' }}>
       <h2 style={{ fontSize: 16, marginBottom: 14 }}>Edit {editing.name}</h2><div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14 }}>Permanent label: {editing.slug ?? editing.name.toLowerCase().replace(/\s+/g, '-')}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 210px', gap: 12 }}><div className="field"><label>Name</label><input value={edit.name} onChange={(event) => setEdit({ ...edit, name: event.target.value })} /></div><div className="field"><label>Colour</label><div style={{ display: 'flex', gap: 6 }}><input type="color" value={isColorHex(edit.color) ? edit.color : DEFAULT_COLOR} onChange={(event) => setEdit({ ...edit, color: event.target.value })} style={{ width: 42, height: 42, padding: 3 }} /><input value={edit.color} onChange={(event) => setEdit({ ...edit, color: event.target.value })} aria-label="Colour hex" /></div></div></div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 210px', gap: 12 }}><div className="field"><label htmlFor="edit-stage-name">Name</label><input id="edit-stage-name" aria-invalid={Boolean(editStageValidation.error)} aria-describedby={editStageValidation.error ? 'edit-stage-error' : undefined} value={edit.name} onChange={(event) => { setEdit({ ...edit, name: event.target.value }); editStageValidation.revalidate(event.target.value); }} onBlur={(event) => editStageValidation.onBlur(event.target.value)} /><FieldError id="edit-stage-error" message={editStageValidation.error} /></div><div className="field"><label htmlFor="edit-stage-color">Colour</label><div style={{ display: 'flex', gap: 6 }}><input id="edit-stage-color" type="color" value={isColorHex(edit.color) ? edit.color : DEFAULT_COLOR} onChange={(event) => setEdit({ ...edit, color: event.target.value })} style={{ width: 42, height: 42, padding: 3 }} /><input value={edit.color} onChange={(event) => setEdit({ ...edit, color: event.target.value })} aria-label="Colour hex" /></div></div></div>
       <div className="field"><label>Description (optional)</label><textarea value={edit.description} onChange={(event) => setEdit({ ...edit, description: event.target.value })} /></div>
       <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, marginBottom: 16 }}><input type="checkbox" checked={edit.isFinal} onChange={(event) => setEdit({ ...edit, isFinal: event.target.checked })} /> Final stage</label>
       <div style={{ display: 'flex', gap: 8 }}><Button disabled={busy || !edit.name.trim() || !isColorHex(edit.color)} onClick={saveEdit}>Save changes</Button><Button variant="secondary" disabled={busy} onClick={() => setEditing(null)}>Cancel</Button></div>

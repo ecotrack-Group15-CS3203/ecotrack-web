@@ -1,4 +1,5 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useId } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IconClose } from './icons';
 
 export function Card({
@@ -85,8 +86,11 @@ export function UrgencyBadge({ severity }: { severity: string }) {
 }
 
 export function Toast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  const { t } = useTranslation();
   return (
     <div
+      role="status"
+      aria-live="polite"
       style={{
         position: 'fixed',
         bottom: 24,
@@ -105,7 +109,7 @@ export function Toast({ message, onDismiss }: { message: string; onDismiss: () =
       }}
     >
       {message}
-      <button onClick={onDismiss} style={{ color: '#fff', opacity: 0.7 }}>
+      <button type="button" onClick={onDismiss} aria-label={t('common.dismissNotification')} style={{ color: '#fff', opacity: 0.7 }}>
         ✕
       </button>
     </div>
@@ -151,9 +155,11 @@ export function EmptyState({ children }: { children: ReactNode }) {
 }
 
 export function Spinner() {
+  const { t } = useTranslation();
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '64px 0' }}>
+    <div role="status" aria-label={t('common.loading')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '64px 0' }}>
       <div
+        aria-hidden="true"
         style={{
           width: 24,
           height: 24,
@@ -168,9 +174,18 @@ export function Spinner() {
   );
 }
 
+export function FieldError({ message, id }: { message: string | null | undefined; id?: string }) {
+  if (!message) return null;
+  return (
+    <p id={id} className="field-error" role="alert">
+      {message}
+    </p>
+  );
+}
+
 export function ErrorBanner({ message }: { message: string }) {
   return (
-    <div
+    <div role="alert"
       style={{
         borderRadius: 8,
         border: '1px solid var(--rejected)',
@@ -229,7 +244,7 @@ export function FilterPill({
   children: ReactNode;
 }) {
   return (
-    <button className={`filter-pill ${active ? 'active' : ''}`} onClick={onClick}>
+    <button type="button" className={`filter-pill ${active ? 'active' : ''}`} aria-pressed={active} onClick={onClick}>
       {children}
     </button>
   );
@@ -248,15 +263,24 @@ export function Modal({
   children: ReactNode;
   actions?: ReactNode;
 }) {
+  const titleId = useId();
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
   if (!open) return null;
   return (
     <div className="overlay active" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <h2>{title}</h2>
-          <span className="close-x" onClick={onClose}>
+          <h2 id={titleId}>{title}</h2>
+          <button type="button" className="close-x" onClick={onClose} aria-label="Close dialog">
             <IconClose style={{ width: 16, height: 16 }} />
-          </span>
+          </button>
         </div>
         {children}
         {actions && <div className="modal-actions">{actions}</div>}
@@ -278,15 +302,24 @@ export function Drawer({
   children: ReactNode;
   actions?: ReactNode;
 }) {
+  const titleId = useId();
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
   if (!open) return null;
   return (
     <div className="overlay drawer active" onClick={onClose}>
-      <div className="drawer-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="drawer-panel" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <h2>{title}</h2>
-          <span className="close-x" onClick={onClose}>
+          <h2 id={titleId}>{title}</h2>
+          <button type="button" className="close-x" onClick={onClose} aria-label="Close dialog">
             <IconClose style={{ width: 16, height: 16 }} />
-          </span>
+          </button>
         </div>
         {children}
         {actions && <div className="modal-actions">{actions}</div>}
@@ -295,6 +328,6 @@ export function Drawer({
   );
 }
 
-export function TableThumb({ gradient }: { gradient?: string }) {
-  return <div className="table-thumb" style={gradient ? { background: gradient } : undefined} />;
+export function TableThumb({ gradient, alt }: { gradient?: string; alt?: string }) {
+  return <div className="table-thumb" role={alt ? 'img' : undefined} aria-label={alt} aria-hidden={alt ? undefined : true} style={gradient ? { background: gradient } : undefined} />;
 }

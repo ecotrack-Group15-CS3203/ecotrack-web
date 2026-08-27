@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Avatar } from './ui';
 import { IconBell, IconLeaf } from './icons';
+import { useTranslation } from 'react-i18next';
 
 interface NavItem {
   href: string;
@@ -29,6 +30,7 @@ export function AdminShell({
   const pathname = usePathname();
   const { profile, logout } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const activeItem =
     navItems.find((item) => pathname === item.href) ??
@@ -50,7 +52,7 @@ export function AdminShell({
           {navItems.map((item) => {
             const active = item === activeItem;
             return (
-              <Link key={item.href} href={item.href} className={`web-nav-item ${active ? 'active' : ''}`}>
+              <Link key={item.href} href={item.href} className={`web-nav-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined}>
                 <item.icon className="w-[18px] h-[18px]" />
                 {item.label}
                 {item.badgeCount !== undefined && item.badgeCount > 0 && (
@@ -84,13 +86,13 @@ export function AdminShell({
         <div className="web-topbar">
           <div className="web-topbar-title">{activeItem?.label ?? ''}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <IconBell style={{ color: 'var(--text-2)' }} />
+            <button type="button" aria-label={t('common.notifications')} style={{ color: 'var(--text-2)' }}><IconBell aria-hidden="true" /></button>
             <Avatar name={profile?.fullName ?? '?'} />
             <button
               onClick={handleLogout}
               style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}
             >
-              Log out
+              {t('common.logOut')}
             </button>
           </div>
         </div>

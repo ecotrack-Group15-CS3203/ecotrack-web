@@ -6,7 +6,7 @@
 :root {
   --primary: #0F6E56; --primary-hover: #085041; --primary-tint: #E1F5EE; --on-primary: #FFFFFF;
   --platform: #3C3489; --platform-tint: #EEEDFE;
-  --pending: #BA7517; --pending-tint: #FAEEDA;
+  --pending: #8A5A00; --pending-tint: #FAEEDA;
   --verified: #185FA5; --verified-tint: #E6F1FB;
   --progress: #534AB7; --progress-tint: #EEEDFE;
   --resolved: #0F6E56; --resolved-tint: #E1F5EE;
@@ -15,11 +15,11 @@
   --sev-med: #854F0B; --sev-med-tint: #FAEEDA;
   --sev-high: #791F1F; --sev-high-tint: #FCEBEB;
   --urgency-low: #1E7A34; --urgency-low-tint: #E3F5E7;
-  --urgency-medium: #8A7A00; --urgency-medium-tint: #FBF6D9;
+  --urgency-medium: #6B5F00; --urgency-medium-tint: #FBF6D9;
   --urgency-high: #B45900; --urgency-high-tint: #FDEBD8;
   --urgency-critical: #B4231F; --urgency-critical-tint: #FBE1DF;
   --bg: #F6F6F3; --card: #FFFFFF; --border: #DEDCD2; --border-strong: #C3C1B6;
-  --text: #242422; --text-2: #5F5E56; --text-3: #8B8A80; --text-disabled: #B4B2A9;
+  --text: #242422; --text-2: #5F5E56; --text-3: #6B6A61; --text-disabled: #B4B2A9;
   --radius-sm: 4px; --radius-md: 10px; --radius-lg: 18px;
   --shadow-card: 0 1px 2px rgba(30,30,25,0.06), 0 1px 8px rgba(30,30,25,0.04);
 
@@ -41,6 +41,22 @@ body {
 }
 h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.01em; }
 button { font-family: inherit; cursor: pointer; }
+
+/* Visible focus ring for keyboard navigation across every interactive element. */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
+textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Screen-reader-only text, for labels on icon-only controls that also need a visible cue. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+.field-error { font-size: 12px; color: var(--rejected); margin-top: 5px; }
+.field input[aria-invalid="true"], .field textarea[aria-invalid="true"], .field select[aria-invalid="true"] { border-color: var(--rejected); }
 
 /* ===== Shared admin-console primitives (mirrors the prototype's CSS) ===== */
 .chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }

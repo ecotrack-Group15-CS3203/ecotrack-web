@@ -7,6 +7,7 @@ import { useApiGet } from '@/lib/use-org-api';
 import { Card, Chip, EmptyState, ErrorBanner, FilterBar, FilterPill, PageHeader, Spinner, TableThumb } from '@/components/ui';
 import type { Incident, IncidentSeverity, VerificationStatus, WorkflowStage } from '@/lib/types';
 import { ApiError } from '@/lib/api';
+import { useTranslation } from 'react-i18next';
 
 const STATUS_TABS: { label: string; value: VerificationStatus | 'all' }[] = [
   { label: 'All statuses', value: 'all' },
@@ -27,6 +28,7 @@ const THUMB_GRADIENTS = [
 ];
 
 export default function IncidentsPage() {
+  const { t } = useTranslation();
   const { activeOrgId } = useAuth();
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<VerificationStatus | 'all'>('all');
@@ -64,19 +66,20 @@ export default function IncidentsPage() {
 
   return (
     <div>
-      <PageHeader title="My organisation's incidents" description="Reports submitted to your organisation" />
+      <PageHeader title={t('incidentsList.title')} description={t('incidentsList.description')} />
 
       <FilterBar>
         {STATUS_TABS.map((tab) => (
           <FilterPill key={tab.value} active={statusFilter === tab.value} onClick={() => setStatusFilter(tab.value)}>
-            {tab.label}
+            {t(`incidentsList.statusTabs.${tab.value}`)}
           </FilterPill>
         ))}
       </FilterBar>
 
       <FilterBar>
-        <select value={stageFilter} onChange={(e) => setStageFilter(e.target.value)}>
-          <option value="all">All workflow stages</option>
+        <label htmlFor="incident-stage-filter" className="sr-only">{t('incidentsList.filters.allStages')}</label>
+        <select id="incident-stage-filter" aria-label={t('incidentsList.filters.allStages')} value={stageFilter} onChange={(e) => setStageFilter(e.target.value)}>
+          <option value="all">{t('incidentsList.filters.allStages')}</option>
           {(stages ?? [])
             .slice()
             .sort((a, b) => a.position - b.position)
@@ -86,8 +89,9 @@ export default function IncidentsPage() {
               </option>
             ))}
         </select>
-        <select value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value as IncidentSeverity | 'all')}>
-          <option value="all">All urgency levels</option>
+        <label htmlFor="incident-severity-filter" className="sr-only">{t('incidentsList.filters.allUrgency')}</label>
+        <select id="incident-severity-filter" aria-label={t('incidentsList.filters.allUrgency')} value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value as IncidentSeverity | 'all')}>
+          <option value="all">{t('incidentsList.filters.allUrgency')}</option>
           {SEVERITIES.map((s) => (
             <option key={s} value={s}>
               {s[0].toUpperCase() + s.slice(1)}
@@ -95,26 +99,27 @@ export default function IncidentsPage() {
           ))}
         </select>
         <label style={{ fontSize: 13, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          From
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          {t('incidentsList.filters.from')}
+          <input id="incident-date-from" aria-label={t('incidentsList.filters.dateFromLabel')} type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
         </label>
         <label style={{ fontSize: 13, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          To
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          {t('incidentsList.filters.to')}
+          <input id="incident-date-to" aria-label={t('incidentsList.filters.dateToLabel')} type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         </label>
-        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}>
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
+        <label htmlFor="incident-sort" className="sr-only">{t('incidentsList.filters.sortLabel')}</label>
+        <select id="incident-sort" aria-label={t('incidentsList.filters.sortLabel')} value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}>
+          <option value="newest">{t('incidentsList.filters.newestFirst')}</option>
+          <option value="oldest">{t('incidentsList.filters.oldestFirst')}</option>
         </select>
       </FilterBar>
 
-      {error && <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load incidents'} />}
+      {error && <ErrorBanner message={error instanceof ApiError ? error.message : t('incidentsList.loadError')} />}
       {!incidents && !error && <Spinner />}
 
       {incidents && filteredIncidents.length === 0 && (
         <Card>
           <EmptyState>
-            <p>No incidents match these filters.</p>
+            <p>{t('incidentsList.empty')}</p>
           </EmptyState>
         </Card>
       )}
@@ -124,20 +129,20 @@ export default function IncidentsPage() {
           <table>
             <thead>
               <tr>
-                <th></th>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Severity</th>
-                <th>Stage</th>
-                <th>Status</th>
-                <th>Submitted</th>
+                <th scope="col">{t('incidentsList.table.thumbnail')}</th>
+                <th scope="col">{t('incidentsList.table.title')}</th>
+                <th scope="col">{t('incidentsList.table.category')}</th>
+                <th scope="col">{t('incidentsList.table.severity')}</th>
+                <th scope="col">{t('incidentsList.table.stage')}</th>
+                <th scope="col">{t('incidentsList.table.status')}</th>
+                <th scope="col">{t('incidentsList.table.submitted')}</th>
               </tr>
             </thead>
             <tbody>
               {filteredIncidents.map((incident, i) => (
-                <tr key={incident.id} style={{ cursor: 'pointer' }} onClick={() => router.push(`/incidents/${incident.id}`)}>
+                <tr key={incident.id} tabIndex={0} aria-label={t('incidentsList.table.rowLabel', { title: incident.title })} style={{ cursor: 'pointer' }} onClick={() => router.push(`/incidents/${incident.id}`)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); router.push(`/incidents/${incident.id}`); } }}>
                   <td>
-                    <TableThumb gradient={THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]} />
+                    <TableThumb alt={t('incidentsList.table.thumbnail')} gradient={THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]} />
                   </td>
                   <td>{incident.title}</td>
                   <td style={{ textTransform: 'capitalize' }}>{incident.category.replace(/_/g, ' ')}</td>
