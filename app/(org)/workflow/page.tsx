@@ -26,8 +26,8 @@ export default function WorkflowPage() {
   const { t } = useTranslation();
   const { activeOrgId } = useAuth();
   const api = useAuthedFetch();
-  const stagesPath = activeOrgId ? `/v1/workflows/stages?organizationId=${activeOrgId}` : null;
-  const rulesPath = activeOrgId ? `/v1/workflows/stage-rules?organizationId=${activeOrgId}` : null;
+  const stagesPath = activeOrgId ? `/organisations/${activeOrgId}/workflow-stages` : null;
+  const rulesPath = null;
   const { data: stages, error: stagesError, mutate: mutateStages } = useApiGet<WorkflowStage[]>(stagesPath);
   const { data: savedRules, error: rulesError, mutate: mutateRules } = useApiGet<WorkflowStageRuleSettings>(rulesPath);
   const [newStage, setNewStage] = useState({ name: '', description: '', color: DEFAULT_COLOR });
@@ -57,7 +57,7 @@ export default function WorkflowPage() {
     if (!newStage.name.trim()) return;
     setBusy(true); setActionError(null);
     try {
-      await api.post('/v1/workflows/stages', { ...newStage, organizationId: activeOrgId });
+      await api.post(`/organisations/${activeOrgId}/workflow-stages`, { ...newStage });
       setNewStage({ name: '', description: '', color: DEFAULT_COLOR });
       setToast('Stage added.'); await mutateStages();
     } catch (error) { showError(error, 'Unable to add the stage.'); } finally { setBusy(false); }
@@ -72,7 +72,7 @@ export default function WorkflowPage() {
     if (!editing || !edit.name.trim()) return;
     setBusy(true); setActionError(null);
     try {
-      await api.patch(`/v1/workflows/stages/${editing.id}`, edit);
+      await api.patch(`/organisations/${activeOrgId}/workflow-stages/${editing.id}`, edit);
       setEditing(null); setToast('Stage updated.'); await mutateStages();
     } catch (error) { showError(error, 'Unable to update the stage.'); } finally { setBusy(false); }
   }
@@ -80,7 +80,7 @@ export default function WorkflowPage() {
   async function deleteStage(stage: WorkflowStage) {
     setBusy(true); setActionError(null);
     try {
-      await api.del(`/v1/workflows/stages/${stage.id}`);
+      await api.del(`/organisations/${activeOrgId}/workflow-stages/${stage.id}`);
       setToast('Stage deleted.'); await mutateStages();
     } catch (error) { showError(error, 'Unable to delete the stage.'); } finally { setBusy(false); }
   }
@@ -95,7 +95,7 @@ export default function WorkflowPage() {
     next.splice(next.findIndex((stage) => stage.id === targetId), 0, source);
     setBusy(true); setActionError(null);
     try {
-      await api.patch('/v1/workflows/stages/reorder', { organizationId: activeOrgId, orderedStageIds: next.map((stage) => stage.id) });
+      await api.patch(`/organisations/${activeOrgId}/workflow-stages/reorder`, { orderedStageIds: next.map((stage) => stage.id) });
       await mutateStages();
     } catch (error) { showError(error, 'Unable to reorder stages.'); } finally { setBusy(false); setDragId(null); }
   }
@@ -107,7 +107,7 @@ export default function WorkflowPage() {
     const next = [...orderedStages];
     [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
     setBusy(true); setActionError(null);
-    try { await api.patch('/v1/workflows/stages/reorder', { organizationId: activeOrgId, orderedStageIds: next.map((stage) => stage.id) }); await mutateStages(); }
+    try { await api.patch(`/organisations/${activeOrgId}/workflow-stages/reorder`, { orderedStageIds: next.map((stage) => stage.id) }); await mutateStages(); }
     catch (error) { showError(error, t('workflow.loadError')); }
     finally { setBusy(false); }
   }
@@ -115,7 +115,7 @@ export default function WorkflowPage() {
   async function saveRules() {
     setBusy(true); setActionError(null);
     try {
-      await api.patch('/v1/workflows/stage-rules', { organizationId: activeOrgId, ...rules });
+      await api.patch(`/organisations/${activeOrgId}/workflow-stage-rules`, rules);
       setToast('Stage rules saved.'); await mutateRules();
     } catch (error) { showError(error, 'Unable to save stage rules.'); } finally { setBusy(false); }
   }

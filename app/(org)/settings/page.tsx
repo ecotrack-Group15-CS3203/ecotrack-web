@@ -22,7 +22,7 @@ export default function SettingsPage() {
   const { data: org, error, mutate } = useApiGet<Organisation>(orgPath);
   const membersPath = activeOrgId ? `/organisations/${activeOrgId}/members` : null;
   const { data: members } = useApiGet<OrganisationMember[]>(membersPath);
-  const invitesPath = activeOrgId ? `/v1/organizations/${activeOrgId}/invites` : null;
+  const invitesPath = activeOrgId ? `/organisations/${activeOrgId}/invitations` : null;
   const { data: invites, error: invitesError, mutate: mutateInvites } = useApiGet<InviteLink[]>(invitesPath);
 
   const [name, setName] = useState('');
@@ -63,7 +63,7 @@ export default function SettingsPage() {
     setSaveError(null);
     setSaved(false);
     try {
-      await api.patch(`/v1/organizations/${activeOrgId}`, {
+      await api.patch(`/organisations/${activeOrgId}`, {
         name,
         description,
         contactEmail,
@@ -84,7 +84,7 @@ export default function SettingsPage() {
     setGenerating(true);
     setGenerateError(null);
     try {
-      const link = await api.post<InviteLink>(`/v1/organizations/${activeOrgId}/invites`, {
+      const link = await api.post<InviteLink>(`/organisations/${activeOrgId}/invitations`, {
         maxUses: maxUses.trim() ? Number(maxUses) : null,
         expiresInDays: expiresInDays.trim() ? Number(expiresInDays) : 7,
       });
