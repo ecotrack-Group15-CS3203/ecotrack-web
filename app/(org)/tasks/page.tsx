@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import { Button, Card, Chip, EmptyState, ErrorBanner, FilterBar, FilterPill, Modal, PageHeader, Spinner } from '@/components/ui';
@@ -16,11 +16,21 @@ const STATUS_TABS: { label: string; value: TaskStatus | 'all' }[] = [
 ];
 
 export default function TasksPage() {
+  return (
+    <Suspense fallback={<Spinner />}>
+      <TasksPageInner />
+    </Suspense>
+  );
+}
+
+function TasksPageInner() {
   const { activeOrgId } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedIncidentId = searchParams.get('incidentId');
   const api = useAuthedFetch();
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
-  const [showCreate, setShowCreate] = useState(false);
+  const [showCreate, setShowCreate] = useState(() => Boolean(preselectedIncidentId));
 
   const listPath = activeOrgId
     ? `/organisations/${activeOrgId}/tasks${statusFilter === 'all' ? '' : `?status=${statusFilter}`}`
@@ -96,6 +106,7 @@ export default function TasksPage() {
         onClose={() => setShowCreate(false)}
         organisationId={activeOrgId ?? ''}
         approvedIncidents={approvedIncidents ?? []}
+        initialIncidentId={preselectedIncidentId}
         onCreated={async (taskId) => {
           setShowCreate(false);
           await mutate();
@@ -112,6 +123,7 @@ function CreateTaskModal({
   onClose,
   organisationId,
   approvedIncidents,
+  initialIncidentId,
   onCreated,
   api,
 }: {
@@ -119,10 +131,11 @@ function CreateTaskModal({
   onClose: () => void;
   organisationId: string;
   approvedIncidents: Incident[];
+  initialIncidentId?: string | null;
   onCreated: (taskId: string) => void;
   api: ReturnType<typeof useAuthedFetch>;
 }) {
-  const [incidentId, setIncidentId] = useState('');
+  const [incidentId, setIncidentId] = useState(initialIncidentId ?? '');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('high');
   const [scheduledAt, setScheduledAt] = useState('');

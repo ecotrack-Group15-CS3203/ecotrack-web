@@ -32,6 +32,8 @@ const MOCK_INCIDENTS: Incident[] = [
   { id: 'inc-4', organisationId: MOCK_ORG_ID, reportedByUserId: 'user-4', title: 'Tree clearing without permit', description: 'Multiple mature trees felled overnight near the reserve boundary.', category: 'deforestation', severity: 'high', latitude: 6.9022, longitude: 79.8607, address: 'Reserve Boundary Rd', verificationStatus: 'approved', currentStageId: 'stage-verified', currentStage: STAGES[2], rejectionReason: null, duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(3), images: [], createdAt: daysAgo(4) },
   { id: 'inc-5', organisationId: MOCK_ORG_ID, reportedByUserId: 'user-5', title: 'Injured bird near wetland', description: 'A visibly injured heron seen tangled in discarded fishing line.', category: 'wildlife_hazard', severity: 'medium', latitude: 6.9098, longitude: 79.8556, address: 'Wetland Path', verificationStatus: 'pending', currentStageId: 'stage-review', currentStage: STAGES[1], rejectionReason: null, duplicateOfId: null, verifiedByUserId: null, verifiedAt: null, images: [], createdAt: daysAgo(2) },
   { id: 'inc-6', organisationId: MOCK_ORG_ID, reportedByUserId: 'user-6', title: 'Overflowing public bin', description: 'Bin overflowing for several days, attracting pests.', category: 'other', severity: 'low', latitude: 6.9214, longitude: 79.8654, address: 'Market St', verificationStatus: 'pending', currentStageId: 'stage-reported', currentStage: STAGES[0], rejectionReason: null, duplicateOfId: null, verifiedByUserId: null, verifiedAt: null, images: [], createdAt: daysAgo(1) },
+  { id: 'inc-7', organisationId: MOCK_ORG_ID, reportedByUserId: 'user-7', title: 'Litter near beach access path', description: 'Scattered litter, looks like an earlier report already covers this stretch.', category: 'illegal_dumping', severity: 'low', latitude: 6.9182, longitude: 79.8503, address: 'Beach Access Rd', verificationStatus: 'duplicate', currentStageId: 'stage-reported', currentStage: STAGES[0], rejectionReason: null, duplicateOfId: 'inc-1', verifiedByUserId: 'user-admin', verifiedAt: daysAgo(8), images: [], createdAt: daysAgo(9) },
+  { id: 'inc-8', organisationId: MOCK_ORG_ID, reportedByUserId: 'user-8', title: 'Loud noise complaint', description: 'Reported as an environmental incident but is outside the org\'s scope.', category: 'other', severity: 'low', latitude: 6.9256, longitude: 79.8601, address: 'Temple Rd', verificationStatus: 'rejected', currentStageId: 'stage-reported', currentStage: STAGES[0], rejectionReason: 'Not an environmental incident.', duplicateOfId: null, verifiedByUserId: 'user-admin', verifiedAt: daysAgo(14), images: [], createdAt: daysAgo(15) },
 ];
 
 const MOCK_VOLUNTEERS: OrganisationMember[] = [
@@ -74,10 +76,84 @@ const MOCK_STATS: DashboardStats = {
 /** Returns mock JSON for a known org-scoped path, or undefined if there's no mock for it. */
 export function getMockResponse(path: string): unknown | undefined {
   const withoutQuery = path.split('?')[0];
+  const query = new URLSearchParams(path.split('?')[1] ?? '');
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/dashboard/stats`) return MOCK_STATS;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/dashboard/map`) return MOCK_INCIDENTS;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/audit-logs`) return MOCK_AUDIT_LOG;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/members`) return MOCK_VOLUNTEERS;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/tasks`) return MOCK_TASKS;
+  if (withoutQuery === `/organisations/${MOCK_ORG_ID}/incidents`) {
+    const status = query.get('status');
+    return status ? MOCK_INCIDENTS.filter((i) => i.verificationStatus === status) : MOCK_INCIDENTS;
+  }
+  if (withoutQuery === `/organisations/${MOCK_ORG_ID}/workflow-stages`) return STAGES;
+
+  const incidentMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/incidents/([^/]+)$`));
+  if (incidentMatch) return MOCK_INCIDENTS.find((i) => i.id === incidentMatch[1]);
+
+  return undefined;
+}
+
+/**
+ * Simulates a write against the in-memory mock data (stage updates, dismiss/reject,
+ * task creation) so the new incident actions are click-through demoable without a
+ * real backend. Returns undefined for paths/methods it doesn't recognize.
+ */
+export function handleMockMutation(path: string, method: string, body: unknown): unknown | undefined {
+  const withoutQuery = path.split('?')[0];
+
+  const stageMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/incidents/([^/]+)/stage$`));
+  if (stageMatch && method === 'PATCH') {
+    const incident = MOCK_INCIDENTS.find((i) => i.id === stageMatch[1]);
+    const { stageId } = (body ?? {}) as { stageId?: string };
+    const stage = STAGES.find((s) => s.id === stageId);
+    if (!incident || !stage) return undefined;
+    incident.currentStageId = stage.id;
+    incident.currentStage = stage;
+    return incident;
+  }
+
+  const rejectMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/incidents/([^/]+)/reject$`));
+  if (rejectMatch && method === 'PATCH') {
+    const incident = MOCK_INCIDENTS.find((i) => i.id === rejectMatch[1]);
+    const { reason } = (body ?? {}) as { reason?: string };
+    if (!incident) return undefined;
+    incident.verificationStatus = 'rejected';
+    incident.rejectionReason = reason ?? null;
+    return incident;
+  }
+
+  const approveMatch = withoutQuery.match(new RegExp(`^/organisations/${MOCK_ORG_ID}/incidents/([^/]+)/approve$`));
+  if (approveMatch && method === 'PATCH') {
+    const incident = MOCK_INCIDENTS.find((i) => i.id === approveMatch[1]);
+    if (!incident) return undefined;
+    incident.verificationStatus = 'approved';
+    incident.verifiedAt = new Date().toISOString();
+    return incident;
+  }
+
+  if (withoutQuery === `/organisations/${MOCK_ORG_ID}/tasks` && method === 'POST') {
+    const input = (body ?? {}) as { incidentId: string; description: string; priority: Task['priority']; scheduledAt?: string };
+    const incident = MOCK_INCIDENTS.find((i) => i.id === input.incidentId);
+    if (!incident) return undefined;
+    const task: Task = {
+      id: `task-${MOCK_TASKS.length + 1}`,
+      organisationId: MOCK_ORG_ID,
+      incidentId: incident.id,
+      incident,
+      description: input.description,
+      priority: input.priority,
+      scheduledAt: input.scheduledAt ?? null,
+      status: 'pending',
+      createdByUserId: 'dev-user',
+      assignments: [],
+      notes: [],
+      photos: [],
+      createdAt: new Date().toISOString(),
+    };
+    MOCK_TASKS.push(task);
+    return { id: task.id };
+  }
+
   return undefined;
 }

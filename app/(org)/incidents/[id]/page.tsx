@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import { Button, Card, Chip, ErrorBanner, SectionTitle, Spinner } from '@/components/ui';
-import type { Incident } from '@/lib/types';
+import type { Incident, WorkflowStage } from '@/lib/types';
 import { ApiError, absoluteUrl } from '@/lib/api';
 
 type Decision = 'approve' | 'reject' | 'duplicate';
@@ -20,12 +20,20 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   const { data: incident, error, mutate } = useApiGet<Incident>(detailPath);
   const allPath = activeOrgId ? `/organisations/${activeOrgId}/incidents` : null;
   const { data: allIncidents } = useApiGet<Incident[]>(allPath);
+  const stagesPath = activeOrgId ? `/organisations/${activeOrgId}/workflow-stages` : null;
+  const { data: stages } = useApiGet<WorkflowStage[]>(stagesPath);
 
   const [decision, setDecision] = useState<Decision>('approve');
   const [reason, setReason] = useState('');
   const [duplicateOfId, setDuplicateOfId] = useState('');
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const [selectedStageId, setSelectedStageId] = useState('');
+  const [stageBusy, setStageBusy] = useState(false);
+  const [stageError, setStageError] = useState<string | null>(null);
+  const [dismissBusy, setDismissBusy] = useState(false);
+  const [dismissError, setDismissError] = useState<string | null>(null);
 
   if (error) {
     return <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load incident'} />;
@@ -54,6 +62,37 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   }
 
   const decisionLabel = { approve: 'Approve incident', reject: 'Reject incident', duplicate: 'Mark as duplicate' }[decision];
+
+  const orderedStages = (stages ?? []).slice().sort((a, b) => a.position - b.position);
+
+  async function updateStage() {
+    if (!selectedStageId) return;
+    setStageError(null);
+    setStageBusy(true);
+    try {
+      await api.patch(`/organisations/${activeOrgId}/incidents/${id}/stage`, { stageId: selectedStageId });
+      await mutate();
+    } catch (err) {
+      setStageError(err instanceof ApiError ? err.message : 'Could not update status');
+    } finally {
+      setStageBusy(false);
+    }
+  }
+
+  async function dismiss() {
+    setDismissError(null);
+    setDismissBusy(true);
+    try {
+      await api.patch(`/organisations/${activeOrgId}/incidents/${id}/reject`, {
+        reason: 'Dismissed by organisation admin',
+      });
+      await mutate();
+    } catch (err) {
+      setDismissError(err instanceof ApiError ? err.message : 'Could not dismiss incident');
+    } finally {
+      setDismissBusy(false);
+    }
+  }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 22, alignItems: 'start' }}>
@@ -158,9 +197,63 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
       ) : (
         <Card style={{ padding: 20 }}>
           <h3 style={{ fontSize: 15, marginBottom: 8 }}>Verification</h3>
-          <p style={{ fontSize: 13.5, color: 'var(--text-2)' }}>
+          <p style={{ fontSize: 13.5, color: 'var(--text-2)', marginBottom: 20 }}>
             This incident has already been {incident.verificationStatus}.
           </p>
+
+          {incident.verificationStatus === 'approved' && (
+            <>
+              <SectionTitle>Actions</SectionTitle>
+
+              <Button className="btn-block" style={{ marginBottom: 16 }} onClick={() => router.push(`/tasks?incidentId=${incident.id}`)}>
+                + Create task
+              </Button>
+
+              <div className="field">
+                <label>Update status</label>
+                {stageError && (
+                  <div style={{ marginBottom: 8 }}>
+                    <ErrorBanner message={stageError} />
+                  </div>
+                )}
+                <select value={selectedStageId} onChange={(e) => setSelectedStageId(e.target.value)}>
+                  <option value="">Select a workflow stage…</option>
+                  {orderedStages.map((stage) => (
+                    <option key={stage.id} value={stage.id}>
+                      {stage.name}
+                      {stage.id === incident.currentStageId ? ' (current)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  variant="secondary"
+                  className="btn-block"
+                  style={{ marginTop: 8 }}
+                  disabled={stageBusy || !selectedStageId}
+                  onClick={updateStage}
+                >
+                  {stageBusy ? 'Updating…' : 'Update status'}
+                </Button>
+              </div>
+
+              {dismissError && (
+                <div style={{ marginBottom: 8 }}>
+                  <ErrorBanner message={dismissError} />
+                </div>
+              )}
+              <Button
+                variant="destructive"
+                className="btn-block"
+                disabled={dismissBusy || Boolean(incident.currentStage?.isFinal)}
+                onClick={dismiss}
+              >
+                {dismissBusy ? 'Dismissing…' : 'Dismiss incident'}
+              </Button>
+              {incident.currentStage?.isFinal && (
+                <p className="hint">This incident is in a final stage and can no longer be dismissed.</p>
+              )}
+            </>
+          )}
         </Card>
       )}
     </div>
