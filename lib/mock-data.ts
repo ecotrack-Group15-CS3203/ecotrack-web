@@ -63,10 +63,45 @@ const MOCK_VOLUNTEERS: OrganisationMember[] = [
 ];
 
 const MOCK_TASKS: Task[] = [
-  { id: 'task-1', organisationId: MOCK_ORG_ID, incidentId: 'inc-1', incident: MOCK_INCIDENTS[0], title: 'Clear dumped waste from riverside path', description: 'Clear dumped waste from riverside path', priority: 'high', scheduledAt: daysAgo(21), status: 'completed', createdByUserId: 'user-admin', assignments: [{ id: 'asg-1', volunteerUserId: 'vol-1', volunteer: { id: 'vol-1', fullName: 'Amara Silva', email: 'amara@example.com' }, status: 'accepted', respondedAt: daysAgo(20) }], notes: [], photos: [], createdAt: daysAgo(22) },
+  {
+    id: 'task-1',
+    organisationId: MOCK_ORG_ID,
+    incidentId: 'inc-1',
+    incident: MOCK_INCIDENTS[0],
+    title: 'Clear dumped waste from riverside path',
+    description: 'Clear dumped waste from riverside path',
+    priority: 'high',
+    scheduledAt: daysAgo(21),
+    status: 'completed',
+    createdByUserId: 'user-admin',
+    assignments: [{ id: 'asg-1', volunteerUserId: 'vol-1', volunteer: { id: 'vol-1', fullName: 'Amara Silva', email: 'amara@example.com' }, status: 'accepted', respondedAt: daysAgo(20) }],
+    notes: [],
+    photos: [
+      { id: 'photo-1', url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100%" height="100%" fill="%230F6E56"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="10" font-family="sans-serif">Riverside Debris</text></svg>', uploadedByUserId: 'vol-1' },
+      { id: 'photo-2', url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100%" height="100%" fill="%23185FA5"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="10" font-family="sans-serif">Clean Path</text></svg>', uploadedByUserId: 'vol-1' }
+    ],
+    createdAt: daysAgo(22)
+  },
   { id: 'task-2', organisationId: MOCK_ORG_ID, incidentId: 'inc-2', incident: MOCK_INCIDENTS[1], title: 'Contain and report oil sheen', description: 'Contain and report oil sheen to environmental authority', priority: 'high', scheduledAt: daysAgo(9), status: 'in_progress', createdByUserId: 'user-admin', assignments: [{ id: 'asg-2', volunteerUserId: 'vol-2', volunteer: { id: 'vol-2', fullName: 'Nadeem Fernando', email: 'nadeem@example.com' }, status: 'accepted', respondedAt: daysAgo(8) }], notes: [], photos: [], createdAt: daysAgo(10) },
   { id: 'task-3', organisationId: MOCK_ORG_ID, incidentId: 'inc-3', incident: MOCK_INCIDENTS[2], title: 'Coordinate cleanup crew for burn site', description: 'Coordinate cleanup crew for burn site', priority: 'medium', scheduledAt: daysAgo(1), status: 'pending', createdByUserId: 'user-admin', assignments: [{ id: 'asg-3', volunteerUserId: 'vol-1', volunteer: { id: 'vol-1', fullName: 'Amara Silva', email: 'amara@example.com' }, status: 'assigned', respondedAt: null }], notes: [], photos: [], createdAt: daysAgo(5) },
-  { id: 'task-4', organisationId: MOCK_ORG_ID, incidentId: 'inc-1', incident: MOCK_INCIDENTS[0], title: 'Follow-up debris sweep', description: 'Follow-up debris sweep', priority: 'low', scheduledAt: daysAgo(18), status: 'completed', createdByUserId: 'user-admin', assignments: [{ id: 'asg-4', volunteerUserId: 'vol-3', volunteer: { id: 'vol-3', fullName: 'Priya Jayasuriya', email: 'priya@example.com' }, status: 'accepted', respondedAt: daysAgo(17) }], notes: [], photos: [], createdAt: daysAgo(19) },
+  {
+    id: 'task-4',
+    organisationId: MOCK_ORG_ID,
+    incidentId: 'inc-1',
+    incident: MOCK_INCIDENTS[0],
+    title: 'Follow-up debris sweep',
+    description: 'Follow-up debris sweep',
+    priority: 'low',
+    scheduledAt: daysAgo(18),
+    status: 'completed',
+    createdByUserId: 'user-admin',
+    assignments: [{ id: 'asg-4', volunteerUserId: 'vol-3', volunteer: { id: 'vol-3', fullName: 'Priya Jayasuriya', email: 'priya@example.com' }, status: 'accepted', respondedAt: daysAgo(17) }],
+    notes: [],
+    photos: [
+      { id: 'photo-3', url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100%" height="100%" fill="%23534AB7"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="10" font-family="sans-serif">Sweep Complete</text></svg>', uploadedByUserId: 'vol-3' }
+    ],
+    createdAt: daysAgo(19)
+  },
 ];
 
 function daysFromNow(n: number): string {
@@ -371,6 +406,15 @@ export function handleMockMutation(path: string, method: string, body: unknown):
     incident.organisationId = MOCK_ORG_ID;
     incident.claimedAt = new Date().toISOString();
     return incident;
+  }
+
+  const suspendMatch = withoutQuery.match(new RegExp(`^/(?:v1/)?organi[sz]ations/${MOCK_ORG_ID}/volunteers/([^/]+)$`));
+  if (suspendMatch && method === 'DELETE') {
+    const member = MOCK_VOLUNTEERS.find((v) => v.userId === suspendMatch[1]);
+    if (!member) return undefined;
+    // Suspends the membership only — the underlying user account is untouched.
+    member.isActive = false;
+    return member;
   }
 
   return undefined;
