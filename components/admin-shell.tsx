@@ -10,6 +10,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: (p: { className?: string }) => React.ReactElement;
+  badgeCount?: number;
 }
 
 export function AdminShell({
@@ -52,6 +53,25 @@ export function AdminShell({
               <Link key={item.href} href={item.href} className={`web-nav-item ${active ? 'active' : ''}`}>
                 <item.icon className="w-[18px] h-[18px]" />
                 {item.label}
+                {item.badgeCount !== undefined && item.badgeCount > 0 && (
+                  <span
+                    aria-label={`${item.badgeCount} pending`}
+                    style={{
+                      marginLeft: 'auto',
+                      minWidth: 19,
+                      padding: '1px 6px',
+                      borderRadius: 999,
+                      background: active ? 'rgba(255,255,255,0.2)' : '#E9B44C',
+                      color: active ? '#fff' : '#1E352A',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      lineHeight: '17px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {item.badgeCount}
+                  </span>
+                )}
               </Link>
             );
           })}

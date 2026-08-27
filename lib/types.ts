@@ -69,6 +69,19 @@ export interface InvitationInfo {
   emailAlreadyRegistered: boolean;
 }
 
+export type JoinRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface JoinRequest {
+  id: string;
+  organisationId: string;
+  requesterUserId: string;
+  requester: { id: string; fullName: string; email: string };
+  message: string | null;
+  status: JoinRequestStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface WorkflowStage {
   id: string;
   organisationId: string;

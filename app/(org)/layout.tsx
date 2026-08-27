@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { useApiGet } from '@/lib/use-org-api';
+import type { JoinRequest } from '@/lib/types';
 import { AdminShell } from '@/components/admin-shell';
 import { Spinner, EmptyState } from '@/components/ui';
 import {
@@ -23,6 +25,7 @@ const NAV_ITEMS = [
   { href: '/tasks', label: 'Tasks', icon: IconTasks },
   { href: '/events', label: 'Events', icon: IconEvents },
   { href: '/volunteers', label: 'Volunteers', icon: IconVolunteers },
+  { href: '/join-requests', label: 'Join Requests', icon: IconVolunteers },
   { href: '/workflow', label: 'Workflow', icon: IconWorkflow },
   { href: '/reports', label: 'Reports', icon: IconReports },
   { href: '/settings', label: 'Settings', icon: IconSettings },
@@ -31,6 +34,8 @@ const NAV_ITEMS = [
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
   const { token, profile, loading, activeOrgId, setActiveOrgId } = useAuth();
   const router = useRouter();
+  const joinRequestsPath = activeOrgId ? `/v1/organizations/${activeOrgId}/join-requests` : null;
+  const { data: joinRequests } = useApiGet<JoinRequest[]>(joinRequestsPath);
 
   useEffect(() => {
     if (loading) return;
@@ -59,11 +64,15 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
   }
 
   const activeOrg = orgAdminMemberships.find((m) => m.organisationId === activeOrgId);
+  const pendingJoinRequests = joinRequests?.filter((request) => request.status === 'pending').length;
+  const navItems = NAV_ITEMS.map((item) =>
+    item.href === '/join-requests' ? { ...item, badgeCount: pendingJoinRequests } : item,
+  );
 
   return (
     <AdminShell
       mode="org"
-      navItems={NAV_ITEMS}
+      navItems={navItems}
       sidebarFoot={activeOrg?.organisationName ?? orgAdminMemberships[0].organisationName}
       orgSwitcher={
         orgAdminMemberships.length > 1 ? (

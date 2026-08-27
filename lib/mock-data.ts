@@ -9,6 +9,7 @@ import type {
   Organisation,
   OrganisationMember,
   Task,
+  JoinRequest,
   WorkflowStage,
 } from './types';
 import { distanceKm } from './geo';
@@ -60,6 +61,31 @@ const MOCK_VOLUNTEERS: OrganisationMember[] = [
   { id: 'mem-1', organisationId: MOCK_ORG_ID, userId: 'vol-1', user: { id: 'vol-1', fullName: 'Amara Silva', email: 'amara@example.com' }, role: 'volunteer', isActive: true, invitedAt: daysAgo(60), joinedAt: daysAgo(58) },
   { id: 'mem-2', organisationId: MOCK_ORG_ID, userId: 'vol-2', user: { id: 'vol-2', fullName: 'Nadeem Fernando', email: 'nadeem@example.com' }, role: 'volunteer', isActive: true, invitedAt: daysAgo(45), joinedAt: daysAgo(44) },
   { id: 'mem-3', organisationId: MOCK_ORG_ID, userId: 'vol-3', user: { id: 'vol-3', fullName: 'Priya Jayasuriya', email: 'priya@example.com' }, role: 'volunteer', isActive: true, invitedAt: daysAgo(30), joinedAt: daysAgo(29) },
+];
+
+const MOCK_JOIN_REQUESTS: JoinRequest[] = [
+  {
+    id: 'join-1', organisationId: MOCK_ORG_ID, requesterUserId: 'join-user-1',
+    requester: { id: 'join-user-1', fullName: 'Kavindi Perera', email: 'kavindi@example.com' },
+    message: 'I would like to help with weekend cleanups near the river.', status: 'pending',
+    createdAt: daysAgo(1), updatedAt: daysAgo(1),
+  },
+  {
+    id: 'join-2', organisationId: MOCK_ORG_ID, requesterUserId: 'join-user-2',
+    requester: { id: 'join-user-2', fullName: 'Ruwan Dias', email: 'ruwan@example.com' },
+    message: 'Happy to support community environmental work.', status: 'pending',
+    createdAt: daysAgo(3), updatedAt: daysAgo(3),
+  },
+  {
+    id: 'join-3', organisationId: MOCK_ORG_ID, requesterUserId: 'join-user-3',
+    requester: { id: 'join-user-3', fullName: 'Shehani Fernando', email: 'shehani@example.com' },
+    message: null, status: 'approved', createdAt: daysAgo(10), updatedAt: daysAgo(8),
+  },
+  {
+    id: 'join-4', organisationId: MOCK_ORG_ID, requesterUserId: 'join-user-4',
+    requester: { id: 'join-user-4', fullName: 'Malith Senanayake', email: 'malith@example.com' },
+    message: 'Please consider my application.', status: 'rejected', createdAt: daysAgo(14), updatedAt: daysAgo(12),
+  },
 ];
 
 const MOCK_TASKS: Task[] = [
@@ -203,6 +229,7 @@ export function getMockResponse(path: string): unknown | undefined {
   }
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/workflow-stages`) return STAGES;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}/events`) return MOCK_EVENTS;
+  if (withoutQuery === `/v1/organizations/${MOCK_ORG_ID}/join-requests`) return MOCK_JOIN_REQUESTS;
   if (withoutQuery === `/organisations/${MOCK_ORG_ID}`) {
     const organisation: Organisation = {
       id: MOCK_ORG_ID,
@@ -415,6 +442,21 @@ export function handleMockMutation(path: string, method: string, body: unknown):
     // Suspends the membership only — the underlying user account is untouched.
     member.isActive = false;
     return member;
+  }
+
+  const joinRequestMatch = withoutQuery.match(
+    new RegExp(`^/v1/organizations/${MOCK_ORG_ID}/join-requests/([^/]+)$`),
+  );
+  if (joinRequestMatch && method === 'PATCH') {
+    const request = MOCK_JOIN_REQUESTS.find((item) => item.id === joinRequestMatch[1]);
+    const { status } = (body ?? {}) as { status?: JoinRequest['status'] };
+    if (!request || !status) return undefined;
+    if (status === 'approved' && request.id === 'join-2') {
+      throw new MockHttpError(409, 'Approval is blocked because this requester already holds an active membership elsewhere.');
+    }
+    request.status = status;
+    request.updatedAt = new Date().toISOString();
+    return request;
   }
 
   return undefined;
