@@ -107,13 +107,6 @@ export interface WorkflowStage {
   isFixed?: boolean;
 }
 
-export interface WorkflowStageRuleSettings {
-  taskCreation: { minimumStageId: string | null; targetStageId: string | null };
-  eventCreation: { minimumStageId: string | null; targetStageId: string | null };
-  taskCompletion: { targetStageId: string | null };
-  eventCompletion: { targetStageId: string | null };
-}
-
 export type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'duplicate';
 export type IncidentCategory =
   | 'illegal_dumping'

@@ -7,6 +7,7 @@ import { Avatar, Button, Card, Chip, ErrorBanner, Modal, PageHeader, SectionTitl
 import { IconPlus } from '@/components/icons';
 import type { InviteLink, Organisation, OrganisationMember } from '@/lib/types';
 import { ApiError } from '@/lib/api';
+import { LocationMap } from '@/components/incident-map';
 
 const RADIUS_OPTIONS = [1, 5, 10, 25, 50];
 
@@ -149,15 +150,13 @@ export default function SettingsPage() {
 
       <div className="field">
         <label>Service area</label>
-        <div className="map-placeholder" style={{ height: 140, marginBottom: 8 }}>
-          <span
-            className="map-pin"
-            style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--primary)' }}
-          />
-        </div>
-        <p className="hint" style={{ marginBottom: 8 }}>
-          Drag-to-place map pin isn&apos;t available in this build — enter the center point directly.
-        </p>
+        <LocationMap
+          id={activeOrgId ?? 'service-area'}
+          title={org.name}
+          latitude={latitude}
+          longitude={longitude}
+          radiusKm={radiusKm}
+        />
         <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
           <input type="number" step="0.0001" value={latitude} onChange={(e) => setLatitude(Number(e.target.value))} placeholder="Latitude" />
           <input type="number" step="0.0001" value={longitude} onChange={(e) => setLongitude(Number(e.target.value))} placeholder="Longitude" />

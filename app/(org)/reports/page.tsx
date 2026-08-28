@@ -3,16 +3,9 @@
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
 import { Card, ErrorBanner, KpiCard, KpiRow, PageHeader, Spinner } from '@/components/ui';
-import { IconPin } from '@/components/icons';
+import { IncidentMap } from '@/components/incident-map';
 import type { DashboardStats, Incident } from '@/lib/types';
 import { ApiError } from '@/lib/api';
-
-const PIN_TONE: Record<string, string> = {
-  pending: 'var(--pending)',
-  approved: 'var(--verified)',
-  rejected: 'var(--rejected)',
-  duplicate: 'var(--text-3)',
-};
 
 export default function ReportsPage() {
   const { activeOrgId } = useAuth();
@@ -75,18 +68,7 @@ export default function ReportsPage() {
         </Card>
         <Card style={{ padding: 20 }}>
           <h3 style={{ fontSize: 14, marginBottom: 14 }}>Incident map</h3>
-          <div className="map-placeholder" style={{ height: 150 }}>
-            {mapData.map((incident, i) => (
-              <IconPin
-                key={incident.id}
-                style={{
-                  top: 10 + ((i * 37) % 110),
-                  left: 10 + ((i * 61) % 260),
-                  color: PIN_TONE[incident.verificationStatus] ?? 'var(--text-3)',
-                }}
-              />
-            ))}
-          </div>
+          <IncidentMap incidents={mapData} />
         </Card>
       </div>
     </div>

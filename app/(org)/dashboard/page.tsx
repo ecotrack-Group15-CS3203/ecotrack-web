@@ -46,27 +46,29 @@ export default function DashboardPage() {
   const { activeOrgId } = useAuth();
   const statsPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/stats` : null;
   const mapPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/map` : null;
+  const incidentsPath = activeOrgId ? `/organisations/${activeOrgId}/incidents` : null;
   const auditPath = activeOrgId ? `/organisations/${activeOrgId}/audit-logs` : null;
   const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer` : null;
   const tasksPath = activeOrgId ? `/organisations/${activeOrgId}/tasks` : null;
 
   const { data: stats, error: statsError } = useApiGet<DashboardStats>(statsPath);
   const { data: incidents, error: incidentsError } = useApiGet<Incident[]>(mapPath);
+  const { data: workflowIncidents, error: workflowIncidentsError } = useApiGet<Incident[]>(incidentsPath);
   const { data: auditLog, error: auditError } = useApiGet<AuditLogEntry[]>(auditPath);
   const { data: volunteers, error: volunteersError } = useApiGet<OrganisationMember[]>(volunteersPath);
   const { data: tasks, error: tasksError } = useApiGet<Task[]>(tasksPath);
 
-  const error = statsError || incidentsError || auditError || volunteersError || tasksError;
+  const error = statsError || incidentsError || workflowIncidentsError || auditError || volunteersError || tasksError;
 
   const stageDistribution = useMemo(() => {
-    if (!incidents) return [];
+    if (!workflowIncidents) return [];
     const counts = new Map<string, number>();
-    for (const incident of incidents) {
+    for (const incident of workflowIncidents) {
       const label = incident.currentStage?.name ?? 'Unstaged';
       counts.set(label, (counts.get(label) ?? 0) + 1);
     }
     return Array.from(counts.entries()).map(([stage, count]) => ({ stage, count }));
-  }, [incidents]);
+  }, [workflowIncidents]);
 
   const volunteerActivity = useMemo(() => {
     if (!volunteers || !tasks) return [];
@@ -132,7 +134,7 @@ export default function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 20 }}>
         <Card style={{ padding: 20 }}>
           <h3 style={{ fontSize: 14, marginBottom: 12 }}>Incidents by workflow stage</h3>
-          {!incidents ? (
+          {!workflowIncidents ? (
             <Skeleton height={120} />
           ) : stageDistribution.length === 0 ? (
             <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>No incidents recorded yet.</p>

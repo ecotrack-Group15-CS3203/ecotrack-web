@@ -1,23 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
-import type { WorkflowStage, WorkflowStageRuleSettings } from '@/lib/types';
+import type { WorkflowStage } from '@/lib/types';
 import { Button, Card, ErrorBanner, FieldError, PageHeader, Spinner, Toast } from '@/components/ui';
 import { IconDrag, IconTrash } from '@/components/icons';
 import { useTranslation } from 'react-i18next';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
 
 const DEFAULT_COLOR = '#0F6E56';
-const EMPTY_RULES: WorkflowStageRuleSettings = {
-  taskCreation: { minimumStageId: null, targetStageId: null },
-  eventCreation: { minimumStageId: null, targetStageId: null },
-  taskCompletion: { targetStageId: null },
-  eventCompletion: { targetStageId: null },
-};
-
 const sortStages = (stages: WorkflowStage[]) => stages.slice().sort((a, b) => (a.orderIndex ?? a.position) - (b.orderIndex ?? b.position));
 const isReported = (stage: WorkflowStage) => stage.isFixed || stage.slug === 'reported' || stage.name.trim().toLowerCase() === 'reported';
 const isColorHex = (value: string) => /^#[0-9a-fA-F]{6}$/.test(value);
@@ -27,13 +20,10 @@ export default function WorkflowPage() {
   const { activeOrgId } = useAuth();
   const api = useAuthedFetch();
   const stagesPath = activeOrgId ? `/organisations/${activeOrgId}/workflow-stages` : null;
-  const rulesPath = null;
   const { data: stages, error: stagesError, mutate: mutateStages } = useApiGet<WorkflowStage[]>(stagesPath);
-  const { data: savedRules, error: rulesError, mutate: mutateRules } = useApiGet<WorkflowStageRuleSettings>(rulesPath);
   const [newStage, setNewStage] = useState({ name: '', description: '', color: DEFAULT_COLOR });
   const [editing, setEditing] = useState<WorkflowStage | null>(null);
   const [edit, setEdit] = useState({ name: '', description: '', color: DEFAULT_COLOR, isFinal: false });
-  const [rules, setRules] = useState<WorkflowStageRuleSettings>(EMPTY_RULES);
   const [dragId, setDragId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -41,13 +31,6 @@ export default function WorkflowPage() {
   const orderedStages = useMemo(() => sortStages(stages ?? []), [stages]);
   const newStageValidation = useFieldValidation(required(t('workflow.addModal.nameRequired')));
   const editStageValidation = useFieldValidation(required(t('workflow.addModal.nameRequired')));
-
-  useEffect(() => {
-    if (savedRules) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setRules(savedRules);
-    }
-  }, [savedRules]);
 
   function showError(error: unknown, fallback: string) {
     setActionError(error instanceof ApiError ? error.message : fallback);
@@ -72,7 +55,10 @@ export default function WorkflowPage() {
     if (!editing || !edit.name.trim()) return;
     setBusy(true); setActionError(null);
     try {
-      await api.patch(`/organisations/${activeOrgId}/workflow-stages/${editing.id}`, edit);
+      await api.patch(`/organisations/${activeOrgId}/workflow-stages/${editing.id}`, {
+        name: edit.name,
+        isFinal: edit.isFinal,
+      });
       setEditing(null); setToast('Stage updated.'); await mutateStages();
     } catch (error) { showError(error, 'Unable to update the stage.'); } finally { setBusy(false); }
   }
@@ -111,19 +97,6 @@ export default function WorkflowPage() {
     catch (error) { showError(error, t('workflow.loadError')); }
     finally { setBusy(false); }
   }
-
-  async function saveRules() {
-    setBusy(true); setActionError(null);
-    try {
-      await api.patch(`/organisations/${activeOrgId}/workflow-stage-rules`, rules);
-      setToast('Stage rules saved.'); await mutateRules();
-    } catch (error) { showError(error, 'Unable to save stage rules.'); } finally { setBusy(false); }
-  }
-
-  const options = (automatic = false) => <>
-    <option value="">{automatic ? 'Automatic' : 'Choose a stage'}</option>
-    {orderedStages.map((stage) => <option key={stage.id} value={stage.id}>{stage.name}</option>)}
-  </>;
 
   if (stagesError) return <ErrorBanner message={stagesError instanceof ApiError ? stagesError.message : t('workflow.loadError')} />;
   if (!stages) return <Spinner />;
@@ -170,18 +143,6 @@ export default function WorkflowPage() {
       <div style={{ display: 'flex', gap: 8 }}><Button disabled={busy || !edit.name.trim() || !isColorHex(edit.color)} onClick={saveEdit}>Save changes</Button><Button variant="secondary" disabled={busy} onClick={() => setEditing(null)}>Cancel</Button></div>
     </Card>}
 
-    <Card style={{ marginTop: 24, padding: 18 }}>
-      <h2 style={{ fontSize: 16, marginBottom: 5 }}>Workflow Stage Rules</h2><p className="subtitle" style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 16 }}>Choose how creating or completing work changes a report&apos;s stage.</p>
-      {rulesError && <div style={{ marginBottom: 12 }}><ErrorBanner message={rulesError instanceof ApiError ? rulesError.message : 'Unable to load stage rules.'} /></div>}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {([['Task Creation', 'taskCreation', true], ['Event Creation', 'eventCreation', true], ['Task Completion', 'taskCompletion', false], ['Event Completion', 'eventCompletion', false]] as const).map(([label, key, minimum]) => <div key={key} style={{ display: 'grid', gridTemplateColumns: minimum ? '150px 1fr 1fr' : '150px 1fr', gap: 12, alignItems: 'end', paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-          <strong style={{ fontSize: 13 }}>{label}</strong>
-          {minimum && <label className="field" style={{ margin: 0 }}><span>Requires incident to have reached</span><select value={rules[key].minimumStageId ?? ''} onChange={(event) => setRules({ ...rules, [key]: { ...rules[key], minimumStageId: event.target.value || null } })}>{options()}</select></label>}
-          <label className="field" style={{ margin: 0 }}><span>Moves incident to</span><select value={rules[key].targetStageId ?? ''} onChange={(event) => setRules({ ...rules, [key]: { ...rules[key], targetStageId: event.target.value || null } })}>{options(true)}</select></label>
-        </div>)}
-      </div>
-      <Button style={{ marginTop: 18 }} disabled={busy || !savedRules} onClick={saveRules}>Save rules</Button>
-    </Card>
     {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
   </div>;
 }

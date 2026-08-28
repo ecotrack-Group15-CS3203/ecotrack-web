@@ -9,6 +9,7 @@ import type { Event, Incident } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
+import { LocationMap } from '@/components/incident-map';
 
 export default function EventsPage() {
   return (
@@ -223,15 +224,7 @@ function CreateEventModal({
       </div>
       <div className="field">
         <label>Location</label>
-        <div className="map-placeholder" style={{ height: 100, marginBottom: 8 }}>
-          <span
-            className="map-pin"
-            style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--primary)' }}
-          />
-        </div>
-        <p className="hint" style={{ marginBottom: 8 }}>
-          Drag-to-place map pin isn&apos;t available in this build — enter coordinates directly.
-        </p>
+        <LocationMap id="new-event" title={title || 'New event'} latitude={latitude} longitude={longitude} address={address} />
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             type="number"
