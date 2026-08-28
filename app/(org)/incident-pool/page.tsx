@@ -15,7 +15,7 @@ import {
   TableThumb,
   UrgencyBadge,
 } from '@/components/ui';
-import { IconPin } from '@/components/icons';
+import { IncidentMap, LocationMap } from '@/components/incident-map';
 import { distanceKm } from '@/lib/geo';
 import type { Incident, Organisation } from '@/lib/types';
 import { ApiError, absoluteUrl } from '@/lib/api';
@@ -83,8 +83,13 @@ export default function IncidentPoolPage() {
       )}
 
       {pool && pool.length > 0 && (
-        <Card>
-          <table>
+        <>
+          <Card style={{ padding: 20, marginBottom: 20 }}>
+            <h2 style={{ fontSize: 15, marginBottom: 12 }}>Incidents in your service area</h2>
+            <IncidentMap incidents={pool} />
+          </Card>
+          <Card>
+            <table>
             <thead>
               <tr>
                 <th></th>
@@ -115,7 +120,7 @@ export default function IncidentPoolPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
 
           {totalPages > 1 && (
             <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '14px 0' }}>
@@ -130,7 +135,8 @@ export default function IncidentPoolPage() {
               ))}
             </div>
           )}
-        </Card>
+          </Card>
+        </>
       )}
 
       <IncidentDetailModal
@@ -203,9 +209,13 @@ function IncidentDetailModal({
         </div>
       )}
 
-      <div className="map-placeholder" style={{ height: 140, marginBottom: 8 }}>
-        <IconPin style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--rejected)' }} />
-      </div>
+      <LocationMap
+        id={incident.id}
+        title={incident.title}
+        latitude={incident.latitude}
+        longitude={incident.longitude}
+        address={incident.address}
+      />
       <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 16 }}>
         {incident.latitude.toFixed(5)}, {incident.longitude.toFixed(5)}
         {incident.address && ` — ${incident.address}`}

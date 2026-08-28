@@ -32,17 +32,6 @@ export interface Organisation {
   updatedAt: string;
 }
 
-export interface InviteLink {
-  id: string;
-  organisationId: string;
-  token: string;
-  url: string;
-  maxUses: number | null;
-  usesCount: number;
-  expiresAt: string;
-  createdAt: string;
-}
-
 export interface OrganisationMember {
   id: string;
   organisationId: string;
@@ -177,7 +166,6 @@ export interface Task {
   organisationId: string;
   incidentId: string;
   incident: Incident;
-  title: string;
   description: string;
   priority: TaskPriority;
   scheduledAt: string | null;

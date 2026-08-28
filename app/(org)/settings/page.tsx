@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import { Avatar, Button, Card, Chip, ErrorBanner, Modal, PageHeader, SectionTitle, Spinner, Toast } from '@/components/ui';
 import { IconPlus } from '@/components/icons';
-import type { InviteLink, Organisation, OrganisationMember } from '@/lib/types';
+import type { Invitation, Organisation, OrganisationMember } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { LocationMap } from '@/components/incident-map';
 
@@ -24,7 +24,7 @@ export default function SettingsPage() {
   const membersPath = activeOrgId ? `/organisations/${activeOrgId}/members` : null;
   const { data: members } = useApiGet<OrganisationMember[]>(membersPath);
   const invitesPath = activeOrgId ? `/organisations/${activeOrgId}/invitations` : null;
-  const { data: invites, error: invitesError, mutate: mutateInvites } = useApiGet<InviteLink[]>(invitesPath);
+  const { data: invites, error: invitesError, mutate: mutateInvites } = useApiGet<Invitation[]>(invitesPath);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -38,11 +38,10 @@ export default function SettingsPage() {
 
   const [toast, setToast] = useState<string | null>(null);
   const [generateOpen, setGenerateOpen] = useState(false);
-  const [maxUses, setMaxUses] = useState('');
-  const [expiresInDays, setExpiresInDays] = useState('7');
+  const [inviteEmail, setInviteEmail] = useState('');
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
-  const [generatedLink, setGeneratedLink] = useState<InviteLink | null>(null);
+  const [generatedLink, setGeneratedLink] = useState<Invitation | null>(null);
 
   useEffect(() => {
     // Populate the editable form once the org loads from SWR — not a
@@ -85,10 +84,7 @@ export default function SettingsPage() {
     setGenerating(true);
     setGenerateError(null);
     try {
-      const link = await api.post<InviteLink>(`/organisations/${activeOrgId}/invitations`, {
-        maxUses: maxUses.trim() ? Number(maxUses) : null,
-        expiresInDays: expiresInDays.trim() ? Number(expiresInDays) : 7,
-      });
+      const link = await api.post<Invitation>(`/organisations/${activeOrgId}/invitations`, { email: inviteEmail });
       setGeneratedLink(link);
       await mutateInvites();
     } catch (err) {
@@ -110,15 +106,18 @@ export default function SettingsPage() {
   function closeGenerateModal() {
     setGenerateOpen(false);
     setGeneratedLink(null);
-    setMaxUses('');
-    setExpiresInDays('7');
+    setInviteEmail('');
     setGenerateError(null);
   }
 
-  function inviteStatus(invite: InviteLink): { label: string; tone: string } {
+  function inviteStatus(invite: Invitation): { label: string; tone: string } {
     const expired = new Date(invite.expiresAt) < new Date();
-    const usedUp = invite.maxUses !== null && invite.usesCount >= invite.maxUses;
-    return expired || usedUp ? { label: 'Expired', tone: 'rejected' } : { label: 'Active', tone: 'active' };
+    if (invite.acceptedAt) return { label: 'Accepted', tone: 'verified' };
+    return expired ? { label: 'Expired', tone: 'rejected' } : { label: 'Active', tone: 'active' };
+  }
+
+  function inviteUrl(token: string) {
+    return `${typeof window === 'undefined' ? '' : window.location.origin}/accept-invite?token=${token}`;
   }
 
   if (error) return <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load organisation'} />;
@@ -219,7 +218,7 @@ export default function SettingsPage() {
               <tr>
                 <th>Created</th>
                 <th>Expires</th>
-                <th>Uses</th>
+                <th>Email</th>
                 <th>Status</th>
                 <th aria-label="Actions" />
               </tr>
@@ -231,11 +230,11 @@ export default function SettingsPage() {
                   <tr key={invite.id}>
                     <td>{formatDate(invite.createdAt)}</td>
                     <td>{formatDate(invite.expiresAt)}</td>
-                    <td>{invite.usesCount} / {invite.maxUses === null ? 'unlimited' : invite.maxUses}</td>
+                    <td>{invite.email}</td>
                     <td><Chip tone={status.tone}>{status.label}</Chip></td>
                     <td>
                       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button size="sm" variant="secondary" onClick={() => copyLink(invite.url)}>
+                        <Button size="sm" variant="secondary" onClick={() => copyLink(inviteUrl(invite.token))}>
                           Copy link
                         </Button>
                       </div>
@@ -262,26 +261,15 @@ export default function SettingsPage() {
           <div>
             <p className="hint" style={{ marginBottom: 8 }}>Share this link with the people you want to invite:</p>
             <div style={{ display: 'flex', gap: 8 }}>
-              <input type="text" value={generatedLink.url} readOnly style={{ flex: 1 }} />
-              <Button variant="secondary" onClick={() => copyLink(generatedLink.url)}>Copy</Button>
+              <input type="text" value={inviteUrl(generatedLink.token)} readOnly style={{ flex: 1 }} />
+              <Button variant="secondary" onClick={() => copyLink(inviteUrl(generatedLink.token))}>Copy</Button>
             </div>
           </div>
         ) : (
           <div>
             <div className="field">
-              <label>Maximum uses (optional)</label>
-              <input
-                type="number"
-                min={1}
-                value={maxUses}
-                onChange={(e) => setMaxUses(e.target.value)}
-                placeholder="Unlimited"
-              />
-              <div className="hint">Leave blank to allow unlimited uses.</div>
-            </div>
-            <div className="field">
-              <label>Expires in (days)</label>
-              <input type="number" min={1} value={expiresInDays} onChange={(e) => setExpiresInDays(e.target.value)} />
+              <label htmlFor="invite-email">Volunteer email</label>
+              <input id="invite-email" type="email" required value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="volunteer@example.com" />
             </div>
           </div>
         )}
@@ -289,7 +277,7 @@ export default function SettingsPage() {
         <div className="modal-actions">
           <Button variant="secondary" onClick={closeGenerateModal}>{generatedLink ? 'Close' : 'Cancel'}</Button>
           {!generatedLink && (
-            <Button onClick={generateInvite} disabled={generating}>
+            <Button onClick={generateInvite} disabled={generating || !/^\S+@\S+\.\S+$/.test(inviteEmail)}>
               {generating ? 'Generating…' : 'Generate link'}
             </Button>
           )}

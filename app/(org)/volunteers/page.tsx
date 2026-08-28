@@ -271,7 +271,7 @@ export default function VolunteersPage() {
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6, marginBottom: 4 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {task.title}
+                          {task.incident.title}
                         </span>
                         <Chip tone={task.status}>{task.status}</Chip>
                       </div>

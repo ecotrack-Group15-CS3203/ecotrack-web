@@ -128,7 +128,6 @@ function TasksPageInner() {
             <tbody>
               {filteredTasks.map((task) => (
                 <tr key={task.id} style={{ cursor: 'pointer' }} onClick={() => router.push(`/tasks/${task.id}`)}>
-                  <td>{task.title}</td>
                   <td>{task.incident.title}</td>
                   <td>
                     {task.assignments.length === 0
@@ -154,7 +153,6 @@ function TasksPageInner() {
         onClose={() => setShowCreate(false)}
         organisationId={activeOrgId ?? ''}
         approvedIncidents={approvedIncidents ?? []}
-        volunteers={volunteers ?? []}
         initialIncidentId={preselectedIncidentId}
         onCreated={async (taskId) => {
           setShowCreate(false);
@@ -172,7 +170,6 @@ function CreateTaskModal({
   onClose,
   organisationId,
   approvedIncidents,
-  volunteers,
   initialIncidentId,
   onCreated,
   api,
@@ -181,7 +178,6 @@ function CreateTaskModal({
   onClose: () => void;
   organisationId: string;
   approvedIncidents: Incident[];
-  volunteers: OrganisationMember[];
   initialIncidentId?: string | null;
   onCreated: (taskId: string) => void;
   api: ReturnType<typeof useAuthedFetch>;
@@ -189,15 +185,12 @@ function CreateTaskModal({
   const { t } = useTranslation();
   const initialIncident = approvedIncidents.find((i) => i.id === initialIncidentId);
   const [incidentId, setIncidentId] = useState(initialIncidentId ?? '');
-  const [title, setTitle] = useState(initialIncident?.title ?? '');
   const [description, setDescription] = useState(initialIncident?.description ?? '');
-  const [assignedTo, setAssignedTo] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('high');
   const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const incidentValidation = useFieldValidation(required(t('tasksList.createModal.incidentRequired')));
-  const titleValidation = useFieldValidation(required(t('tasksList.createModal.titleRequired')));
   const descriptionValidation = useFieldValidation(required(t('tasksList.createModal.descriptionRequired')));
 
   const selectedIncident = approvedIncidents.find((i) => i.id === incidentId);
@@ -206,28 +199,23 @@ function CreateTaskModal({
     setIncidentId(nextIncidentId);
     const incident = approvedIncidents.find((i) => i.id === nextIncidentId);
     if (incident) {
-      setTitle(incident.title);
       setDescription(incident.description);
     }
   }
 
   async function handleSubmit() {
-    if (!incidentId || !title.trim() || !description.trim()) return;
+    if (!incidentId || !description.trim()) return;
     setSubmitting(true);
     setError(null);
     try {
       const task = await api.post<{ id: string }>(`/organisations/${organisationId}/tasks`, {
         incidentId,
-        title,
         description,
         priority,
-        assignedTo: assignedTo || undefined,
         scheduledAt: dueDate ? new Date(dueDate).toISOString() : undefined,
       });
-      setTitle('');
       setDescription('');
       setIncidentId('');
-      setAssignedTo('');
       setDueDate('');
       onCreated(task.id);
     } catch (err) {
@@ -247,7 +235,7 @@ function CreateTaskModal({
           <Button variant="secondary" onClick={onClose}>
             {t('common.cancel')}
           </Button>
-          <Button disabled={submitting || !incidentId || !title.trim() || !description.trim()} onClick={handleSubmit}>
+          <Button disabled={submitting || !incidentId || !description.trim()} onClick={handleSubmit}>
             {submitting ? t('tasksList.createModal.creating') : t('tasksList.createModal.submit')}
           </Button>
         </>
@@ -279,11 +267,6 @@ function CreateTaskModal({
         )}
       </div>
       <div className="field">
-        <label htmlFor="create-task-title">{t('tasksList.createModal.titleLabel')}</label>
-        <input id="create-task-title" type="text" aria-invalid={Boolean(titleValidation.error)} aria-describedby={titleValidation.error ? 'create-task-title-error' : undefined} value={title} onChange={(e) => { setTitle(e.target.value); titleValidation.revalidate(e.target.value); }} onBlur={(e) => titleValidation.onBlur(e.target.value)} placeholder={t('tasksList.createModal.titlePlaceholder')} />
-        <FieldError id="create-task-title-error" message={titleValidation.error} />
-      </div>
-      <div className="field">
         <label htmlFor="create-task-description">{t('tasksList.createModal.descriptionLabel')}</label>
         <textarea
           id="create-task-description"
@@ -295,17 +278,6 @@ function CreateTaskModal({
           placeholder={t('tasksList.createModal.descriptionPlaceholder')}
         />
         <FieldError id="create-task-description-error" message={descriptionValidation.error} />
-      </div>
-      <div className="field">
-        <label htmlFor="create-task-assignee">{t('tasksList.createModal.assignTo')}</label>
-        <select id="create-task-assignee" value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}>
-          <option value="">{t('common.unassigned')}</option>
-          {volunteers.map((v) => (
-            <option key={v.userId} value={v.userId}>
-              {v.user.fullName}
-            </option>
-          ))}
-        </select>
       </div>
       <div className="field">
         <label htmlFor="create-task-priority">{t('tasksList.createModal.priority')}</label>

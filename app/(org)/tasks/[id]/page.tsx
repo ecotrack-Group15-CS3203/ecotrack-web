@@ -78,7 +78,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         <Button variant="text" onClick={() => router.push('/tasks')} style={{ marginBottom: 10 }}>
           ← Back to tasks
         </Button>
-        <h1 style={{ fontSize: 19 }}>{task.title}</h1>
+        <h1 style={{ fontSize: 19 }}>{task.incident.title}</h1>
         <p style={{ fontSize: 13.5, color: 'var(--text-2)', margin: '4px 0 10px' }}>{task.description}</p>
         <div style={{ display: 'flex', gap: 6, margin: '10px 0 16px' }}>
           <Chip tone={task.priority}>{`${task.priority} priority`}</Chip>

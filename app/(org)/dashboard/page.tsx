@@ -140,29 +140,17 @@ export default function DashboardPage() {
             <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>No incidents recorded yet.</p>
           ) : (
             <>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, height: 120 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 154, overflowX: 'auto', paddingTop: 18 }}>
                 {stageDistribution.map(({ stage, count }) => {
                   const max = Math.max(1, ...stageDistribution.map((s) => s.count));
                   return (
-                    <div
-                      key={stage}
-                      title={`${stage}: ${count}`}
-                      style={{
-                        width: 32,
-                        height: `${Math.max(6, (count / max) * 100)}%`,
-                        background: 'var(--progress)',
-                        borderRadius: '4px 4px 0 0',
-                      }}
-                    />
+                    <div key={stage} title={`${stage}: ${count}`} style={{ width: 54, height: '100%', flex: '0 0 54px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                      <strong style={{ fontSize: 12, color: 'var(--text)' }}>{count}</strong>
+                      <div style={{ width: 32, height: `${Math.max(8, (count / max) * 100)}%`, background: 'var(--progress)', borderRadius: '4px 4px 0 0' }} />
+                      <span style={{ width: 54, minHeight: 28, fontSize: 10, lineHeight: '13px', color: 'var(--text-3)', textAlign: 'center' }}>{stage}</span>
+                    </div>
                   );
                 })}
-              </div>
-              <div style={{ display: 'flex', gap: 14, marginTop: 8, fontSize: 11, color: 'var(--text-3)' }}>
-                {stageDistribution.map(({ stage }) => (
-                  <span key={stage} style={{ width: 32, textAlign: 'center' }}>
-                    {stage.split(' ')[0]}
-                  </span>
-                ))}
               </div>
             </>
           )}
