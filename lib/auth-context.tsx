@@ -7,25 +7,6 @@ import type { Profile } from './types';
 const TOKEN_KEY = 'ecotrack_token';
 const ACTIVE_ORG_KEY = 'ecotrack_active_org';
 
-// Dev-only: NEXT_PUBLIC_DEV_BYPASS_AUTH=true skips real login and injects a
-// fake org_admin profile so pages can be viewed locally without a backend.
-// Never enable this in production.
-const DEV_BYPASS_AUTH = process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === 'true';
-const DEV_PROFILE: Profile = {
-  id: 'dev-user',
-  fullName: 'Dev User',
-  email: 'dev@example.com',
-  isPlatformAdmin: false,
-  memberships: [
-    {
-      organisationId: 'dev-org',
-      organisationName: 'Dev Organisation',
-      organisationIsActive: true,
-      role: 'org_admin',
-    },
-  ],
-};
-
 interface AuthContextValue {
   token: string | null;
   profile: Profile | null;
@@ -61,18 +42,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // One-time client-only bootstrap from localStorage (unavailable during SSR),
-    // not a subscription — the flagged setState-in-effect pattern doesn't apply.
-    if (DEV_BYPASS_AUTH) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setToken('dev-bypass-token');
-      setProfile(DEV_PROFILE);
-      setActiveOrgIdState(DEV_PROFILE.memberships[0].organisationId);
-      setLoading(false);
-      return;
-    }
+    // Restore the backend session from the browser token after hydration.
     const stored = localStorage.getItem(TOKEN_KEY);
     if (!stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false);
       return;
     }

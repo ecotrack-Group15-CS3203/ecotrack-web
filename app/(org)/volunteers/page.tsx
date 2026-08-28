@@ -117,8 +117,7 @@ export default function VolunteersPage() {
     setIsSuspending(true);
     setSuspendError(null);
     try {
-      // Calls DELETE /v1/organizations/:id/volunteers/:userId
-      await api.del(`/v1/organizations/${activeOrgId}/volunteers/${selectedVolunteer.userId}`);
+      await api.del(`/organisations/${activeOrgId}/volunteers/${selectedVolunteer.userId}`);
       setToast(`${selectedVolunteer.user.fullName} has been suspended.`);
       setShowSuspendConfirm(false);
       setSelectedVolunteer(null);
@@ -272,7 +271,7 @@ export default function VolunteersPage() {
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6, marginBottom: 4 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {task.title}
+                          {task.incident.title}
                         </span>
                         <Chip tone={task.status}>{task.status}</Chip>
                       </div>
@@ -432,7 +431,6 @@ function InviteModal({
   api: ReturnType<typeof useAuthedFetch>;
 }) {
   const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [createdInvitation, setCreatedInvitation] = useState<Invitation | null>(null);
@@ -440,7 +438,6 @@ function InviteModal({
 
   function reset() {
     setEmail('');
-    setFullName('');
     setError(null);
     setCreatedInvitation(null);
     setCopied(false);
@@ -453,7 +450,6 @@ function InviteModal({
     try {
       const invitation = await api.post<Invitation>(`/organisations/${organisationId}/invitations`, {
         email,
-        fullName: fullName || undefined,
       });
       setCreatedInvitation(invitation);
       onInvited();
@@ -547,15 +543,6 @@ function InviteModal({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="volunteer@email.com"
-            />
-          </div>
-          <div className="field">
-            <label>Full name</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Optional — pre-fills their name on the accept screen"
             />
           </div>
         </>

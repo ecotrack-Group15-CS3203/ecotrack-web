@@ -34,7 +34,7 @@ const NAV_ITEMS = [
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
   const { token, profile, loading, activeOrgId, setActiveOrgId } = useAuth();
   const router = useRouter();
-  const joinRequestsPath = activeOrgId ? `/v1/organizations/${activeOrgId}/join-requests` : null;
+  const joinRequestsPath = activeOrgId ? `/organisations/${activeOrgId}/join-requests` : null;
   const { data: joinRequests } = useApiGet<JoinRequest[]>(joinRequestsPath);
 
   useEffect(() => {

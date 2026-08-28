@@ -9,6 +9,7 @@ import type { Incident, WorkflowStage } from '@/lib/types';
 import { ApiError, absoluteUrl } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
+import { LocationMap } from '@/components/incident-map';
 
 type Decision = 'approve' | 'reject' | 'duplicate';
 
@@ -143,7 +144,13 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
         )}
 
         <SectionTitle>Location</SectionTitle>
-        <div className="map-placeholder" />
+        <LocationMap
+          id={incident.id}
+          title={incident.title}
+          latitude={incident.latitude}
+          longitude={incident.longitude}
+          address={incident.address}
+        />
         <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 8 }}>
           {incident.latitude.toFixed(5)}, {incident.longitude.toFixed(5)}
           {incident.address && ` — ${incident.address}`}

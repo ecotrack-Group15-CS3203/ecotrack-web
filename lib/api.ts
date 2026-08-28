@@ -1,7 +1,4 @@
-import { getMockResponse, handleMockMutation, MockHttpError } from './mock-data';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
-const USE_MOCK_API = process.env.NEXT_PUBLIC_USE_MOCK_API === 'true';
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 
 export class ApiError extends Error {
   constructor(
@@ -24,21 +21,6 @@ export async function apiFetch<T>(
   path: string,
   { method = 'GET', token, body, isFormData }: RequestOptions = {},
 ): Promise<T> {
-  if (USE_MOCK_API) {
-    if (method === 'GET') {
-      const mock = getMockResponse(path);
-      if (mock !== undefined) return mock as T;
-    } else {
-      try {
-        const mock = handleMockMutation(path, method, body);
-        if (mock !== undefined) return mock as T;
-      } catch (err) {
-        if (err instanceof MockHttpError) throw new ApiError(err.status, err.message);
-        throw err;
-      }
-    }
-  }
-
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
   if (body !== undefined && !isFormData) headers['Content-Type'] = 'application/json';
@@ -50,11 +32,22 @@ export async function apiFetch<T>(
   });
 
   const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
+  let data: unknown = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new ApiError(
+        response.status,
+        response.ok ? 'The backend returned an invalid response.' : `Backend request failed (${response.status}).`,
+      );
+    }
+  }
 
   if (!response.ok) {
+    const errorBody = data && typeof data === 'object' ? (data as { message?: string | string[] }) : null;
     const message =
-      (data && (data.message instanceof Array ? data.message.join(', ') : data.message)) ||
+      (errorBody?.message instanceof Array ? errorBody.message.join(', ') : errorBody?.message) ||
       response.statusText;
     throw new ApiError(response.status, message);
   }

@@ -32,17 +32,6 @@ export interface Organisation {
   updatedAt: string;
 }
 
-export interface InviteLink {
-  id: string;
-  organisationId: string;
-  token: string;
-  url: string;
-  maxUses: number | null;
-  usesCount: number;
-  expiresAt: string;
-  createdAt: string;
-}
-
 export interface OrganisationMember {
   id: string;
   organisationId: string;
@@ -105,13 +94,6 @@ export interface WorkflowStage {
   color?: string;
   orderIndex?: number;
   isFixed?: boolean;
-}
-
-export interface WorkflowStageRuleSettings {
-  taskCreation: { minimumStageId: string | null; targetStageId: string | null };
-  eventCreation: { minimumStageId: string | null; targetStageId: string | null };
-  taskCompletion: { targetStageId: string | null };
-  eventCompletion: { targetStageId: string | null };
 }
 
 export type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'duplicate';
@@ -184,7 +166,6 @@ export interface Task {
   organisationId: string;
   incidentId: string;
   incident: Incident;
-  title: string;
   description: string;
   priority: TaskPriority;
   scheduledAt: string | null;

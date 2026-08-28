@@ -24,7 +24,7 @@ export default function JoinRequestsPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const path = activeOrgId ? `/v1/organizations/${activeOrgId}/join-requests` : null;
+  const path = activeOrgId ? `/organisations/${activeOrgId}/join-requests` : null;
   const { data: requests, error, mutate } = useApiGet<JoinRequest[]>(path);
 
   const filteredRequests = useMemo(
@@ -37,7 +37,7 @@ export default function JoinRequestsPage() {
     setUpdatingId(request.id);
     setActionError(null);
     try {
-      await api.patch(`/v1/organizations/${activeOrgId}/join-requests/${request.id}`, { status });
+      await api.patch(`/organisations/${activeOrgId}/join-requests/${request.id}`, { status });
       setToast(`${request.requester.fullName}'s request was ${status}.`);
       await mutate();
     } catch (caught) {

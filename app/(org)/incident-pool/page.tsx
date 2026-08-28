@@ -13,10 +13,9 @@ import {
   PageHeader,
   Spinner,
   TableThumb,
-  Toast,
   UrgencyBadge,
 } from '@/components/ui';
-import { IconPin } from '@/components/icons';
+import { IncidentMap, LocationMap } from '@/components/incident-map';
 import { distanceKm } from '@/lib/geo';
 import type { Incident, Organisation } from '@/lib/types';
 import { ApiError, absoluteUrl } from '@/lib/api';
@@ -34,12 +33,28 @@ export default function IncidentPoolPage() {
   const api = useAuthedFetch();
   const [page, setPage] = useState(1);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
 
   const orgPath = activeOrgId ? `/organisations/${activeOrgId}` : null;
   const { data: organisation } = useApiGet<Organisation>(orgPath);
-  const poolPath = activeOrgId ? `/organisations/${activeOrgId}/incident-pool` : null;
+  const poolPath = activeOrgId ? `/organisations/${activeOrgId}/incidents/incident-pool` : null;
   const { data: pool, error, mutate } = useApiGet<Incident[]>(poolPath);
+
+  async function claimIncident() {
+    if (!activeOrgId || !selectedIncident) return;
+    setClaiming(true);
+    setClaimError(null);
+    try {
+      await api.post(`/organisations/${activeOrgId}/incidents/${selectedIncident.id}/claim`);
+      setSelectedIncident(null);
+      await mutate();
+    } catch (err) {
+      setClaimError(err instanceof ApiError ? err.message : 'Could not claim this incident');
+    } finally {
+      setClaiming(false);
+    }
+  }
 
   const sorted = useMemo(
     () => (pool ?? []).slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
@@ -68,8 +83,13 @@ export default function IncidentPoolPage() {
       )}
 
       {pool && pool.length > 0 && (
-        <Card>
-          <table>
+        <>
+          <Card style={{ padding: 20, marginBottom: 20 }}>
+            <h2 style={{ fontSize: 15, marginBottom: 12 }}>Incidents in your service area</h2>
+            <IncidentMap incidents={pool} />
+          </Card>
+          <Card>
+            <table>
             <thead>
               <tr>
                 <th></th>
@@ -100,7 +120,7 @@ export default function IncidentPoolPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
 
           {totalPages > 1 && (
             <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '14px 0' }}>
@@ -115,23 +135,17 @@ export default function IncidentPoolPage() {
               ))}
             </div>
           )}
-        </Card>
+          </Card>
+        </>
       )}
 
       <IncidentDetailModal
         incident={selectedIncident}
         onClose={() => setSelectedIncident(null)}
-        organisationId={activeOrgId ?? ''}
-        api={api}
-        onClaimed={async () => {
-          setSelectedIncident(null);
-          setToastMessage('Incident claimed successfully.');
-          await mutate();
-        }}
-        onClaimError={(message) => setToastMessage(message)}
+        claiming={claiming}
+        claimError={claimError}
+        onClaim={claimIncident}
       />
-
-      {toastMessage && <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />}
     </div>
   );
 }
@@ -139,37 +153,17 @@ export default function IncidentPoolPage() {
 function IncidentDetailModal({
   incident,
   onClose,
-  organisationId,
-  api,
-  onClaimed,
-  onClaimError,
+  claiming,
+  claimError,
+  onClaim,
 }: {
   incident: Incident | null;
   onClose: () => void;
-  organisationId: string;
-  api: ReturnType<typeof useAuthedFetch>;
-  onClaimed: () => void;
-  onClaimError: (message: string) => void;
+  claiming: boolean;
+  claimError: string | null;
+  onClaim: () => void;
 }) {
-  const [claiming, setClaiming] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   if (!incident) return null;
-
-  async function claim() {
-    setClaiming(true);
-    setError(null);
-    try {
-      await api.post(`/organisations/${organisationId}/incidents/${incident!.id}/claim`);
-      onClaimed();
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Could not claim this incident.';
-      setError(message);
-      onClaimError(message);
-    } finally {
-      setClaiming(false);
-    }
-  }
 
   return (
     <Modal
@@ -178,21 +172,14 @@ function IncidentDetailModal({
       title={incident.title}
       actions={
         <>
-          <Button variant="secondary" onClick={onClose}>
-            Close
-          </Button>
-          <Button disabled={claiming} onClick={claim}>
-            {claiming ? 'Claiming…' : 'Claim Incident'}
+          {claimError && <ErrorBanner message={claimError} />}
+          <Button variant="secondary" onClick={onClose} disabled={claiming}>Close</Button>
+          <Button onClick={onClaim} disabled={claiming}>
+            {claiming ? 'Claiming...' : 'Claim incident'}
           </Button>
         </>
       }
     >
-      {error && (
-        <div style={{ marginBottom: 12 }}>
-          <ErrorBanner message={error} />
-        </div>
-      )}
-
       <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
         <Chip tone="neutral">{incident.category.replace(/_/g, ' ')}</Chip>
         <UrgencyBadge severity={incident.severity} />
@@ -222,9 +209,13 @@ function IncidentDetailModal({
         </div>
       )}
 
-      <div className="map-placeholder" style={{ height: 140, marginBottom: 8 }}>
-        <IconPin style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--rejected)' }} />
-      </div>
+      <LocationMap
+        id={incident.id}
+        title={incident.title}
+        latitude={incident.latitude}
+        longitude={incident.longitude}
+        address={incident.address}
+      />
       <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 16 }}>
         {incident.latitude.toFixed(5)}, {incident.longitude.toFixed(5)}
         {incident.address && ` — ${incident.address}`}

@@ -82,7 +82,7 @@ export function AdminShell({
         <div className="web-sidebar-foot">{sidebarFoot}</div>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <div className="web-shell-main">
         <div className="web-topbar">
           <div className="web-topbar-title">{activeItem?.label ?? ''}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

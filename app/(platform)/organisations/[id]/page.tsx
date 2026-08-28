@@ -19,6 +19,7 @@ export default function OrganisationDetailPage({ params }: { params: Promise<{ i
   const { data: stats } = useApiGet<DashboardStats>(`/organisations/${id}/dashboard/stats`);
   const {
     data: adminInvitations,
+    error: adminInvitationsError,
     mutate: mutateInvitations,
   } = useApiGet<Invitation[]>(`/organisations/${id}/admin-invitations`);
 
@@ -36,9 +37,13 @@ export default function OrganisationDetailPage({ params }: { params: Promise<{ i
   }
 
   async function copyInviteLink(invitation: Invitation) {
-    await navigator.clipboard.writeText(inviteLink(invitation));
-    setCopiedId(invitation.id);
-    setTimeout(() => setCopiedId(null), 2000);
+    try {
+      await navigator.clipboard.writeText(inviteLink(invitation));
+      setCopiedId(invitation.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      setActionError('Could not copy the invitation link. Please copy it from the browser address bar.');
+    }
   }
 
   async function resendInvitation(invitation: Invitation) {
@@ -127,6 +132,17 @@ export default function OrganisationDetailPage({ params }: { params: Promise<{ i
 
       <SectionTitle>Admin invitations</SectionTitle>
       <Card>
+        {adminInvitationsError && (
+          <div style={{ marginBottom: 12 }}>
+            <ErrorBanner
+              message={
+                adminInvitationsError instanceof ApiError
+                  ? adminInvitationsError.message
+                  : 'Failed to load admin invitations'
+              }
+            />
+          </div>
+        )}
         <table>
           <tbody>
             {(adminInvitations ?? []).map((inv) => {

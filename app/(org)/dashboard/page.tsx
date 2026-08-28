@@ -13,18 +13,11 @@ import {
   Skeleton,
   Avatar,
 } from '@/components/ui';
-import { IconPin } from '@/components/icons';
 import type { AuditLogEntry, DashboardStats, Incident, OrganisationMember, Task } from '@/lib/types';
 import { ApiError } from '@/lib/api';
+import { IncidentMap } from '@/components/incident-map';
 
 const RECENT_ACTIVITY_LIMIT = 20;
-
-const PIN_TONE: Record<string, string> = {
-  pending: 'var(--pending)',
-  approved: 'var(--verified)',
-  rejected: 'var(--rejected)',
-  duplicate: 'var(--text-3)',
-};
 
 function humanizeAction(action: string): string {
   const [entity, verb] = action.split('.');
@@ -53,27 +46,29 @@ export default function DashboardPage() {
   const { activeOrgId } = useAuth();
   const statsPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/stats` : null;
   const mapPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/map` : null;
+  const incidentsPath = activeOrgId ? `/organisations/${activeOrgId}/incidents` : null;
   const auditPath = activeOrgId ? `/organisations/${activeOrgId}/audit-logs` : null;
   const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer` : null;
   const tasksPath = activeOrgId ? `/organisations/${activeOrgId}/tasks` : null;
 
   const { data: stats, error: statsError } = useApiGet<DashboardStats>(statsPath);
   const { data: incidents, error: incidentsError } = useApiGet<Incident[]>(mapPath);
+  const { data: workflowIncidents, error: workflowIncidentsError } = useApiGet<Incident[]>(incidentsPath);
   const { data: auditLog, error: auditError } = useApiGet<AuditLogEntry[]>(auditPath);
   const { data: volunteers, error: volunteersError } = useApiGet<OrganisationMember[]>(volunteersPath);
   const { data: tasks, error: tasksError } = useApiGet<Task[]>(tasksPath);
 
-  const error = statsError || incidentsError || auditError || volunteersError || tasksError;
+  const error = statsError || incidentsError || workflowIncidentsError || auditError || volunteersError || tasksError;
 
   const stageDistribution = useMemo(() => {
-    if (!incidents) return [];
+    if (!workflowIncidents) return [];
     const counts = new Map<string, number>();
-    for (const incident of incidents) {
+    for (const incident of workflowIncidents) {
       const label = incident.currentStage?.name ?? 'Unstaged';
       counts.set(label, (counts.get(label) ?? 0) + 1);
     }
     return Array.from(counts.entries()).map(([stage, count]) => ({ stage, count }));
-  }, [incidents]);
+  }, [workflowIncidents]);
 
   const volunteerActivity = useMemo(() => {
     if (!volunteers || !tasks) return [];
@@ -139,35 +134,23 @@ export default function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 20 }}>
         <Card style={{ padding: 20 }}>
           <h3 style={{ fontSize: 14, marginBottom: 12 }}>Incidents by workflow stage</h3>
-          {!incidents ? (
+          {!workflowIncidents ? (
             <Skeleton height={120} />
           ) : stageDistribution.length === 0 ? (
             <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>No incidents recorded yet.</p>
           ) : (
             <>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, height: 120 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 154, overflowX: 'auto', paddingTop: 18 }}>
                 {stageDistribution.map(({ stage, count }) => {
                   const max = Math.max(1, ...stageDistribution.map((s) => s.count));
                   return (
-                    <div
-                      key={stage}
-                      title={`${stage}: ${count}`}
-                      style={{
-                        width: 32,
-                        height: `${Math.max(6, (count / max) * 100)}%`,
-                        background: 'var(--progress)',
-                        borderRadius: '4px 4px 0 0',
-                      }}
-                    />
+                    <div key={stage} title={`${stage}: ${count}`} style={{ width: 54, height: '100%', flex: '0 0 54px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                      <strong style={{ fontSize: 12, color: 'var(--text)' }}>{count}</strong>
+                      <div style={{ width: 32, height: `${Math.max(8, (count / max) * 100)}%`, background: 'var(--progress)', borderRadius: '4px 4px 0 0' }} />
+                      <span style={{ width: 54, minHeight: 28, fontSize: 10, lineHeight: '13px', color: 'var(--text-3)', textAlign: 'center' }}>{stage}</span>
+                    </div>
                   );
                 })}
-              </div>
-              <div style={{ display: 'flex', gap: 14, marginTop: 8, fontSize: 11, color: 'var(--text-3)' }}>
-                {stageDistribution.map(({ stage }) => (
-                  <span key={stage} style={{ width: 32, textAlign: 'center' }}>
-                    {stage.split(' ')[0]}
-                  </span>
-                ))}
               </div>
             </>
           )}
@@ -185,18 +168,7 @@ export default function DashboardPage() {
           {!incidents ? (
             <Skeleton height={260} />
           ) : (
-            <div className="map-placeholder" style={{ height: 260 }}>
-              {incidents.map((incident, i) => (
-                <IconPin
-                  key={incident.id}
-                  style={{
-                    top: 20 + ((i * 47) % 200),
-                    left: 20 + ((i * 83) % 380),
-                    color: PIN_TONE[incident.verificationStatus] ?? 'var(--text-3)',
-                  }}
-                />
-              ))}
-            </div>
+            <IncidentMap incidents={incidents} />
           )}
         </Card>
       </div>

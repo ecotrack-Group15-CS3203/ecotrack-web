@@ -3,16 +3,9 @@
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
 import { Card, ErrorBanner, KpiCard, KpiRow, PageHeader, Spinner } from '@/components/ui';
-import { IconPin } from '@/components/icons';
+import { IncidentMap } from '@/components/incident-map';
 import type { DashboardStats, Incident } from '@/lib/types';
 import { ApiError } from '@/lib/api';
-
-const PIN_TONE: Record<string, string> = {
-  pending: 'var(--pending)',
-  approved: 'var(--verified)',
-  rejected: 'var(--rejected)',
-  duplicate: 'var(--text-3)',
-};
 
 export default function ReportsPage() {
   const { activeOrgId } = useAuth();
@@ -49,25 +42,13 @@ export default function ReportsPage() {
             <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>No incidents reported yet.</p>
           ) : (
             <>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, height: 120 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 154, overflowX: 'auto', paddingTop: 18 }}>
                 {stats.incidentsByCategory.map((c) => (
-                  <div
-                    key={c.category}
-                    title={`${c.category}: ${c.count}`}
-                    style={{
-                      width: 32,
-                      height: `${Math.max(6, (c.count / maxCategory) * 100)}%`,
-                      background: 'var(--verified)',
-                      borderRadius: '4px 4px 0 0',
-                    }}
-                  />
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: 14, marginTop: 8, fontSize: 11, color: 'var(--text-3)' }}>
-                {stats.incidentsByCategory.map((c) => (
-                  <span key={c.category} style={{ width: 32, textAlign: 'center' }}>
-                    {c.category.split('_')[0]}
-                  </span>
+                  <div key={c.category} title={`${c.category}: ${c.count}`} style={{ width: 54, height: '100%', flex: '0 0 54px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                    <strong style={{ fontSize: 12, color: 'var(--text)' }}>{c.count}</strong>
+                    <div style={{ width: 32, height: `${Math.max(8, (c.count / maxCategory) * 100)}%`, background: 'var(--verified)', borderRadius: '4px 4px 0 0' }} />
+                    <span style={{ width: 54, minHeight: 28, fontSize: 10, lineHeight: '13px', color: 'var(--text-3)', textAlign: 'center' }}>{c.category.replace(/_/g, ' ')}</span>
+                  </div>
                 ))}
               </div>
             </>
@@ -75,18 +56,7 @@ export default function ReportsPage() {
         </Card>
         <Card style={{ padding: 20 }}>
           <h3 style={{ fontSize: 14, marginBottom: 14 }}>Incident map</h3>
-          <div className="map-placeholder" style={{ height: 150 }}>
-            {mapData.map((incident, i) => (
-              <IconPin
-                key={incident.id}
-                style={{
-                  top: 10 + ((i * 37) % 110),
-                  left: 10 + ((i * 61) % 260),
-                  color: PIN_TONE[incident.verificationStatus] ?? 'var(--text-3)',
-                }}
-              />
-            ))}
-          </div>
+          <IncidentMap incidents={mapData} />
         </Card>
       </div>
     </div>

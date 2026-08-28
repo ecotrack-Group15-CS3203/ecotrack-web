@@ -7,6 +7,7 @@ import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import { Avatar, Button, Card, Chip, ErrorBanner, SectionTitle, Spinner } from '@/components/ui';
 import type { Event, EventStatus } from '@/lib/types';
 import { ApiError } from '@/lib/api';
+import { LocationMap } from '@/components/incident-map';
 
 const NEXT_STATUS: Partial<Record<EventStatus, { label: string; status: EventStatus }[]>> = {
   scheduled: [
@@ -70,7 +71,13 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             Ends: {new Date(event.endsAt).toLocaleString()}
           </p>
         )}
-        <div className="map-placeholder" style={{ height: 150, marginBottom: 8 }} />
+        <LocationMap
+          id={event.id}
+          title={event.title}
+          latitude={event.latitude}
+          longitude={event.longitude}
+          address={event.address}
+        />
         <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 20 }}>
           {event.latitude.toFixed(5)}, {event.longitude.toFixed(5)}
           {event.address && ` — ${event.address}`}
