@@ -38,16 +38,11 @@ export const IconSettings = (p: IconProps) => (
 export const IconOrganisations = (p: IconProps) => (
   <Icon {...p} d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1" />
 );
-export const IconPlatformAdmins = (p: IconProps) => (
-  <Icon {...p} d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
-);
 export const IconLeaf = (p: IconProps) => <Icon {...p} d="M12 2C8 6 4 9 4 14a8 8 0 0 0 16 0c0-5-4-8-8-12z" />;
-export const IconBack = (p: IconProps) => <Icon {...p} d="M15 18l-6-6 6-6" />;
 export const IconClose = (p: IconProps) => <Icon {...p} d="M18 6 6 18M6 6l12 12" />;
 export const IconBell = (p: IconProps) => (
   <Icon {...p} d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" />
 );
-export const IconCheck = (p: IconProps) => <Icon {...p} d="M4 12l5 5L20 6" />;
 export const IconDrag = (p: IconProps) => (
   <Icon {...p} d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />
 );

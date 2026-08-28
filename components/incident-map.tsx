@@ -17,7 +17,6 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 export function IncidentMap({ incidents }: { incidents: Incident[] }) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
 
   useEffect(() => {
     if (!MAPBOX_TOKEN || !mapContainer.current) return;
@@ -32,7 +31,6 @@ export function IncidentMap({ incidents }: { incidents: Incident[] }) {
       zoom: validIncidents.length ? 11 : 1,
       attributionControl: true,
     });
-    map.current = instance;
     instance.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
     const markers = validIncidents.map((incident) => {
@@ -61,7 +59,6 @@ export function IncidentMap({ incidents }: { incidents: Incident[] }) {
     return () => {
       markers.forEach((marker) => marker.remove());
       instance.remove();
-      map.current = null;
     };
   }, [incidents]);
 
