@@ -5,8 +5,26 @@ import { useTranslation } from 'react-i18next';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
-import { Button, Card, Chip, EmptyState, ErrorBanner, FieldError, FilterBar, FilterPill, Modal, PageHeader, Spinner } from '@/components/ui';
-import type { Incident, OrganisationMember, Task, TaskPriority, TaskStatus } from '@/lib/types';
+import {
+  Button,
+  Card,
+  Chip,
+  EmptyState,
+  ErrorBanner,
+  FieldError,
+  FilterBar,
+  FilterPill,
+  Modal,
+  PageHeader,
+  Spinner,
+} from '@/components/ui';
+import type {
+  Incident,
+  OrganisationMember,
+  Task,
+  TaskPriority,
+  TaskStatus,
+} from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
 
@@ -33,34 +51,60 @@ function TasksPageInner() {
   const searchParams = useSearchParams();
   const preselectedIncidentId = searchParams.get('incidentId');
   const api = useAuthedFetch();
+
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
   const [volunteerFilter, setVolunteerFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [showCreate, setShowCreate] = useState(() => Boolean(preselectedIncidentId));
+  const [showCreate, setShowCreate] = useState(() =>
+    Boolean(preselectedIncidentId)
+  );
 
   const listPath = activeOrgId
-    ? `/organisations/${activeOrgId}/tasks${statusFilter === 'all' ? '' : `?status=${statusFilter}`}`
+    ? `/organisations/${activeOrgId}/tasks${
+        statusFilter === 'all' ? '' : `?status=${statusFilter}`
+      }`
     : null;
+
   const { data: tasks, error, mutate } = useApiGet<Task[]>(listPath);
-  const approvedIncidentsPath = activeOrgId ? `/organisations/${activeOrgId}/incidents?status=approved` : null;
-  const { data: approvedIncidents } = useApiGet<Incident[]>(approvedIncidentsPath);
-  const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer` : null;
-  const { data: volunteers } = useApiGet<OrganisationMember[]>(volunteersPath);
+
+  const approvedIncidentsPath = activeOrgId
+    ? `/organisations/${activeOrgId}/incidents?status=approved`
+    : null;
+
+  const { data: approvedIncidents } =
+    useApiGet<Incident[]>(approvedIncidentsPath);
+
+  const volunteersPath = activeOrgId
+    ? `/organisations/${activeOrgId}/members?role=volunteer`
+    : null;
+
+  const { data: volunteers } =
+    useApiGet<OrganisationMember[]>(volunteersPath);
 
   const filteredTasks = useMemo(() => {
     if (!tasks) return [];
+
     const from = dateFrom ? new Date(dateFrom).getTime() : null;
     const to = dateTo ? new Date(dateTo).getTime() + 86_400_000 : null;
+
     return tasks.filter((task) => {
-      if (volunteerFilter !== 'all' && !task.assignments.some((a) => a.volunteerUserId === volunteerFilter)) {
+      if (
+        volunteerFilter !== 'all' &&
+        !task.assignments.some(
+          (a) => a.volunteerUserId === volunteerFilter
+        )
+      ) {
         return false;
       }
+
       if (task.scheduledAt) {
         const due = new Date(task.scheduledAt).getTime();
+
         if (from !== null && due < from) return false;
         if (to !== null && due > to) return false;
       }
+
       return true;
     });
   }, [tasks, volunteerFilter, dateFrom, dateTo]);
@@ -70,38 +114,103 @@ function TasksPageInner() {
       <PageHeader
         title={t('tasksList.title')}
         description={t('tasksList.description')}
-        action={<Button onClick={() => setShowCreate(true)}>{t('tasksList.createTask')}</Button>}
+        action={
+          <Button onClick={() => setShowCreate(true)}>
+            {t('tasksList.createTask')}
+          </Button>
+        }
       />
 
       <FilterBar>
         {STATUS_TABS.map((tab) => (
-          <FilterPill key={tab.value} active={statusFilter === tab.value} onClick={() => setStatusFilter(tab.value)}>
+          <FilterPill
+            key={tab.value}
+            active={statusFilter === tab.value}
+            onClick={() => setStatusFilter(tab.value)}
+          >
             {t(`tasksList.statusTabs.${tab.value}`)}
           </FilterPill>
         ))}
       </FilterBar>
 
       <FilterBar>
-        <label className="filter-control" htmlFor="task-volunteer-filter"><span className="sr-only">{t('tasksList.filters.allVolunteers')}</span>
-        <select id="task-volunteer-filter" aria-label={t('tasksList.filters.allVolunteers')} value={volunteerFilter} onChange={(e) => setVolunteerFilter(e.target.value)}>
-          <option value="all">{t('tasksList.filters.allVolunteers')}</option>
-          {(volunteers ?? []).map((v) => (
-            <option key={v.userId} value={v.userId}>
-              {v.user.fullName}
+        <label
+          className="filter-control"
+          htmlFor="task-volunteer-filter"
+        >
+          <span className="sr-only">
+            {t('tasksList.filters.allVolunteers')}
+          </span>
+
+          <select
+            id="task-volunteer-filter"
+            aria-label={t('tasksList.filters.allVolunteers')}
+            value={volunteerFilter}
+            onChange={(e) => setVolunteerFilter(e.target.value)}
+          >
+            <option value="all">
+              {t('tasksList.filters.allVolunteers')}
             </option>
-          ))}
-        </select></label>
-        <label style={{ fontSize: 13, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {t('tasksList.filters.dueFrom')}
-          <input id="task-due-from" aria-label={t('tasksList.filters.dueFrom')} type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+
+            {(volunteers ?? []).map((v) => (
+              <option key={v.userId} value={v.userId}>
+                {v.user.fullName}
+              </option>
+            ))}
+          </select>
         </label>
-        <label style={{ fontSize: 13, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
+
+        <label
+          style={{
+            fontSize: 13,
+            color: 'var(--text-2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          {t('tasksList.filters.dueFrom')}
+
+          <input
+            id="task-due-from"
+            aria-label={t('tasksList.filters.dueFrom')}
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+          />
+        </label>
+
+        <label
+          style={{
+            fontSize: 13,
+            color: 'var(--text-2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
           {t('tasksList.filters.dueTo')}
-          <input id="task-due-to" aria-label={t('tasksList.filters.dueTo')} type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+
+          <input
+            id="task-due-to"
+            aria-label={t('tasksList.filters.dueTo')}
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+          />
         </label>
       </FilterBar>
 
-      {error && <ErrorBanner message={error instanceof ApiError ? error.message : t('tasksList.loadError')} />}
+      {error && (
+        <ErrorBanner
+          message={
+            error instanceof ApiError
+              ? error.message
+              : t('tasksList.loadError')
+          }
+        />
+      )}
+
       {!tasks && !error && <Spinner />}
 
       {tasks && filteredTasks.length === 0 && (
@@ -125,21 +234,50 @@ function TasksPageInner() {
                 <th>Status</th>
               </tr>
             </thead>
+
             <tbody>
               {filteredTasks.map((task) => (
-                <tr key={task.id} style={{ cursor: 'pointer' }} onClick={() => router.push(`/tasks/${task.id}`)}>
+                <tr
+                  key={task.id}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => router.push(`/tasks/${task.id}`)}
+                >
+                  {/* Task */}
+                  <td>{task.description}</td>
+
+                  {/* Linked incident */}
                   <td>{task.incident.title}</td>
+
+                  {/* Assigned volunteer */}
                   <td>
                     {task.assignments.length === 0
                       ? '—'
-                      : task.assignments.map((a) => a.volunteer.fullName).join(', ')}
+                      : task.assignments
+                          .map((a) => a.volunteer.fullName)
+                          .join(', ')}
                   </td>
+
+                  {/* Priority */}
                   <td>
-                    <Chip tone={task.priority}>{task.priority}</Chip>
+                    <Chip tone={task.priority}>
+                      {task.priority}
+                    </Chip>
                   </td>
-                  <td>{task.scheduledAt ? new Date(task.scheduledAt).toLocaleString() : '—'}</td>
+
+                  {/* Due date */}
                   <td>
-                    <Chip tone={task.status}>{task.status === 'pending' ? 'scheduled' : task.status}</Chip>
+                    {task.scheduledAt
+                      ? new Date(task.scheduledAt).toLocaleString()
+                      : '—'}
+                  </td>
+
+                  {/* Status */}
+                  <td>
+                    <Chip tone={task.status}>
+                      {task.status === 'pending'
+                        ? 'scheduled'
+                        : task.status}
+                    </Chip>
                   </td>
                 </tr>
               ))}
@@ -183,21 +321,41 @@ function CreateTaskModal({
   api: ReturnType<typeof useAuthedFetch>;
 }) {
   const { t } = useTranslation();
-  const initialIncident = approvedIncidents.find((i) => i.id === initialIncidentId);
-  const [incidentId, setIncidentId] = useState(initialIncidentId ?? '');
-  const [description, setDescription] = useState(initialIncident?.description ?? '');
+
+  const initialIncident = approvedIncidents.find(
+    (i) => i.id === initialIncidentId
+  );
+
+  const [incidentId, setIncidentId] = useState(
+    initialIncidentId ?? ''
+  );
+  const [description, setDescription] = useState(
+    initialIncident?.description ?? ''
+  );
   const [priority, setPriority] = useState<TaskPriority>('high');
   const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const incidentValidation = useFieldValidation(required(t('tasksList.createModal.incidentRequired')));
-  const descriptionValidation = useFieldValidation(required(t('tasksList.createModal.descriptionRequired')));
 
-  const selectedIncident = approvedIncidents.find((i) => i.id === incidentId);
+  const incidentValidation = useFieldValidation(
+    required(t('tasksList.createModal.incidentRequired'))
+  );
+
+  const descriptionValidation = useFieldValidation(
+    required(t('tasksList.createModal.descriptionRequired'))
+  );
+
+  const selectedIncident = approvedIncidents.find(
+    (i) => i.id === incidentId
+  );
 
   function selectIncident(nextIncidentId: string) {
     setIncidentId(nextIncidentId);
-    const incident = approvedIncidents.find((i) => i.id === nextIncidentId);
+
+    const incident = approvedIncidents.find(
+      (i) => i.id === nextIncidentId
+    );
+
     if (incident) {
       setDescription(incident.description);
     }
@@ -205,21 +363,34 @@ function CreateTaskModal({
 
   async function handleSubmit() {
     if (!incidentId || !description.trim()) return;
+
     setSubmitting(true);
     setError(null);
+
     try {
-      const task = await api.post<{ id: string }>(`/organisations/${organisationId}/tasks`, {
-        incidentId,
-        description,
-        priority,
-        scheduledAt: dueDate ? new Date(dueDate).toISOString() : undefined,
-      });
+      const task = await api.post<{ id: string }>(
+        `/organisations/${organisationId}/tasks`,
+        {
+          incidentId,
+          description,
+          priority,
+          scheduledAt: dueDate
+            ? new Date(dueDate).toISOString()
+            : undefined,
+        }
+      );
+
       setDescription('');
       setIncidentId('');
       setDueDate('');
+
       onCreated(task.id);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not create task');
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : 'Could not create task'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -235,8 +406,18 @@ function CreateTaskModal({
           <Button variant="secondary" onClick={onClose}>
             {t('common.cancel')}
           </Button>
-          <Button disabled={submitting || !incidentId || !description.trim()} onClick={handleSubmit}>
-            {submitting ? t('tasksList.createModal.creating') : t('tasksList.createModal.submit')}
+
+          <Button
+            disabled={
+              submitting ||
+              !incidentId ||
+              !description.trim()
+            }
+            onClick={handleSubmit}
+          >
+            {submitting
+              ? t('tasksList.createModal.creating')
+              : t('tasksList.createModal.submit')}
           </Button>
         </>
       }
@@ -246,52 +427,123 @@ function CreateTaskModal({
           <ErrorBanner message={error} />
         </div>
       )}
+
       <div className="field">
-        <label htmlFor="create-task-incident">{t('tasksList.createModal.linkedIncident')}</label>
-        <select id="create-task-incident" aria-invalid={Boolean(incidentValidation.error)} aria-describedby={incidentValidation.error ? 'create-task-incident-error' : undefined} value={incidentId} onChange={(e) => selectIncident(e.target.value)} onBlur={(e) => incidentValidation.onBlur(e.target.value)}>
-          <option value="">{t('tasksList.createModal.selectIncident')}</option>
+        <label htmlFor="create-task-incident">
+          {t('tasksList.createModal.linkedIncident')}
+        </label>
+
+        <select
+          id="create-task-incident"
+          aria-invalid={Boolean(incidentValidation.error)}
+          aria-describedby={
+            incidentValidation.error
+              ? 'create-task-incident-error'
+              : undefined
+          }
+          value={incidentId}
+          onChange={(e) => selectIncident(e.target.value)}
+          onBlur={(e) =>
+            incidentValidation.onBlur(e.target.value)
+          }
+        >
+          <option value="">
+            {t('tasksList.createModal.selectIncident')}
+          </option>
+
           {approvedIncidents.map((i) => (
             <option key={i.id} value={i.id}>
               {i.title}
             </option>
           ))}
         </select>
+
         {approvedIncidents.length === 0 && (
-          <p className="hint">{t('tasksList.createModal.noIncidents')}</p>
+          <p className="hint">
+            {t('tasksList.createModal.noIncidents')}
+          </p>
         )}
+
         {selectedIncident && (
           <p className="hint">
-            {t('tasksList.createModal.location', { lat: selectedIncident.latitude.toFixed(5), lng: selectedIncident.longitude.toFixed(5) })}
-            {selectedIncident.address && ` — ${selectedIncident.address}`}
+            {t('tasksList.createModal.location', {
+              lat: selectedIncident.latitude.toFixed(5),
+              lng: selectedIncident.longitude.toFixed(5),
+            })}
+            {selectedIncident.address &&
+              ` — ${selectedIncident.address}`}
           </p>
         )}
       </div>
+
       <div className="field">
-        <label htmlFor="create-task-description">{t('tasksList.createModal.descriptionLabel')}</label>
+        <label htmlFor="create-task-description">
+          {t('tasksList.createModal.descriptionLabel')}
+        </label>
+
         <textarea
           id="create-task-description"
           aria-invalid={Boolean(descriptionValidation.error)}
-          aria-describedby={descriptionValidation.error ? 'create-task-description-error' : undefined}
+          aria-describedby={
+            descriptionValidation.error
+              ? 'create-task-description-error'
+              : undefined
+          }
           value={description}
-          onChange={(e) => { setDescription(e.target.value); descriptionValidation.revalidate(e.target.value); }}
-          onBlur={(e) => descriptionValidation.onBlur(e.target.value)}
-          placeholder={t('tasksList.createModal.descriptionPlaceholder')}
+          onChange={(e) => {
+            setDescription(e.target.value);
+            descriptionValidation.revalidate(e.target.value);
+          }}
+          onBlur={(e) =>
+            descriptionValidation.onBlur(e.target.value)
+          }
+          placeholder={t(
+            'tasksList.createModal.descriptionPlaceholder'
+          )}
         />
-        <FieldError id="create-task-description-error" message={descriptionValidation.error} />
+
+        <FieldError
+          id="create-task-description-error"
+          message={descriptionValidation.error}
+        />
       </div>
+
       <div className="field">
-        <label htmlFor="create-task-priority">{t('tasksList.createModal.priority')}</label>
-        <select id="create-task-priority" value={priority} onChange={(e) => setPriority(e.target.value as TaskPriority)}>
-          <option value="low">{t('tasksList.createModal.priorityLow')}</option>
-          <option value="medium">{t('tasksList.createModal.priorityMedium')}</option>
-          <option value="high">{t('tasksList.createModal.priorityHigh')}</option>
+        <label htmlFor="create-task-priority">
+          {t('tasksList.createModal.priority')}
+        </label>
+
+        <select
+          id="create-task-priority"
+          value={priority}
+          onChange={(e) =>
+            setPriority(e.target.value as TaskPriority)
+          }
+        >
+          <option value="low">
+            {t('tasksList.createModal.priorityLow')}
+          </option>
+          <option value="medium">
+            {t('tasksList.createModal.priorityMedium')}
+          </option>
+          <option value="high">
+            {t('tasksList.createModal.priorityHigh')}
+          </option>
         </select>
       </div>
+
       <div className="field">
-        <label htmlFor="create-task-due">{t('tasksList.createModal.dueDate')}</label>
-        <input id="create-task-due" type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+        <label htmlFor="create-task-due">
+          {t('tasksList.createModal.dueDate')}
+        </label>
+
+        <input
+          id="create-task-due"
+          type="datetime-local"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+        />
       </div>
     </Modal>
   );
 }
-
