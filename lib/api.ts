@@ -1,5 +1,6 @@
 const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 
+// ApiError - Custom error class for API failures with HTTP status code
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -24,6 +25,7 @@ interface RequestOptions {
 // The function uses fetch to send the request to the backend and processes the response. 
 // If the response is not OK, it throws an ApiError with the status code and message from the backend. 
 // If successful, it returns the parsed JSON data.
+// apiFetch() - Makes authenticated HTTP requests to the backend with automatic Bearer token injection
 export async function apiFetch<T>(
   path: string,
   { method = 'GET', token, body, isFormData }: RequestOptions = {},
@@ -62,6 +64,7 @@ export async function apiFetch<T>(
   return data as T;
 }
 
+// absoluteUrl() - Converts relative paths to absolute URLs by prepending the backend API base URL
 export function absoluteUrl(path: string): string {
   if (path.startsWith('http')) return path;
   return `${API_URL}${path}`;

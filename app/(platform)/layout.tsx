@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: '/organisations', label: 'Organisations', icon: IconOrganisations },
 ];
 
+// PlatformLayout() - Shared layout for platform admin pages with access control for super admins only
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const { token, profile, loading } = useAuth();
   const router = useRouter();

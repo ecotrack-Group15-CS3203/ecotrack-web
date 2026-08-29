@@ -117,7 +117,7 @@ export default function VolunteersPage() {
     setIsSuspending(true);
     setSuspendError(null);
     try {
-      await api.del(`/organisations/${activeOrgId}/volunteers/${selectedVolunteer.userId}`);
+      await api.patch(`/organisations/${activeOrgId}/members/${selectedVolunteer.id}/deactivate`);
       setToast(`${selectedVolunteer.user.fullName} has been suspended.`);
       setShowSuspendConfirm(false);
       setSelectedVolunteer(null);

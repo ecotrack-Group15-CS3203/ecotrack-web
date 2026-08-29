@@ -103,10 +103,21 @@ export default function IncidentPoolPage() {
             </thead>
             {/* Table body containing the incidents in the current page */}
             <tbody>
-              {pageItems.map((incident, i) => (
+              {pageItems.map((incident, i) => {
+                const images = incident.images ?? [];
+                return (
                 <tr key={incident.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedIncident(incident)}>
                   <td>
-                    <TableThumb gradient={THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]} />
+                    {images[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={absoluteUrl(images[0].url)}
+                        alt={incident.title}
+                        style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', display: 'block' }}
+                      />
+                    ) : (
+                      <TableThumb gradient={THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]} />
+                    )}
                   </td>
                   <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{incident.id}</td>
                   <td>{incident.title}</td>
@@ -120,7 +131,8 @@ export default function IncidentPoolPage() {
                       : '—'}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
             </table>
 
@@ -190,23 +202,15 @@ function IncidentDetailModal({
 
       <p style={{ fontSize: 13.5, color: 'var(--text-2)', marginBottom: 16 }}>{incident.description}</p>
 
-      {incident.images[0] && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={absoluteUrl(incident.images[0].url)}
-          alt=""
-          style={{ width: '100%', height: 180, borderRadius: 10, objectFit: 'cover', marginBottom: 16 }}
-        />
-      )}
-      {incident.images.length > 1 && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          {incident.images.slice(1).map((img) => (
+      {(incident.images ?? []).length > 0 && (
+        <div style={{ display: 'grid', gap: 10, marginBottom: 16 }}>
+          {(incident.images ?? []).map((img) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={img.id}
               src={absoluteUrl(img.url)}
-              alt=""
-              style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover' }}
+              alt={`${incident.title} evidence`}
+              style={{ width: '100%', maxHeight: 220, borderRadius: 10, objectFit: 'cover', display: 'block' }}
             />
           ))}
         </div>

@@ -1,4 +1,5 @@
 /** Great-circle distance between two coordinates, in kilometers (haversine formula). */
+// distanceKm() - Calculates the distance in kilometers between two geographic coordinates using haversine formula
 export function distanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;

@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
 import { Card, Chip, EmptyState, ErrorBanner, FilterBar, FilterPill, PageHeader, Spinner, TableThumb } from '@/components/ui';
 import type { Incident, IncidentSeverity, VerificationStatus, WorkflowStage } from '@/lib/types';
-import { ApiError } from '@/lib/api';
+import { absoluteUrl, ApiError } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 
 // Constants and configuration for the incidents page
@@ -147,10 +147,21 @@ export default function IncidentsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredIncidents.map((incident, i) => (
+              {filteredIncidents.map((incident, i) => {
+                const images = incident.images ?? [];
+                return (
                 <tr key={incident.id} tabIndex={0} aria-label={t('incidentsList.table.rowLabel', { title: incident.title })} style={{ cursor: 'pointer' }} onClick={() => router.push(`/incidents/${incident.id}`)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); router.push(`/incidents/${incident.id}`); } }}>
                   <td>
-                    <TableThumb alt={t('incidentsList.table.thumbnail')} gradient={THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]} />
+                    {images[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={absoluteUrl(images[0].url)}
+                        alt={incident.title}
+                        style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', display: 'block' }}
+                      />
+                    ) : (
+                      <TableThumb alt={t('incidentsList.table.thumbnail')} gradient={THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]} />
+                    )}
                   </td>
                   <td>{incident.title}</td>
                   <td style={{ textTransform: 'capitalize' }}>{incident.category.replace(/_/g, ' ')}</td>
@@ -163,7 +174,8 @@ export default function IncidentsPage() {
                   </td>
                   <td>{new Date(incident.createdAt).toLocaleDateString()}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </Card>

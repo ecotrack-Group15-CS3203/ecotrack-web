@@ -6,6 +6,7 @@ import { useCallback, useState } from 'react';
  * Blur-triggered inline validation: synchronous, so the message appears
  * well within 200ms of the field losing focus.
  */
+// useFieldValidation() - Hook for managing form field validation on blur with error messages
 export function useFieldValidation(validate: (value: string) => string | null) {
   const [touched, setTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,10 +29,12 @@ export function useFieldValidation(validate: (value: string) => string | null) {
   return { error: touched ? error : null, onBlur, revalidate };
 }
 
+// required() - Validation rule that checks if a field is not empty
 export function required(message: string) {
   return (value: string) => (value.trim() ? null : message);
 }
 
+// requiredEmail() - Validation rule that checks if a field is a valid email address
 export function requiredEmail(requiredMessage: string, invalidMessage: string) {
   return (value: string) => {
     if (!value.trim()) return requiredMessage;

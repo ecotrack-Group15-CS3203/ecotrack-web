@@ -31,6 +31,7 @@ const NAV_ITEMS = [
   { href: '/settings', label: 'Settings', icon: IconSettings },
 ];
 
+// OrgLayout() - Shared layout for all organization admin pages with sidebar navigation and access control
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
   const { token, profile, loading, activeOrgId, setActiveOrgId } = useAuth();
   const router = useRouter();

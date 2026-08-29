@@ -105,28 +105,30 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
       <div>
           <Button variant="text" onClick={() => router.push('/incidents')} style={{ marginBottom: 10 }}>
           {t('incidentDetail.backToIncidents')}
-        </Button>// Button to navigate back to the incidents list
+        </Button>
+        {/* Button to navigate back to the incidents list */}
 
-        {incident.images[0] && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={absoluteUrl(incident.images[0].url)}
-            alt={incident.title}
-            style={{ width: '100%', height: 220, borderRadius: 10, objectFit: 'cover', marginBottom: 16 }}
-          />
-        )}
-        {incident.images.length > 1 && (
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-            {incident.images.slice(1).map((img) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={img.id}
-                src={absoluteUrl(img.url)}
-                alt={`${incident.title} evidence`}
-                style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover' }}
-              />
-            ))}
-          </div>
+        {(incident.images ?? []).length > 0 && (
+          <>
+            <img
+              src={absoluteUrl((incident.images ?? [])[0].url)}
+              alt={incident.title}
+              style={{ width: '100%', height: 220, borderRadius: 10, objectFit: 'cover', marginBottom: 16 }}
+            />
+            {(incident.images ?? []).length > 1 && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                {(incident.images ?? []).slice(1).map((img) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={img.id}
+                    src={absoluteUrl(img.url)}
+                    alt={`${incident.title} evidence`}
+                    style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover' }}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
         {/* Incident metadata chips (category, severity, verification status) */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>

@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   description: "EcoTrack organisation and platform administration dashboard",
 };
 
+// RootLayout() - Main app layout that wraps all pages with Auth and i18n providers
 export default function RootLayout({
   children,
 }: Readonly<{

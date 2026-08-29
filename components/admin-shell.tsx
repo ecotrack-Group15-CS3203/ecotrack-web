@@ -14,6 +14,7 @@ interface NavItem {
   badgeCount?: number;
 }
 
+// AdminShell() - Main layout wrapper with sidebar navigation, top bar, and main content area for admin pages
 export function AdminShell({
   children,
   navItems,

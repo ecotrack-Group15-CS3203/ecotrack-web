@@ -49,6 +49,12 @@ export default function WorkflowPage() {
   function openEdit(stage: WorkflowStage) {
     setEditing(stage);
     setEdit({ name: stage.name, description: stage.description ?? '', color: stage.color ?? DEFAULT_COLOR, isFinal: stage.isFinal });
+    requestAnimationFrame(() => {
+      const editor = document.getElementById('workflow-stage-editor');
+      editor?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const nameInput = document.getElementById('edit-stage-name') as HTMLInputElement | null;
+      nameInput?.focus();
+    });
   }
 
   async function saveEdit() {
@@ -135,7 +141,7 @@ export default function WorkflowPage() {
       <Button disabled={busy || !newStage.name.trim() || !isColorHex(newStage.color)} onClick={addStage}>{t('workflow.addModal.submit')}</Button>
     </Card>
 
-    {editing && <Card style={{ marginTop: 16, padding: 18, borderColor: 'var(--primary)' }}>
+    {editing && <Card id="workflow-stage-editor" style={{ marginTop: 16, padding: 18, borderColor: 'var(--primary)' }}>
       <h2 style={{ fontSize: 16, marginBottom: 14 }}>Edit {editing.name}</h2><div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14 }}>Permanent label: {editing.slug ?? editing.name.toLowerCase().replace(/\s+/g, '-')}</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 210px', gap: 12 }}><div className="field"><label htmlFor="edit-stage-name">Name</label><input id="edit-stage-name" aria-invalid={Boolean(editStageValidation.error)} aria-describedby={editStageValidation.error ? 'edit-stage-error' : undefined} value={edit.name} onChange={(event) => { setEdit({ ...edit, name: event.target.value }); editStageValidation.revalidate(event.target.value); }} onBlur={(event) => editStageValidation.onBlur(event.target.value)} /><FieldError id="edit-stage-error" message={editStageValidation.error} /></div><div className="field"><label htmlFor="edit-stage-color">Colour</label><div style={{ display: 'flex', gap: 6 }}><input id="edit-stage-color" type="color" value={isColorHex(edit.color) ? edit.color : DEFAULT_COLOR} onChange={(event) => setEdit({ ...edit, color: event.target.value })} style={{ width: 42, height: 42, padding: 3 }} /><input value={edit.color} onChange={(event) => setEdit({ ...edit, color: event.target.value })} aria-label="Colour hex" /></div></div></div>
       <div className="field"><label>Description (optional)</label><textarea value={edit.description} onChange={(event) => setEdit({ ...edit, description: event.target.value })} /></div>

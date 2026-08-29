@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { ApiError } from '@/lib/api';
 import { Button, Card, ErrorBanner } from '@/components/ui';
 
+// LoginPage() - Login form page where users enter email and password to authenticate
 export default function LoginPage() {
   const { login, token, loading } = useAuth();
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function LoginPage() {
     }
   }, [loading, token, router]);
 
+  // handleSubmit() - Processes login form submission by calling auth.login() with email and password
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);

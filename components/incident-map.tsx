@@ -24,6 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
+// IncidentMap() - Displays a Mapbox map with incident locations and color-coded markers by status
 export function IncidentMap({ incidents }: { incidents: Incident[] }) {
   return (
     <MapView
@@ -39,6 +40,7 @@ export function IncidentMap({ incidents }: { incidents: Incident[] }) {
   );
 }
 
+// LocationMap() - Displays a Mapbox map with a single location and optional service area radius circle
 export function LocationMap({
   id,
   title,
@@ -50,6 +52,7 @@ export function LocationMap({
   return <MapView points={[{ id, title, latitude, longitude, address }]} radiusKm={radiusKm} />;
 }
 
+// MapView() - Core map rendering function that initializes Mapbox, adds markers, and handles zoom/bounds
 function MapView({ points, radiusKm }: { points: MapPoint[]; radiusKm?: number }) {
   const mapContainer = useRef<HTMLDivElement>(null);
 

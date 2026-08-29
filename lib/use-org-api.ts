@@ -9,6 +9,7 @@ import { apiFetch } from './api';
  * bearer token. `path` may be null to skip fetching (e.g. while the
  * active organisation hasn't been resolved yet).
  */
+// useApiGet() - Hook for fetching data from backend API with automatic Bearer token and caching
 export function useApiGet<T>(path: string | null) {
   const { token } = useAuth();
   const swr = useSWR<T>(
@@ -18,6 +19,7 @@ export function useApiGet<T>(path: string | null) {
   return swr;
 }
 
+// useAuthedFetch() - Hook that returns object with methods for making authenticated API requests (GET, POST, PATCH, DELETE, upload)
 export function useAuthedFetch() {
   const { token } = useAuth();
   return {

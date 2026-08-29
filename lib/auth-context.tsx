@@ -22,12 +22,14 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// AuthProvider component - Wraps the app and manages all authentication state (login, logout, user profile)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [activeOrgId, setActiveOrgIdState] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // loadProfile() - Fetches user profile and memberships from backend using a token
   const loadProfile = useCallback(async (activeToken: string) => {
     const data = await apiFetch<Profile>('/auth/me', { token: activeToken });
     setProfile(data);
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, [loadProfile]);
 
+  // completeAuth() - Saves a token to localStorage and loads the user profile
   const completeAuth = useCallback(
     async (accessToken: string) => {
       localStorage.setItem(TOKEN_KEY, accessToken);
@@ -67,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [loadProfile],
   );
 
+  // login() - Sends email and password to backend, receives token, and loads profile
   const login = useCallback(
     async (email: string, password: string) => {
       const result = await apiFetch<{ accessToken: string }>('/auth/login', {
@@ -78,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [completeAuth],
   );
 
+  // logout() - Clears token and user profile, notifies backend, clears localStorage
   const logout = useCallback(() => {
     if (token) {
       apiFetch('/auth/logout', { method: 'POST', token }).catch(() => undefined);
@@ -89,11 +94,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setActiveOrgIdState(null);
   }, [token]);
 
+  // setActiveOrgId() - Saves the currently selected organization ID to localStorage
   const setActiveOrgId = useCallback((organisationId: string) => {
     localStorage.setItem(ACTIVE_ORG_KEY, organisationId);
     setActiveOrgIdState(organisationId);
   }, []);
 
+  // refreshProfile() - Re-fetches the current user's profile from the backend
   const refreshProfile = useCallback(async () => {
     if (token) await loadProfile(token);
   }, [token, loadProfile]);
@@ -116,6 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// useAuth() - Hook that returns current auth state (token, profile, login, logout, etc.) for any component
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
