@@ -24,6 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
+// IncidentMap() - Displays a Mapbox map with incident locations and color-coded markers by status
 export function IncidentMap({ incidents }: { incidents: Incident[] }) {
   return (
     <MapView
@@ -39,6 +40,7 @@ export function IncidentMap({ incidents }: { incidents: Incident[] }) {
   );
 }
 
+// LocationMap() - Displays a Mapbox map with a single location and optional service area radius circle
 export function LocationMap({
   id,
   title,
@@ -50,6 +52,7 @@ export function LocationMap({
   return <MapView points={[{ id, title, latitude, longitude, address }]} radiusKm={radiusKm} />;
 }
 
+// MapView() - Core map rendering function that initializes Mapbox, adds markers, and handles zoom/bounds
 function MapView({ points, radiusKm }: { points: MapPoint[]; radiusKm?: number }) {
   const mapContainer = useRef<HTMLDivElement>(null);
 
@@ -129,3 +132,4 @@ function createCircle(longitude: number, latitude: number, radiusKm: number) {
 function escapeHtml(value: string): string {
   return value.replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character] ?? character);
 }
+/* The map flow starts when IncidentMap or LocationMap receives location data. IncidentMap converts each Incident into a simpler MapPoint and assigns a marker color based on its verification status, while LocationMap displays a single location and can optionally show a service-area radius. Both components pass their points to the reusable MapView. Inside MapView, useEffect() checks for the Mapbox token and then creates a Mapbox map using NEXT_PUBLIC_MAPBOX_TOKEN. It filters out invalid latitude/longitude values, sets the initial map center, and creates a marker for each valid incident. Each marker gets a popup containing the incident title and address. If there are multiple incidents, fitBounds() automatically adjusts the map so all markers are visible. If a radiusKm is provided, createCircle() generates a GeoJSON circle around the location and the map displays it as a service-area boundary. When the component is removed or updated, the cleanup function removes the markers and destroys the Mapbox instance to prevent memory leaks.*/

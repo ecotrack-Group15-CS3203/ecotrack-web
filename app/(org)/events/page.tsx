@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
 import { LocationMap } from '@/components/incident-map';
 
+// Main Events page component - Shows loading spinner while the page content is being fetched
 export default function EventsPage() {
   return (
     <Suspense fallback={<Spinner />}>
@@ -19,6 +20,7 @@ export default function EventsPage() {
   );
 }
 
+// Main page content - Loads and displays all events for the organization, with ability to create new events
 function EventsPageInner() {
   const { activeOrgId } = useAuth();
   const router = useRouter();
@@ -27,8 +29,11 @@ function EventsPageInner() {
   const api = useAuthedFetch();
   const [showCreate, setShowCreate] = useState(() => Boolean(preselectedIncidentId));
 
+  // Fetch all events for this organization from the backend
   const eventsPath = activeOrgId ? `/organisations/${activeOrgId}/events` : null;
   const { data: events, error, mutate } = useApiGet<Event[]>(eventsPath);
+  
+  // Fetch approved incidents to link them to new events
   const approvedIncidentsPath = activeOrgId ? `/organisations/${activeOrgId}/incidents?status=approved` : null;
   const { data: approvedIncidents } = useApiGet<Incident[]>(approvedIncidentsPath);
 
@@ -77,7 +82,6 @@ function EventsPageInner() {
           ))}
         </div>
       )}
-
       <CreateEventModal
         open={showCreate}
         onClose={() => setShowCreate(false)}
@@ -125,20 +129,24 @@ function CreateEventModal({
   const [maxAttendees, setMaxAttendees] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const incidentsValidation = useFieldValidation(required(t('events.createModal.incidentsRequired')));
-  const titleValidation = useFieldValidation(required(t('events.createModal.titleRequired')));
-  const descriptionValidation = useFieldValidation(required(t('events.createModal.descriptionRequired')));
-  const startValidation = useFieldValidation(required(t('events.createModal.startRequired')));
+  const incidentsValidation = useFieldValidation(required(t('events.createModal.incidentsRequired')));//validation for incidents selection
+  const titleValidation = useFieldValidation(required(t('events.createModal.titleRequired')));//validation for title
+  const descriptionValidation = useFieldValidation(required(t('events.createModal.descriptionRequired')));//validation for description
+  const startValidation = useFieldValidation(required(t('events.createModal.startRequired')));//validation for start date
 
+  // Toggle incident selection on/off when user checks/unchecks a checkbox
   function toggleIncident(id: string) {
     setIncidentIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
+  // Create the event by sending data to backend and then refresh the events list
   async function handleSubmit() {
+    // Check all required fields are filled before allowing submission
     if (incidentIds.length === 0 || !title.trim() || !description.trim() || !scheduledAt) return;
     setSubmitting(true);
     setError(null);
     try {
+      // Send event data to backend API to create new event
       const event = await api.post<{ id: string }>(`/organisations/${organisationId}/events`, {
         incidentIds,
         title,
@@ -150,12 +158,14 @@ function CreateEventModal({
         endsAt: endsAt ? new Date(endsAt).toISOString() : undefined,
         maxAttendees: maxAttendees ? Number(maxAttendees) : undefined,
       });
+      // Clear all form fields after successful creation
       setIncidentIds([]);
       setTitle('');
       setDescription('');
       setScheduledAt('');
       setEndsAt('');
       setMaxAttendees('');
+      // Notify parent component that event was created and pass the new event ID
       onCreated(event.id);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not create event');
@@ -164,6 +174,7 @@ function CreateEventModal({
     }
   }
 
+  // Render the modal dialog for creating a new event
   return (
     <Modal
       open={open}
@@ -271,3 +282,11 @@ function CreateEventModal({
     </Modal>
   );
 }
+/* When the Events page loads, it gets the active organization ID from useAuth(). 
+It then uses useApiGet() to fetch the organization's events and approved incidents. 
+The events are displayed as cards. When the user clicks Create Event, the modal opens. 
+The user selects approved incidents and enters the event information. 
+When they submit, handleSubmit() validates the required fields and uses useAuthedFetch() 
+to send an authenticated POST request to /organisations/{organisationId}/events. 
+The backend creates the event and returns its ID. 
+The frontend then closes the modal, calls mutate() to refresh the events, and navigates to /events/{eventId}. */

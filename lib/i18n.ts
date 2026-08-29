@@ -17,3 +17,9 @@ if (!i18n.isInitialized) {
 }
 
 export default i18n;
+
+/* The i18n.ts file sets up internationalization for the EcoTrack frontend using the i18next library. 
+It registers locale resources, starting with English (en.json), and configures i18next to use the React integration. 
+The default language is set to English, with a fallback to English if a translation is missing. 
+Interpolation is configured to avoid escaping values, and empty strings are not returned as translations. 
+This setup allows the application to easily support multiple languages by adding additional locale JSON files and updating the resources object accordingly. */

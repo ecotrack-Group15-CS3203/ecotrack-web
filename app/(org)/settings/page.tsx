@@ -63,7 +63,7 @@ export default function SettingsPage() {
     setSaveError(null);
     setSaved(false);
     try {
-      await api.patch(`/organisations/${activeOrgId}`, {
+      await api.patch(`/organisations/${activeOrgId}`, { // Update organisation details
         name,
         description,
         contactEmail,
@@ -84,7 +84,7 @@ export default function SettingsPage() {
     setGenerating(true);
     setGenerateError(null);
     try {
-      const link = await api.post<Invitation>(`/organisations/${activeOrgId}/invitations`, { email: inviteEmail });
+      const link = await api.post<Invitation>(`/organisations/${activeOrgId}/invitations`, { email: inviteEmail }); // Generate an invitation link
       setGeneratedLink(link);
       await mutateInvites();
     } catch (err) {
@@ -93,7 +93,7 @@ export default function SettingsPage() {
       setGenerating(false);
     }
   }
-
+  // Copy invite link to clipboard
   async function copyLink(url: string) {
     try {
       await navigator.clipboard.writeText(url);
@@ -103,6 +103,7 @@ export default function SettingsPage() {
     }
   }
 
+  // Close the generate invite modal
   function closeGenerateModal() {
     setGenerateOpen(false);
     setGeneratedLink(null);
@@ -110,12 +111,14 @@ export default function SettingsPage() {
     setGenerateError(null);
   }
 
+  // Determine the status of an invitation (accepted, expired, or active)
   function inviteStatus(invite: Invitation): { label: string; tone: string } {
     const expired = new Date(invite.expiresAt) < new Date();
     if (invite.acceptedAt) return { label: 'Accepted', tone: 'verified' };
     return expired ? { label: 'Expired', tone: 'rejected' } : { label: 'Active', tone: 'active' };
   }
 
+  // Generate the full URL for an invitation using its token
   function inviteUrl(token: string) {
     return `${typeof window === 'undefined' ? '' : window.location.origin}/accept-invite?token=${token}`;
   }
@@ -288,3 +291,17 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+/*When the user opens the Organisation Settings page, it first gets the active organisation ID using useAuth(). 
+Using this ID, the page fetches the organisation details, organisation members, and existing invitation links 
+through useApiGet(). 
+Once the organisation data is loaded, a useEffect() populates the editable form fields such as the organisation name, 
+description, contact email, latitude, longitude, and service-area radius. 
+The admin can modify these details and click Save changes, which sends a PATCH request to /organisations/{orgId} 
+with the updated organisation information. 
+After saving, mutate() refreshes the organisation data and refreshProfile() updates the user's profile information. 
+The page also displays the organisation's members and their roles. 
+For invitations, the admin can click Generate invite link, enter a volunteer's email, and send a POST request to
+/organisations/{orgId}/invitations. 
+The returned invitation token is converted into an /accept-invite?token=... URL, which the admin can copy and share. 
+Existing invitations are displayed with their creation date, expiry date, email, and status such as Active, Accepted, or Expired.*/

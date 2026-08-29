@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { ApiError } from '@/lib/api';
 import { Button, Card, ErrorBanner } from '@/components/ui';
 
+// LoginPage() - Login form page where users enter email and password to authenticate
 export default function LoginPage() {
   const { login, token, loading } = useAuth();
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function LoginPage() {
     }
   }, [loading, token, router]);
 
+  // handleSubmit() - Processes login form submission by calling auth.login() with email and password
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -87,3 +89,10 @@ export default function LoginPage() {
     </div>
   );
 }
+/* The login flow starts when the user enters their email and password and submits the form. 
+handleSubmit() calls the login(email, password) function from useAuth, which sends the credentials 
+to the backend and, if successful, stores the authentication token. After login completes, router.replace('/') 
+redirects the user to the appropriate home page. The useEffect() also checks whether a user already has a valid 
+token; if so, it automatically redirects them away from the login page. If authentication fails, the catch 
+block captures the error and displays it using ErrorBanner. While the login request is processing, submitting 
+becomes true, which disables the button and changes its text to “Signing in…”.*/

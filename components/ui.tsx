@@ -2,24 +2,28 @@ import { ReactNode, useEffect, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconClose } from './icons';
 
+// Card() - Generic container component for displaying content with optional styling, className, and click handler
 export function Card({
   children,
   className = '',
   style,
   onClick,
+  id,
 }: {
   children: ReactNode;
   className?: string;
   style?: React.CSSProperties;
   onClick?: () => void;
+  id?: string;
 }) {
   return (
-    <div className={`card ${className}`} style={style} onClick={onClick}>
+    <div id={id} className={`card ${className}`} style={style} onClick={onClick}>
       {children}
     </div>
   );
 }
 
+// Button() - Styled button component with variants (primary, secondary, destructive, text) and sizes
 export function Button({
   children,
   variant = 'primary',
@@ -69,6 +73,7 @@ const CHIP_CLASS: Record<string, string> = {
   critical: 'chip-sev-high',
 };
 
+// Chip() - Small badge component that displays status with color coding based on tone (pending, approved, rejected, etc.)
 export function Chip({ children, tone }: { children: string; tone: string }) {
   return <span className={`chip ${CHIP_CLASS[tone] ?? 'chip-neutral'}`}>{children.replace(/_/g, ' ')}</span>;
 }
@@ -81,10 +86,12 @@ const URGENCY_CLASS: Record<string, string> = {
 };
 
 /** Green/yellow/orange/red urgency badge, distinct from the general-purpose Chip tones. */
+// UrgencyBadge() - Colored urgency/severity badge for incidents (low, medium, high, critical)
 export function UrgencyBadge({ severity }: { severity: string }) {
   return <span className={`chip ${URGENCY_CLASS[severity] ?? 'chip-neutral'}`}>{severity}</span>;
 }
 
+// Toast() - Fixed notification message that appears at bottom of screen with dismiss button
 export function Toast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
   const { t } = useTranslation();
   return (
@@ -117,6 +124,7 @@ export function Toast({ message, onDismiss }: { message: string; onDismiss: () =
 }
 
 
+// Avatar() - Circular component showing user initials based on their name
 export function Avatar({ name, size }: { name: string; size?: number }) {
   const initials = name
     .split(' ')
@@ -131,6 +139,7 @@ export function Avatar({ name, size }: { name: string; size?: number }) {
   );
 }
 
+// KpiCard() - Card displaying a key performance indicator with a large number and label
 export function KpiCard({ label, value, tone }: { label: string; value: string | number; tone?: string }) {
   return (
     <Card className="kpi-card">
@@ -142,18 +151,22 @@ export function KpiCard({ label, value, tone }: { label: string; value: string |
   );
 }
 
+// KpiRow() - Container that arranges multiple KpiCard components in a row
 export function KpiRow({ children }: { children: ReactNode }) {
   return <div className="kpi-row">{children}</div>;
 }
 
+// SectionTitle() - Styled heading for separating page sections
 export function SectionTitle({ children }: { children: ReactNode }) {
   return <div className="section-title">{children}</div>;
 }
 
+// EmptyState() - Message displayed when there's no data to show
 export function EmptyState({ children }: { children: ReactNode }) {
   return <div className="empty-state">{children}</div>;
 }
 
+// Spinner() - Animated loading indicator shown while data is being fetched
 export function Spinner() {
   const { t } = useTranslation();
   return (
@@ -174,6 +187,7 @@ export function Spinner() {
   );
 }
 
+// FieldError() - Displays validation error message below a form field
 export function FieldError({ message, id }: { message: string | null | undefined; id?: string }) {
   if (!message) return null;
   return (
@@ -183,6 +197,7 @@ export function FieldError({ message, id }: { message: string | null | undefined
   );
 }
 
+// ErrorBanner() - Prominent error message banner displayed at top of section
 export function ErrorBanner({ message }: { message: string }) {
   return (
     <div role="alert"
@@ -200,6 +215,7 @@ export function ErrorBanner({ message }: { message: string }) {
   );
 }
 
+// Skeleton() - Animated placeholder that shows while content is loading
 export function Skeleton({ height = 16, width = '100%', style }: { height?: number; width?: number | string; style?: React.CSSProperties }) {
   return (
     <div
@@ -218,6 +234,7 @@ export function Skeleton({ height = 16, width = '100%', style }: { height?: numb
   );
 }
 
+// PageHeader() - Header at top of page with title, description, and optional action button
 export function PageHeader({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: description ? 4 : 20 }}>
@@ -230,10 +247,12 @@ export function PageHeader({ title, description, action }: { title: string; desc
   );
 }
 
+// FilterBar() - Container for filter/search controls
 export function FilterBar({ children }: { children: ReactNode }) {
   return <div className="filter-bar">{children}</div>;
 }
 
+// FilterPill() - Individual filter button that can be toggled active/inactive
 export function FilterPill({
   active,
   onClick,
@@ -250,6 +269,7 @@ export function FilterPill({
   );
 }
 
+// Modal() - Dialog box that appears centered on screen with title, content, and action buttons
 export function Modal({
   open,
   onClose,
@@ -289,6 +309,7 @@ export function Modal({
   );
 }
 
+// Drawer() - Side panel that slides in with title, content, and optional action buttons
 export function Drawer({
   open,
   onClose,
@@ -328,6 +349,7 @@ export function Drawer({
   );
 }
 
+// TableThumb() - Thumbnail image placeholder for list items with optional gradient background
 export function TableThumb({ gradient, alt }: { gradient?: string; alt?: string }) {
   return <div className="table-thumb" role={alt ? 'img' : undefined} aria-label={alt} aria-hidden={alt ? undefined : true} style={gradient ? { background: gradient } : undefined} />;
 }

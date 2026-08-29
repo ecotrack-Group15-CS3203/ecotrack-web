@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Spinner } from '@/components/ui';
 
+// Home() - Root page that routes users based on auth status: login page if not authenticated, or dashboard/platform based on role
 export default function Home() {
   const { token, profile, loading } = useAuth();
   const router = useRouter();

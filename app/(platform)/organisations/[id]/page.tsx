@@ -212,3 +212,13 @@ export default function OrganisationDetailPage({ params }: { params: Promise<{ i
     </div>
   );
 }
+/* When the page opens, it gets the organisation id from the URL using use(params), then uses useApiGet() to 
+fetch the organisation details, members, dashboard statistics, and admin invitations from the backend. 
+The page displays the organisation name and active/inactive status, followed by KPIs for the number of members, 
+incidents, and active volunteers. It then displays all organisation members and any admin invitations, showing 
+whether each invitation is pending, accepted, or expired. For an invitation that has not been accepted, the admin 
+can copy the invitation link or resend the invitation, where the resend action sends a POST request to the backend 
+and refreshes the invitation list. The platform administrator can also activate or deactivate the organisation. 
+Clicking the button first opens a confirmation modal, and confirming calls a PATCH request to either /activate 
+or /deactivate; after that, the organisation data and user profile are refreshed. 
+Finally, the Back to organisations button navigates back to the organisations list.*/

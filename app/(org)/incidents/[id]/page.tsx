@@ -20,11 +20,11 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   const router = useRouter();
   const api = useAuthedFetch();
 
-  const detailPath = activeOrgId ? `/organisations/${activeOrgId}/incidents/${id}` : null;
+  const detailPath = activeOrgId ? `/organisations/${activeOrgId}/incidents/${id}` : null;// API endpoint for the details of the specific incident
   const { data: incident, error, mutate } = useApiGet<Incident>(detailPath);
-  const allPath = activeOrgId ? `/organisations/${activeOrgId}/incidents` : null;
+  const allPath = activeOrgId ? `/organisations/${activeOrgId}/incidents` : null;// API endpoint for the list of all incidents of the active organisation
   const { data: allIncidents } = useApiGet<Incident[]>(allPath);
-  const stagesPath = activeOrgId ? `/organisations/${activeOrgId}/workflow-stages` : null;
+  const stagesPath = activeOrgId ? `/organisations/${activeOrgId}/workflow-stages` : null;// API endpoint for the workflow stages of the active organisation
   const { data: stages } = useApiGet<WorkflowStage[]>(stagesPath);
 
   const [decision, setDecision] = useState<Decision>('approve');
@@ -51,13 +51,13 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
     setBusy(true);
     try {
       if (decision === 'approve') {
-        await api.patch(`/organisations/${activeOrgId}/incidents/${id}/approve`);
+        await api.patch(`/organisations/${activeOrgId}/incidents/${id}/approve`);// API call to approve the incident
       } else if (decision === 'reject') {
         if (!reason.trim()) throw new ApiError(400, 'A rejection reason is required');
-        await api.patch(`/organisations/${activeOrgId}/incidents/${id}/reject`, { reason });
+        await api.patch(`/organisations/${activeOrgId}/incidents/${id}/reject`, { reason });// API call to reject the incident
       } else {
         if (!duplicateOfId) throw new ApiError(400, 'Select the original incident');
-        await api.patch(`/organisations/${activeOrgId}/incidents/${id}/duplicate`, { duplicateOfId });
+        await api.patch(`/organisations/${activeOrgId}/incidents/${id}/duplicate`, { duplicateOfId });// API call to mark the incident as duplicate
       }
       await mutate();
     } catch (err) {
@@ -91,7 +91,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
     try {
       await api.patch(`/organisations/${activeOrgId}/incidents/${id}/reject`, {
         reason: 'Dismissed by organisation admin',
-      });
+      });// API call to dismiss the incident
       await mutate();
     } catch (err) {
       setDismissError(err instanceof ApiError ? err.message : 'Could not dismiss incident');
@@ -99,36 +99,38 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
       setDismissBusy(false);
     }
   }
-
+  // Render the incident detail page
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 22, alignItems: 'start' }}>
       <div>
           <Button variant="text" onClick={() => router.push('/incidents')} style={{ marginBottom: 10 }}>
           {t('incidentDetail.backToIncidents')}
         </Button>
+        {/* Button to navigate back to the incidents list */}
 
-        {incident.images[0] && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={absoluteUrl(incident.images[0].url)}
-            alt={incident.title}
-            style={{ width: '100%', height: 220, borderRadius: 10, objectFit: 'cover', marginBottom: 16 }}
-          />
+        {(incident.images ?? []).length > 0 && (
+          <>
+            <img
+              src={absoluteUrl((incident.images ?? [])[0].url)}
+              alt={incident.title}
+              style={{ width: '100%', height: 220, borderRadius: 10, objectFit: 'cover', marginBottom: 16 }}
+            />
+            {(incident.images ?? []).length > 1 && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                {(incident.images ?? []).slice(1).map((img) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={img.id}
+                    src={absoluteUrl(img.url)}
+                    alt={`${incident.title} evidence`}
+                    style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover' }}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
-        {incident.images.length > 1 && (
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-            {incident.images.slice(1).map((img) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={img.id}
-                src={absoluteUrl(img.url)}
-                alt={`${incident.title} evidence`}
-                style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover' }}
-              />
-            ))}
-          </div>
-        )}
-
+        {/* Incident metadata chips (category, severity, verification status) */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
           <Chip tone="neutral">{incident.category.replace(/_/g, ' ')}</Chip>
           <Chip tone={incident.severity}>{`${incident.severity} severity`}</Chip>
@@ -136,13 +138,13 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
         </div>
         <h1 style={{ fontSize: 19 }}>{incident.title}</h1>
         <p style={{ fontSize: 13.5, color: 'var(--text-2)', margin: '10px 0 16px' }}>{incident.description}</p>
-
+        {/* Rejection reason section */}
         {incident.rejectionReason && (
           <p style={{ fontSize: 13.5, color: 'var(--rejected)', marginBottom: 16 }}>
             Rejection reason: {incident.rejectionReason}
           </p>
         )}
-
+        {/* Location section */}
         <SectionTitle>Location</SectionTitle>
         <LocationMap
           id={incident.id}
@@ -156,7 +158,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
           {incident.address && ` — ${incident.address}`}
         </p>
       </div>
-
+      {/* Verification section */}
       {incident.verificationStatus === 'pending' ? (
         <Card style={{ padding: 20 }}>
           <h3 style={{ fontSize: 15, marginBottom: 14 }}>{t('incidentDetail.verification.title')}</h3>
@@ -166,7 +168,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
               <ErrorBanner message={actionError} />
             </div>
           )}
-
+          {/* Decision radio buttons */}
           <div className="field">
             <span className="field-label">{t('incidentDetail.verification.decision')}</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -179,6 +181,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
             </div>
           </div>
 
+          {/* Rejection reason textarea */}
           {decision === 'reject' && (
             <div className="field">
               <label htmlFor="rejection-reason">{t('incidentDetail.verification.reasonLabel')}</label>
@@ -187,6 +190,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
             </div>
           )}
 
+          {/* Duplicate incident selection */}
           {decision === 'duplicate' && (
             <div className="field">
               <label htmlFor="duplicate-incident">{t('incidentDetail.verification.originalIncident')}</label>
@@ -203,7 +207,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
               <FieldError id="duplicate-incident-error" message={duplicateValidation.error} />
             </div>
           )}
-
+          {/* Submit button for the verification decision */}
           <Button variant={decision === 'reject' ? 'destructive' : 'primary'} className="btn-block" disabled={busy} onClick={submit}>
             {busy ? 'Submitting…' : decisionLabel}
           </Button>
@@ -281,3 +285,18 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
     </div>
   );
 }
+
+/*When the user selects an incident from the Incidents page, they are navigated to /incidents/{id}. 
+The page gets the active organization ID using useAuth() and then fetches the selected incident, 
+all incidents, and the organization's workflow stages using useApiGet(). 
+It displays the incident's images, category, severity, verification status, description, location, 
+and rejection reason if available. 
+The page then checks the incident's verification status. 
+If the status is pending, the user can choose to approve, reject, or mark the incident as a duplicate. 
+Depending on the selected decision, the page sends a PATCH request to the appropriate backend endpoint, 
+optionally including a rejection reason or duplicate incident ID. 
+After a successful action, mutate() refreshes the incident data. 
+If the incident has already been approved, rejected, or marked as duplicate, the verification options are no longer shown. 
+For an approved incident, additional actions become available, including creating a task, creating an event, 
+updating the workflow stage, or dismissing the incident. Workflow status changes and dismissal are also 
+sent to the backend using authenticated PATCH requests, and the page refreshes the incident afterward.*/

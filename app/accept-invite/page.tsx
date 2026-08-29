@@ -250,3 +250,11 @@ function SetPasswordForm({ token, info }: { token: string; info: InvitationInfo 
     </form>
   );
 }
+
+/* 
+The SetPasswordForm component is used when a user accepts an invitation and needs to set their password. 
+It receives the invitation token and invitation information as props. The form includes fields for the user's full name and password. 
+When submitted, it sends a POST request to /auth/register with the full name, email, password, and invitation token. 
+If the request succeeds, completeAuth() is called with the returned access token, and the user is redirected to the homepage. 
+If an error occurs, it is displayed using an ErrorBanner. The submit button shows a loading state while the request is in progress.
+*/

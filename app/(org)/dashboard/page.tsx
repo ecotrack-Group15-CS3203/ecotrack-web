@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { useApiGet } from '@/lib/use-org-api';
+import { useApiGet } from '@/lib/use-org-api';//customized hook to fetch data from the organisation-specific API endpoints
 import {
   Card,
   KpiRow,
@@ -19,6 +19,7 @@ import { IncidentMap } from '@/components/incident-map';
 
 const RECENT_ACTIVITY_LIMIT = 20;
 
+// humanizeAction() - Converts action strings like 'incident.created' to readable text like 'Incident created'
 function humanizeAction(action: string): string {
   const [entity, verb] = action.split('.');
   const entityLabel = entity.replace(/_/g, ' ');
@@ -26,6 +27,7 @@ function humanizeAction(action: string): string {
   return `${entityLabel[0].toUpperCase()}${entityLabel.slice(1)} ${verbLabel}`;
 }
 
+// timeAgo() - Converts ISO timestamp to human-readable relative time like '5 minutes ago'
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diffMs / 60000);
@@ -37,21 +39,23 @@ function timeAgo(iso: string): string {
   return `${days} day${days === 1 ? '' : 's'} ago`;
 }
 
+// formatDate() - Formats ISO timestamp to short date format like 'Jan 15, 2024'
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+// DashboardPage() - Organization dashboard showing stats, incident maps, volunteer activity, and audit logs
 export default function DashboardPage() {
   const { activeOrgId } = useAuth();
-  const statsPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/stats` : null;
+  const statsPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/stats` : null;// API endpoint for fetching dashboard statistics
   const mapPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/map` : null;
   const incidentsPath = activeOrgId ? `/organisations/${activeOrgId}/incidents` : null;
   const auditPath = activeOrgId ? `/organisations/${activeOrgId}/audit-logs` : null;
   const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer` : null;
   const tasksPath = activeOrgId ? `/organisations/${activeOrgId}/tasks` : null;
 
-  const { data: stats, error: statsError } = useApiGet<DashboardStats>(statsPath);
+  const { data: stats, error: statsError } = useApiGet<DashboardStats>(statsPath);// Fetches dashboard statistics for the active organization
   const { data: incidents, error: incidentsError } = useApiGet<Incident[]>(mapPath);
   const { data: workflowIncidents, error: workflowIncidentsError } = useApiGet<Incident[]>(incidentsPath);
   const { data: auditLog, error: auditError } = useApiGet<AuditLogEntry[]>(auditPath);
@@ -60,6 +64,7 @@ export default function DashboardPage() {
 
   const error = statsError || incidentsError || workflowIncidentsError || auditError || volunteersError || tasksError;
 
+  // Compute stage distribution for workflow incidents to display in a bar chart
   const stageDistribution = useMemo(() => {
     if (!workflowIncidents) return [];
     const counts = new Map<string, number>();
@@ -68,11 +73,12 @@ export default function DashboardPage() {
       counts.set(label, (counts.get(label) ?? 0) + 1);
     }
     return Array.from(counts.entries()).map(([stage, count]) => ({ stage, count }));
-  }, [workflowIncidents]);
+  }, [workflowIncidents]/* dependancy array for stageDistribution */); 
+  // Recompute stage distribution whenever workflow incidents change
 
   const volunteerActivity = useMemo(() => {
     if (!volunteers || !tasks) return [];
-    return volunteers.map((member) => {
+    return volunteers.map((member) => {//loop through each volunteer to calculate their activity
       const own = tasks.filter((t) => t.assignments.some((a) => a.volunteerUserId === member.userId));
       const completed = own.filter((t) => t.status === 'completed').length;
       const pending = own.filter((t) => t.status !== 'completed').length;
@@ -246,6 +252,7 @@ export default function DashboardPage() {
   );
 }
 
+// Progress bar component for incident statistics to visualize the distribution of resolved, in-progress, and pending incidents.
 function ProgressBar({ stats }: { stats: DashboardStats }) {
   const total = Math.max(1, stats.totalIncidents);
   const resolvedPct = (stats.resolvedIncidents / total) * 100;

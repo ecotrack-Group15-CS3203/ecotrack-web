@@ -6,9 +6,10 @@ import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
 import { Card, Chip, EmptyState, ErrorBanner, FilterBar, FilterPill, PageHeader, Spinner, TableThumb } from '@/components/ui';
 import type { Incident, IncidentSeverity, VerificationStatus, WorkflowStage } from '@/lib/types';
-import { ApiError } from '@/lib/api';
+import { absoluteUrl, ApiError } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 
+// Constants and configuration for the incidents page
 const STATUS_TABS: { label: string; value: VerificationStatus | 'all' }[] = [
   { label: 'All statuses', value: 'all' },
   { label: 'Pending', value: 'pending' },
@@ -40,11 +41,12 @@ export default function IncidentsPage() {
 
   const listPath = activeOrgId
     ? `/organisations/${activeOrgId}/incidents${statusFilter === 'all' ? '' : `?status=${statusFilter}`}`
-    : null;
+    : null; // API endpoint for the list of incidents based on the active organisation and status filter
   const { data: incidents, error } = useApiGet<Incident[]>(listPath);
-  const stagesPath = activeOrgId ? `/organisations/${activeOrgId}/workflow-stages` : null;
+  const stagesPath = activeOrgId ? `/organisations/${activeOrgId}/workflow-stages` : null;// API endpoint for the workflow stages of the active organisation
   const { data: stages } = useApiGet<WorkflowStage[]>(stagesPath);
 
+  // Filter and sort the incidents based on the selected filters and sort order
   const filteredIncidents = useMemo(() => {
     if (!incidents) return [];
     const from = dateFrom ? new Date(dateFrom).getTime() : null;
@@ -67,7 +69,7 @@ export default function IncidentsPage() {
   return (
     <div>
       <PageHeader title={t('incidentsList.title')} description={t('incidentsList.description')} />
-
+      {/* Status filter tabs */}
       <FilterBar>
         {STATUS_TABS.map((tab) => (
           <FilterPill key={tab.value} active={statusFilter === tab.value} onClick={() => setStatusFilter(tab.value)}>
@@ -76,6 +78,7 @@ export default function IncidentsPage() {
         ))}
       </FilterBar>
 
+      {/* Filters for stage, severity, and date range */}
       <FilterBar>
         <label htmlFor="incident-stage-filter" className="sr-only">{t('incidentsList.filters.allStages')}</label>
         <select id="incident-stage-filter" aria-label={t('incidentsList.filters.allStages')} value={stageFilter} onChange={(e) => setStageFilter(e.target.value)}>
@@ -89,6 +92,7 @@ export default function IncidentsPage() {
               </option>
             ))}
         </select>
+        {/* Severity filter dropdown */}
         <label htmlFor="incident-severity-filter" className="sr-only">{t('incidentsList.filters.allUrgency')}</label>
         <select id="incident-severity-filter" aria-label={t('incidentsList.filters.allUrgency')} value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value as IncidentSeverity | 'all')}>
           <option value="all">{t('incidentsList.filters.allUrgency')}</option>
@@ -98,6 +102,7 @@ export default function IncidentsPage() {
             </option>
           ))}
         </select>
+        {/* Date range filter */}
         <label style={{ fontSize: 13, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
           {t('incidentsList.filters.from')}
           <input id="incident-date-from" aria-label={t('incidentsList.filters.dateFromLabel')} type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
@@ -106,6 +111,7 @@ export default function IncidentsPage() {
           {t('incidentsList.filters.to')}
           <input id="incident-date-to" aria-label={t('incidentsList.filters.dateToLabel')} type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
         </label>
+        {/* Sort order dropdown */}
         <label htmlFor="incident-sort" className="sr-only">{t('incidentsList.filters.sortLabel')}</label>
         <select id="incident-sort" aria-label={t('incidentsList.filters.sortLabel')} value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}>
           <option value="newest">{t('incidentsList.filters.newestFirst')}</option>
@@ -123,7 +129,9 @@ export default function IncidentsPage() {
           </EmptyState>
         </Card>
       )}
+      {/* Message displayed when there are no incidents matching the filters */}
 
+      {/* Table displaying the list of incidents matching the filters */}
       {incidents && filteredIncidents.length > 0 && (
         <Card>
           <table>
@@ -139,10 +147,21 @@ export default function IncidentsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredIncidents.map((incident, i) => (
+              {filteredIncidents.map((incident, i) => {
+                const images = incident.images ?? [];
+                return (
                 <tr key={incident.id} tabIndex={0} aria-label={t('incidentsList.table.rowLabel', { title: incident.title })} style={{ cursor: 'pointer' }} onClick={() => router.push(`/incidents/${incident.id}`)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); router.push(`/incidents/${incident.id}`); } }}>
                   <td>
-                    <TableThumb alt={t('incidentsList.table.thumbnail')} gradient={THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]} />
+                    {images[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={absoluteUrl(images[0].url)}
+                        alt={incident.title}
+                        style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', display: 'block' }}
+                      />
+                    ) : (
+                      <TableThumb alt={t('incidentsList.table.thumbnail')} gradient={THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]} />
+                    )}
                   </td>
                   <td>{incident.title}</td>
                   <td style={{ textTransform: 'capitalize' }}>{incident.category.replace(/_/g, ' ')}</td>
@@ -155,7 +174,8 @@ export default function IncidentsPage() {
                   </td>
                   <td>{new Date(incident.createdAt).toLocaleDateString()}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </Card>
@@ -164,3 +184,13 @@ export default function IncidentsPage() {
   );
 }
 
+/*The Incidents page first gets the currently active organization ID using useAuth(). 
+Using this ID, it fetches the organization's incidents and workflow stages from the backend through useApiGet(). 
+The user can then filter the incidents by verification status, workflow stage, severity, and date range, and can 
+also sort them by newest or oldest. 
+The status filter is sent to the backend as a query parameter, while the stage, severity, date, and sorting 
+operations are handled on the frontend using useMemo(). 
+After filtering and sorting, the incidents are displayed in a table with their title, category, severity, 
+current workflow stage, verification status, and submission date. 
+When the user clicks an incident row, router.push() navigates them to /incidents/{incidentId}, 
+where they can view the detailed information about that incident.*/

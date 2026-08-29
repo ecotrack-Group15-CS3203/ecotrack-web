@@ -27,42 +27,66 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   if (error) return <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load task'} />;
   if (!task || !activeOrgId) return <Spinner />;
 
+  // Assign a volunteer to this task
   async function assign(volunteerUserId: string) {
     setActionError(null);
     setBusy(true);
     try {
+      // Send POST request to create a new task assignment
       await api.post(`/organisations/${activeOrgId}/tasks/${task!.id}/assignments`, {
         volunteerUserIds: [volunteerUserId],
       });
+      // Refresh task data after successful assignment
       await mutate();
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Could not assign volunteer');
+      // Handle errors with specific backend messages or fallback message
+      const errorMsg = err instanceof ApiError 
+        ? err.message 
+        : 'Could not assign volunteer. Please check your connection and try again.';
+      console.error('Failed to assign volunteer:', err);
+      setActionError(errorMsg);
     } finally {
       setBusy(false);
     }
   }
 
+  // Remove a volunteer from the task by deleting their assignment
   async function unassign(assignmentId: string) {
     setActionError(null);
     setBusy(true);
     try {
+      // Send DELETE request to remove the volunteer assignment
       await api.del(`/organisations/${activeOrgId}/tasks/${task!.id}/assignments/${assignmentId}`);
+      // Refresh task data after successful removal
       await mutate();
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Could not remove volunteer');
+      // Handle errors with specific backend messages or fallback message
+      const errorMsg = err instanceof ApiError 
+        ? err.message 
+        : 'Could not remove volunteer. Please check your connection and try again.';
+      console.error('Failed to unassign volunteer:', err);
+      setActionError(errorMsg);
     } finally {
       setBusy(false);
     }
   }
 
+  // Cancel the task by changing its status to 'cancelled'
   async function cancelTask() {
     setActionError(null);
     setBusy(true);
     try {
+      // Send PATCH request to update task status to cancelled
       await api.patch(`/organisations/${activeOrgId}/tasks/${task!.id}`, { status: 'cancelled' });
+      // Refresh task data after successful cancellation
       await mutate();
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Could not cancel task');
+      // Handle errors with specific backend messages or fallback message
+      const errorMsg = err instanceof ApiError 
+        ? err.message 
+        : 'Could not cancel task. Please check your connection and try again.';
+      console.error('Failed to cancel task:', err);
+      setActionError(errorMsg);
     } finally {
       setBusy(false);
     }
