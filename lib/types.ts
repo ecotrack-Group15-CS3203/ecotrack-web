@@ -231,3 +231,7 @@ export interface AuditLogEntry {
   metadata: Record<string, unknown> | null;
   createdAt: string;
 }
+
+/* The types.ts file defines TypeScript types and interfaces used throughout the EcoTrack frontend. 
+It includes types for incidents, tasks, events, dashboard statistics, platform statistics, and audit log entries. 
+These type definitions help ensure type safety and provide autocompletion when working with EcoTrack data structures in the frontend. */

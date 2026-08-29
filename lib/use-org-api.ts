@@ -31,3 +31,7 @@ export function useAuthedFetch() {
       apiFetch<T>(path, { method: 'POST', token, body: formData, isFormData: true }),
   };
 }
+
+/* The use-org-api.ts file provides custom hooks and utility functions for interacting with the EcoTrack backend API. 
+The useApiGet() hook wraps SWR and apiFetch to perform GET requests with the caller's bearer token, automatically handling token inclusion and conditional fetching. 
+The useAuthedFetch() function returns an object with methods for making authenticated API requests (GET, POST, PATCH, DELETE, and file uploads) using the caller's bearer token. */

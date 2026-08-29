@@ -87,3 +87,10 @@ export default function LoginPage() {
     </div>
   );
 }
+/* The login flow starts when the user enters their email and password and submits the form. 
+handleSubmit() calls the login(email, password) function from useAuth, which sends the credentials 
+to the backend and, if successful, stores the authentication token. After login completes, router.replace('/') 
+redirects the user to the appropriate home page. The useEffect() also checks whether a user already has a valid 
+token; if so, it automatically redirects them away from the login page. If authentication fails, the catch 
+block captures the error and displays it using ErrorBanner. While the login request is processing, submitting 
+becomes true, which disables the button and changes its text to “Signing in…”.*/

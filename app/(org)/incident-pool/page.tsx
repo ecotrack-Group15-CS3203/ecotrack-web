@@ -33,20 +33,21 @@ export default function IncidentPoolPage() {
   const api = useAuthedFetch();
   const [page, setPage] = useState(1);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
-  const [claiming, setClaiming] = useState(false);
+  const [claiming, setClaiming] = useState(false);// Indicates whether an incident is currently being claimed
   const [claimError, setClaimError] = useState<string | null>(null);
 
-  const orgPath = activeOrgId ? `/organisations/${activeOrgId}` : null;
+  const orgPath = activeOrgId ? `/organisations/${activeOrgId}` : null;// API endpoint for the active organisation's details
   const { data: organisation } = useApiGet<Organisation>(orgPath);
-  const poolPath = activeOrgId ? `/organisations/${activeOrgId}/incidents/incident-pool` : null;
+  const poolPath = activeOrgId ? `/organisations/${activeOrgId}/incidents/incident-pool` : null;// API endpoint for the incident pool of the active organisation
   const { data: pool, error, mutate } = useApiGet<Incident[]>(poolPath);
 
+  // Function to claim an incident from the pool
   async function claimIncident() {
     if (!activeOrgId || !selectedIncident) return;
     setClaiming(true);
     setClaimError(null);
     try {
-      await api.post(`/organisations/${activeOrgId}/incidents/${selectedIncident.id}/claim`);
+      await api.post(`/organisations/${activeOrgId}/incidents/${selectedIncident.id}/claim`);// API call to claim the selected incident
       setSelectedIncident(null);
       await mutate();
     } catch (err) {
@@ -100,6 +101,7 @@ export default function IncidentPoolPage() {
                 <th>Distance</th>
               </tr>
             </thead>
+            {/* Table body containing the incidents in the current page */}
             <tbody>
               {pageItems.map((incident, i) => (
                 <tr key={incident.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedIncident(incident)}>
@@ -138,7 +140,7 @@ export default function IncidentPoolPage() {
           </Card>
         </>
       )}
-
+  {/* Incident detail modal for the selected incident */}
       <IncidentDetailModal
         incident={selectedIncident}
         onClose={() => setSelectedIncident(null)}
@@ -150,6 +152,7 @@ export default function IncidentPoolPage() {
   );
 }
 
+// Modal component for displaying detailed information about a selected incident
 function IncidentDetailModal({
   incident,
   onClose,
@@ -208,7 +211,7 @@ function IncidentDetailModal({
           ))}
         </div>
       )}
-
+      {/* display the location of the incident on a map */}
       <LocationMap
         id={incident.id}
         title={incident.title}
@@ -216,11 +219,12 @@ function IncidentDetailModal({
         longitude={incident.longitude}
         address={incident.address}
       />
+      {/* display the latitude and longitude of the incident */}
       <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 16 }}>
         {incident.latitude.toFixed(5)}, {incident.longitude.toFixed(5)}
         {incident.address && ` — ${incident.address}`}
       </p>
-
+      {/* display the reporter information if available */}
       {incident.reporter && (
         <>
           <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Reporter</p>

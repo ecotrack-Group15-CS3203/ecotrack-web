@@ -38,3 +38,8 @@ export function requiredEmail(requiredMessage: string, invalidMessage: string) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? null : invalidMessage;
   };
 }
+
+/* The use-field-validation.ts file provides a custom React hook for managing inline field validation. 
+The useFieldValidation() hook tracks whether a field has been touched and manages the error state based on a synchronous validation function. 
+It provides onBlur and revalidate callbacks to trigger validation when the field loses focus or when the value changes. 
+Additionally, helper functions required() and requiredEmail() are provided to easily create common validation rules for required fields and email addresses. */

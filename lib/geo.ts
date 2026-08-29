@@ -8,3 +8,6 @@ export function distanceKm(lat1: number, lon1: number, lat2: number, lon2: numbe
     Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
+/* The geo.ts file provides geographic utility functions for the application. 
+The distanceKm() function calculates the great-circle distance between two sets of latitude and longitude coordinates using the haversine formula. 
+This is useful for determining the distance between incidents, locations, or any other geographic points within the EcoTrack application. */

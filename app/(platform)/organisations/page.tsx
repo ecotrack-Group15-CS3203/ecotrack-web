@@ -183,3 +183,14 @@ function CreateOrgModal({
     </Modal>
   );
 }
+/* When the user opens the Organisations page, the page uses useApiGet('/organisations') to retrieve all 
+organisations from the backend and displays them in a table with their name, description, creation date, 
+and active/inactive status. The user can click an organisation row to navigate to /organisations/{organisationId}. 
+Each organisation also has an Activate/Deactivate button; clicking it calls toggleActive(), which sends a
+ PATCH request to either /organisations/{id}/activate or /organisations/{id}/deactivate depending on the current status. 
+ After the status is changed, mutate() refreshes the organisation list and refreshProfile() updates the 
+ user's profile information. The page also has a Create organisation button that opens CreateOrgModal. 
+ In the modal, the user enters the organisation name, description, and initial administrator email. 
+ When submitted, the submit() function sends a POST request to /organisations with these details. 
+ After the backend successfully creates the organisation, the form is cleared, the organisation list is 
+ refreshed, and the user is redirected to the newly created organisation's page.*/

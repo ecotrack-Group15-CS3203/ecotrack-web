@@ -24,7 +24,7 @@ export default function JoinRequestsPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const path = activeOrgId ? `/organisations/${activeOrgId}/join-requests` : null;
+  const path = activeOrgId ? `/organisations/${activeOrgId}/join-requests` : null; // API endpoint for fetching join requests
   const { data: requests, error, mutate } = useApiGet<JoinRequest[]>(path);
 
   const filteredRequests = useMemo(

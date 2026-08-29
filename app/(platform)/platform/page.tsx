@@ -50,3 +50,11 @@ export default function PlatformDashboardPage() {
     </div>
   );
 }
+/* When the platform dashboard loads, it makes two API requests at the same time: useApiGet<PlatformStats>('/platform/stats') 
+gets overall platform statistics such as the total number of organisations, active organisations, and total users, while 
+useApiGet<Organisation[]>('/organisations') gets the list of all organisations. If either request returns an error, 
+an ErrorBanner is displayed.
+If the data is still loading, a Spinner is shown. Once both requests succeed, the page displays 
+four KPI cards showing total organisations, active organisations, total users, and inactive organisations. 
+Below that, it displays a table containing every organisation, its creation date, and whether it is currently active or inactive.
+*/

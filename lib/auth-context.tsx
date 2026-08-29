@@ -123,3 +123,12 @@ export function useAuth(): AuthContextValue {
 }
 
 export { ApiError };
+/* This code manages the authentication and user session for the whole EcoTrack frontend. 
+When the app starts, it checks localStorage for a saved login token; 
+if a token exists, it calls /auth/me to get the user’s profile and organisation memberships. 
+When a user logs in, login() sends the email and password to /auth/login, receives an access token, 
+saves it, and loads the user profile. 
+setActiveOrgId() stores the organisation the user is currently working with, while refreshProfile() gets 
+updated user information. 
+When the user logs out, logout() removes the token, active organisation, and profile information. 
+The useAuth() hook allows other pages and components to easily access this authentication information.*/

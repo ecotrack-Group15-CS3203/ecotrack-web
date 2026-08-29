@@ -9,8 +9,8 @@ import { ApiError } from '@/lib/api';
 
 export default function ReportsPage() {
   const { activeOrgId } = useAuth();
-  const statsPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/stats` : null;
-  const mapPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/map` : null;
+  const statsPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/stats` : null; // API endpoint for fetching dashboard statistics
+  const mapPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/map` : null; // API endpoint for fetching incident map data
   const { data: stats, error: statsError } = useApiGet<DashboardStats>(statsPath);
   const { data: mapData, error: mapError } = useApiGet<Incident[]>(mapPath);
 
@@ -62,3 +62,13 @@ export default function ReportsPage() {
     </div>
   );
 }
+
+/*When the user opens the Reports page, it first gets the active organization ID using useAuth(). 
+Using this ID, it makes two API requests through useApiGet(): one to /organisations/{orgId}/dashboard/stats 
+to retrieve dashboard statistics and another to /organisations/{orgId}/dashboard/map to retrieve incidents for the map. 
+While the data is loading, a Spinner is displayed, and if either API request fails, an ErrorBanner is shown. 
+Once the data is available, the page calculates the resolution rate from the total and resolved incident counts. 
+It then displays four KPI cards showing total incidents, completed cleanups, active volunteers, and resolution rate. 
+Below the KPIs, the page displays a category-based bar chart showing the number of incidents in each category and an 
+IncidentMap showing the geographic locations of the incidents. 
+There is also an Export button in the UI, although in this code it currently does not have an export action attached to it.*/

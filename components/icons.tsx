@@ -62,3 +62,10 @@ export const IconPin = ({ className, style, label }: IconProps & { style?: React
     <path d="M12 2C8 6 4 9 4 14a8 8 0 0 0 16 0c0-5-4-8-8-12z" />
   </svg>
 );
+
+/* 
+The icons.tsx file defines a set of reusable SVG icon components for the application. 
+Each icon component accepts IconProps, which typically include className, style, and other SVG attributes. 
+These components are used throughout the application to provide consistent iconography for various UI elements, 
+such as buttons, navigation items, and status indicators. 
+*/

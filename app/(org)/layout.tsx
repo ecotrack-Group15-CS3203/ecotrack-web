@@ -63,7 +63,7 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const activeOrg = orgAdminMemberships.find((m) => m.organisationId === activeOrgId);
+  const activeOrg = orgAdminMemberships.find((m) => m.organisationId === activeOrgId);// Get the currently active organisation based on the activeOrgId
   const pendingJoinRequests = joinRequests?.filter((request) => request.status === 'pending').length;
   const navItems = NAV_ITEMS.map((item) =>
     item.href === '/join-requests' ? { ...item, badgeCount: pendingJoinRequests } : item,
@@ -104,3 +104,19 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
     </AdminShell>
   );
 }
+/* This code is the Organisation Layout (OrgLayout), which acts as the common wrapper for all 
+organisation-admin pages such as Dashboard, Incidents, Tasks, Volunteers, Settings, and Reports.
+ When a user enters any organisation-admin page, it first gets the authentication information 
+ (token, profile, loading, and activeOrgId) from useAuth(). 
+ It then fetches the organisation's join requests so it can calculate the number of pending requests 
+ and display that number as a badge next to Join Requests. The useEffect() checks whether the 
+ authentication data has finished loading; if there is no token, the user is redirected to /login, 
+ and if the user is a platform administrator, they are redirected to /platform. After authentication, 
+ the code checks whether the user has at least one org_admin membership. If not, it displays a message 
+ saying that the dashboard is only for organisation administrators. 
+ If the user is an organisation admin, the code finds the currently selected organisation using 
+ activeOrgId, creates the navigation items, and passes everything to AdminShell. 
+ If the user belongs to multiple organisations, an organisation switcher is displayed, allowing 
+ them to change activeOrgId. 
+ When the active organisation changes, the child pages can fetch data for the newly selected organisation. 
+ Finally, {children} renders the actual page inside the common organisation-admin layout. */

@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { useApiGet } from '@/lib/use-org-api';
+import { useApiGet } from '@/lib/use-org-api';//customized hook to fetch data from the organisation-specific API endpoints
 import {
   Card,
   KpiRow,
@@ -68,11 +68,12 @@ export default function DashboardPage() {
       counts.set(label, (counts.get(label) ?? 0) + 1);
     }
     return Array.from(counts.entries()).map(([stage, count]) => ({ stage, count }));
-  }, [workflowIncidents]);
+  }, [workflowIncidents]/* dependancy array for stageDistribution */); 
+  // Recompute stage distribution whenever workflow incidents change
 
   const volunteerActivity = useMemo(() => {
     if (!volunteers || !tasks) return [];
-    return volunteers.map((member) => {
+    return volunteers.map((member) => {//loop through each volunteer to calculate their activity
       const own = tasks.filter((t) => t.assignments.some((a) => a.volunteerUserId === member.userId));
       const completed = own.filter((t) => t.status === 'completed').length;
       const pending = own.filter((t) => t.status !== 'completed').length;
@@ -246,6 +247,7 @@ export default function DashboardPage() {
   );
 }
 
+// Progress bar component for incident statistics to visualize the distribution of resolved, in-progress, and pending incidents.
 function ProgressBar({ stats }: { stats: DashboardStats }) {
   const total = Math.max(1, stats.totalIncidents);
   const resolvedPct = (stats.resolvedIncidents / total) * 100;
