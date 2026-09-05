@@ -13,21 +13,21 @@ const NAV_ITEMS = [
 ];
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
-  const { token, profile, loading } = useAuth();
+  const { profile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
-    if (!token) {
+    if (!profile) {
       router.replace('/login');
       return;
     }
     if (!profile?.isPlatformAdmin) {
       router.replace('/dashboard');
     }
-  }, [loading, token, profile, router]);
+  }, [loading, profile, router]);
 
-  if (loading || !token || !profile?.isPlatformAdmin) return <Spinner />;
+  if (loading || !profile?.isPlatformAdmin) return <Spinner />;
 
   return (
     <AdminShell mode="platform" navItems={NAV_ITEMS} sidebarFoot="Platform-wide access">

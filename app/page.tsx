@@ -6,12 +6,12 @@ import { useAuth } from '@/lib/auth-context';
 import { Spinner } from '@/components/ui';
 
 export default function Home() {
-  const { token, profile, loading } = useAuth();
+  const { profile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
-    if (!token) {
+    if (!profile) {
       router.replace('/login');
       return;
     }
@@ -20,7 +20,7 @@ export default function Home() {
     } else {
       router.replace('/dashboard');
     }
-  }, [loading, token, profile, router]);
+  }, [loading, profile, router]);
 
   return <Spinner />;
 }

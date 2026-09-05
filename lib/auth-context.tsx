@@ -4,32 +4,37 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { apiFetch, ApiError } from './api';
 import type { Profile } from './types';
 
-const TOKEN_KEY = 'ecotrack_token';
 const ACTIVE_ORG_KEY = 'ecotrack_active_org';
 
 interface AuthContextValue {
-  token: string | null;
   profile: Profile | null;
   loading: boolean;
   activeOrgId: string | null;
   setActiveOrgId: (organisationId: string) => void;
-  login: (email: string, password: string) => Promise<void>;
+  /** Redirects to Asgardeo's hosted sign-in via /api/auth/login. Asgardeo owns
+   * the credential UI, so there's no email/password to pass. */
+  login: () => void;
+  /** Redirects to /api/auth/logout, which also completes RP-initiated logout
+   * against Asgardeo -- a plain local clear would leave its SSO cookie alive
+   * and silently re-authenticate the next sign-in. */
   logout: () => void;
   refreshProfile: () => Promise<void>;
-  /** Store an already-issued access token (e.g. from register/accept-invite) and load its profile. */
+  /** @deprecated No-op kept only so app/accept-invite/page.tsx (out of scope
+   * for the Asgardeo migration, still calling deleted /auth/login and
+   * /auth/register endpoints) keeps compiling. Reloads the profile instead of
+   * storing the token argument, since there's no token to store any more. */
   completeAuth: (accessToken: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [activeOrgId, setActiveOrgIdState] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadProfile = useCallback(async (activeToken: string) => {
-    const data = await apiFetch<Profile>('/auth/me', { token: activeToken });
+  const loadProfile = useCallback(async () => {
+    const data = await apiFetch<Profile>('/auth/me');
     setProfile(data);
 
     const storedOrgId = localStorage.getItem(ACTIVE_ORG_KEY);
@@ -42,52 +47,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Restore the backend session from the browser token after hydration.
-    const stored = localStorage.getItem(TOKEN_KEY);
-    if (!stored) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLoading(false);
-      return;
-    }
-    setToken(stored);
-    loadProfile(stored)
-      .catch(() => {
-        localStorage.removeItem(TOKEN_KEY);
-        setToken(null);
-      })
+    // The session lives in an HttpOnly cookie the proxy reads -- there's
+    // nothing to inspect client-side, so just ask /auth/me and treat a 401
+    // as "not signed in".
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadProfile()
+      .catch(() => setProfile(null))
       .finally(() => setLoading(false));
   }, [loadProfile]);
 
   const completeAuth = useCallback(
-    async (accessToken: string) => {
-      localStorage.setItem(TOKEN_KEY, accessToken);
-      setToken(accessToken);
-      await loadProfile(accessToken);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- signature kept for callers, see the deprecation note above
+    async (_accessToken: string) => {
+      await loadProfile();
     },
     [loadProfile],
   );
 
-  const login = useCallback(
-    async (email: string, password: string) => {
-      const result = await apiFetch<{ accessToken: string }>('/auth/login', {
-        method: 'POST',
-        body: { email, password },
-      });
-      await completeAuth(result.accessToken);
-    },
-    [completeAuth],
-  );
+  const login = useCallback(() => {
+    window.location.href = '/api/auth/login';
+  }, []);
 
   const logout = useCallback(() => {
-    if (token) {
-      apiFetch('/auth/logout', { method: 'POST', token }).catch(() => undefined);
-    }
-    localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(ACTIVE_ORG_KEY);
-    setToken(null);
     setProfile(null);
     setActiveOrgIdState(null);
-  }, [token]);
+    window.location.href = '/api/auth/logout';
+  }, []);
 
   const setActiveOrgId = useCallback((organisationId: string) => {
     localStorage.setItem(ACTIVE_ORG_KEY, organisationId);
@@ -95,12 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (token) await loadProfile(token);
-  }, [token, loadProfile]);
+    await loadProfile();
+  }, [loadProfile]);
 
   const value = useMemo(
     () => ({
-      token,
       profile,
       loading,
       activeOrgId,
@@ -110,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshProfile,
       completeAuth,
     }),
-    [token, profile, loading, activeOrgId, setActiveOrgId, login, logout, refreshProfile, completeAuth],
+    [profile, loading, activeOrgId, setActiveOrgId, login, logout, refreshProfile, completeAuth],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Avatar } from './ui';
 import { IconBell, IconLeaf } from './icons';
@@ -29,7 +29,6 @@ export function AdminShell({
 }) {
   const pathname = usePathname();
   const { profile, logout } = useAuth();
-  const router = useRouter();
   const { t } = useTranslation();
 
   const activeItem =
@@ -37,8 +36,9 @@ export function AdminShell({
     navItems.find((item) => pathname.startsWith(item.href + '/'));
 
   function handleLogout() {
+    // logout() itself navigates (to /api/auth/logout, then on through
+    // Asgardeo's RP-initiated logout) -- no router.replace needed here.
     logout();
-    router.replace('/login');
   }
 
   return (

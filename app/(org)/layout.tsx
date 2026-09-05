@@ -32,23 +32,23 @@ const NAV_ITEMS = [
 ];
 
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
-  const { token, profile, loading, activeOrgId, setActiveOrgId } = useAuth();
+  const { profile, loading, activeOrgId, setActiveOrgId } = useAuth();
   const router = useRouter();
   const joinRequestsPath = activeOrgId ? `/organisations/${activeOrgId}/join-requests` : null;
   const { data: joinRequests } = useApiGet<JoinRequest[]>(joinRequestsPath);
 
   useEffect(() => {
     if (loading) return;
-    if (!token) {
+    if (!profile) {
       router.replace('/login');
       return;
     }
     if (profile?.isPlatformAdmin) {
       router.replace('/platform');
     }
-  }, [loading, token, profile, router]);
+  }, [loading, profile, router]);
 
-  if (loading || !token || !profile) return <Spinner />;
+  if (loading || !profile) return <Spinner />;
 
   const orgAdminMemberships = profile.memberships.filter((m) => m.role === 'org_admin');
 

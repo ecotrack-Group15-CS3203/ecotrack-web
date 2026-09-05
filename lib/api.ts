@@ -1,4 +1,7 @@
-const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/$/, '');
+// Same-origin BFF proxy (app/api/proxy/[...path]/route.ts). The browser's
+// HttpOnly session cookie rides along automatically because this is same
+// origin; the proxy attaches the real Authorization header server-side.
+const API_URL = '/api/proxy';
 
 export class ApiError extends Error {
   constructor(
@@ -12,6 +15,10 @@ export class ApiError extends Error {
 
 interface RequestOptions {
   method?: string;
+  /** @deprecated The proxy owns Authorization now -- this field only exists
+   * so app/accept-invite/page.tsx (out of scope for the Asgardeo migration,
+   * still calling deleted /auth/login and /auth/register endpoints) keeps
+   * compiling. It has no effect. */
   token?: string | null;
   body?: unknown;
   isFormData?: boolean;
@@ -19,10 +26,9 @@ interface RequestOptions {
 
 export async function apiFetch<T>(
   path: string,
-  { method = 'GET', token, body, isFormData }: RequestOptions = {},
+  { method = 'GET', body, isFormData }: RequestOptions = {},
 ): Promise<T> {
   const headers: Record<string, string> = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
   if (body !== undefined && !isFormData) headers['Content-Type'] = 'application/json';
 
   const response = await fetch(`${API_URL}${path}`, {

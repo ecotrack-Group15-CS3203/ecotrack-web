@@ -1,38 +1,27 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { ApiError } from '@/lib/api';
-import { Button, Card, ErrorBanner } from '@/components/ui';
+import { Button, Card, ErrorBanner, Spinner } from '@/components/ui';
 
-export default function LoginPage() {
-  const { login, token, loading } = useAuth();
+const ERROR_MESSAGES: Record<string, string> = {
+  state_mismatch: 'Sign-in could not be verified. Please try again.',
+  exchange_failed: 'Sign-in with Asgardeo failed. Please try again.',
+};
+
+function LoginContent() {
+  const { login, profile, loading } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const searchParams = useSearchParams();
+  const errorCode = searchParams.get('error');
+  const error = errorCode ? (ERROR_MESSAGES[errorCode] ?? 'Something went wrong. Please try again.') : null;
 
   useEffect(() => {
-    if (!loading && token) {
+    if (!loading && profile) {
       router.replace('/');
     }
-  }, [loading, token, router]);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
-    try {
-      await login(email, password);
-      router.replace('/');
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  }, [loading, profile, router]);
 
   return (
     <div className="flex flex-1 items-center justify-center px-4">
@@ -46,44 +35,22 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           {error && <ErrorBanner message={error} />}
 
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-              placeholder="admin@example.com"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <Button type="submit" disabled={submitting} className="w-full">
-            {submitting ? 'Signing in…' : 'Sign in'}
+          <Button onClick={login} className="w-full">
+            Sign in with Asgardeo
           </Button>
-        </form>
+        </div>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<Spinner />}>
+      <LoginContent />
+    </Suspense>
   );
 }
