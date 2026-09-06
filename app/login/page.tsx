@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { ApiError } from '@/lib/api';
 import { Button, Card, ErrorBanner } from '@/components/ui';
@@ -10,6 +10,8 @@ import { Button, Card, ErrorBanner } from '@/components/ui';
 export default function LoginPage() {
   const { login, token, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get('next') || '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -17,9 +19,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && token) {
-      router.replace('/');
+      router.replace(nextPath);
     }
-  }, [loading, token, router]);
+  }, [loading, token, nextPath, router]);
 
   // handleSubmit() - Processes login form submission by calling auth.login() with email and password
   async function handleSubmit(e: FormEvent) {
@@ -28,7 +30,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
-      router.replace('/');
+      router.replace(nextPath);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
     } finally {
@@ -84,6 +86,12 @@ export default function LoginPage() {
           <Button type="submit" disabled={submitting} className="w-full">
             {submitting ? 'Signing in…' : 'Sign in'}
           </Button>
+          <p style={{ margin: '16px 0 0', textAlign: 'center', fontSize: 13, color: 'var(--text-2)' }}>
+            Need an account?{' '}
+            <a href={`/register?next=${encodeURIComponent(nextPath)}`} style={{ color: 'var(--primary)', fontWeight: 600 }}>
+              Register as a Citizen or Volunteer
+            </a>
+          </p>
         </form>
       </Card>
     </div>
