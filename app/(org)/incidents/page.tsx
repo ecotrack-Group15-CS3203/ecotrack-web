@@ -11,7 +11,6 @@ import { useTranslation } from 'react-i18next';
 
 const STATUS_TABS: { label: string; value: VerificationStatus | 'all' }[] = [
   { label: 'All statuses', value: 'all' },
-  { label: 'Pending', value: 'pending' },
   { label: 'Approved', value: 'approved' },
   { label: 'Rejected', value: 'rejected' },
   { label: 'Duplicate', value: 'duplicate' },
@@ -44,6 +43,7 @@ export default function IncidentsPage() {
   const { data: incidents, error } = useApiGet<Incident[]>(listPath);
   const stagesPath = activeOrgId ? `/organisations/${activeOrgId}/workflow-stages` : null;
   const { data: stages } = useApiGet<WorkflowStage[]>(stagesPath);
+  const stagesById = useMemo(() => new Map((stages ?? []).map((s) => [s.id, s])), [stages]);
 
   const filteredIncidents = useMemo(() => {
     if (!incidents) return [];
@@ -149,9 +149,9 @@ export default function IncidentsPage() {
                   <td>
                     <Chip tone={incident.severity}>{incident.severity}</Chip>
                   </td>
-                  <td>{incident.currentStage?.name ?? '—'}</td>
+                  <td>{(incident.currentStageId && stagesById.get(incident.currentStageId)?.name) || '—'}</td>
                   <td>
-                    <Chip tone={incident.verificationStatus}>{incident.verificationStatus}</Chip>
+                    <Chip tone={incident.verificationStatus ?? 'pending'}>{incident.verificationStatus ?? 'pending'}</Chip>
                   </td>
                   <td>{new Date(incident.createdAt).toLocaleDateString()}</td>
                 </tr>

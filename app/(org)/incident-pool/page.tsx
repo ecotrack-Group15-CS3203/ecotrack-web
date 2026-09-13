@@ -16,9 +16,8 @@ import {
   UrgencyBadge,
 } from '@/components/ui';
 import { IncidentMap, LocationMap } from '@/components/incident-map';
-import { distanceKm } from '@/lib/geo';
-import type { Incident, Organisation } from '@/lib/types';
-import { ApiError, absoluteUrl } from '@/lib/api';
+import type { PoolIncident } from '@/lib/types';
+import { ApiError } from '@/lib/api';
 
 const PAGE_SIZE = 5;
 
@@ -32,21 +31,19 @@ export default function IncidentPoolPage() {
   const { activeOrgId } = useAuth();
   const api = useAuthedFetch();
   const [page, setPage] = useState(1);
-  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [selectedIncident, setSelectedIncident] = useState<PoolIncident | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
 
-  const orgPath = activeOrgId ? `/organisations/${activeOrgId}` : null;
-  const { data: organisation } = useApiGet<Organisation>(orgPath);
-  const poolPath = activeOrgId ? `/organisations/${activeOrgId}/incidents/incident-pool` : null;
-  const { data: pool, error, mutate } = useApiGet<Incident[]>(poolPath);
+  const poolPath = activeOrgId ? '/incidents/pool' : null;
+  const { data: pool, error, mutate } = useApiGet<PoolIncident[]>(poolPath);
 
   async function claimIncident() {
-    if (!activeOrgId || !selectedIncident) return;
+    if (!selectedIncident) return;
     setClaiming(true);
     setClaimError(null);
     try {
-      await api.post(`/organisations/${activeOrgId}/incidents/${selectedIncident.id}/claim`);
+      await api.post(`/incidents/pool/${selectedIncident.id}/claim`);
       setSelectedIncident(null);
       await mutate();
     } catch (err) {
@@ -56,13 +53,23 @@ export default function IncidentPoolPage() {
     }
   }
 
-  const sorted = useMemo(
-    () => (pool ?? []).slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    [pool],
-  );
+  // Already distance-sorted server-side; keep the client sort stable across re-fetches.
+  const sorted = useMemo(() => (pool ?? []).slice().sort((a, b) => a.distanceMeters - b.distanceMeters), [pool]);
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const pageItems = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const center = organisation?.serviceArea;
+
+  const mapIncidents = useMemo(
+    () =>
+      (pool ?? []).map((incident) => ({
+        id: incident.id,
+        title: incident.title,
+        lat: incident.lat,
+        lng: incident.lng,
+        address: incident.address,
+        verificationStatus: null,
+      })),
+    [pool],
+  );
 
   return (
     <div>
@@ -86,7 +93,7 @@ export default function IncidentPoolPage() {
         <>
           <Card style={{ padding: 20, marginBottom: 20 }}>
             <h2 style={{ fontSize: 15, marginBottom: 12 }}>Incidents in your service area</h2>
-            <IncidentMap incidents={pool} />
+            <IncidentMap incidents={mapIncidents} />
           </Card>
           <Card>
             <table>
@@ -112,11 +119,7 @@ export default function IncidentPoolPage() {
                     <UrgencyBadge severity={incident.severity} />
                   </td>
                   <td>{new Date(incident.createdAt).toLocaleString()}</td>
-                  <td>
-                    {center
-                      ? `${distanceKm(center.latitude, center.longitude, incident.latitude, incident.longitude).toFixed(1)} km`
-                      : '—'}
-                  </td>
+                  <td>{(incident.distanceMeters / 1000).toFixed(1)} km</td>
                 </tr>
               ))}
             </tbody>
@@ -157,7 +160,7 @@ function IncidentDetailModal({
   claimError,
   onClaim,
 }: {
-  incident: Incident | null;
+  incident: PoolIncident | null;
   onClose: () => void;
   claiming: boolean;
   claimError: string | null;
@@ -187,47 +190,17 @@ function IncidentDetailModal({
 
       <p style={{ fontSize: 13.5, color: 'var(--text-2)', marginBottom: 16 }}>{incident.description}</p>
 
-      {incident.images[0] && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={absoluteUrl(incident.images[0].url)}
-          alt=""
-          style={{ width: '100%', height: 180, borderRadius: 10, objectFit: 'cover', marginBottom: 16 }}
-        />
-      )}
-      {incident.images.length > 1 && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          {incident.images.slice(1).map((img) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={img.id}
-              src={absoluteUrl(img.url)}
-              alt=""
-              style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover' }}
-            />
-          ))}
-        </div>
-      )}
-
       <LocationMap
         id={incident.id}
         title={incident.title}
-        latitude={incident.latitude}
-        longitude={incident.longitude}
+        latitude={incident.lat}
+        longitude={incident.lng}
         address={incident.address}
       />
       <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 16 }}>
-        {incident.latitude.toFixed(5)}, {incident.longitude.toFixed(5)}
+        {incident.lat.toFixed(5)}, {incident.lng.toFixed(5)}
         {incident.address && ` — ${incident.address}`}
       </p>
-
-      {incident.reporter && (
-        <>
-          <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Reporter</p>
-          <p style={{ fontSize: 13, color: 'var(--text-2)' }}>{incident.reporter.fullName}</p>
-          <p style={{ fontSize: 12.5, color: 'var(--text-3)' }}>{incident.reporter.email}</p>
-        </>
-      )}
     </Modal>
   );
 }

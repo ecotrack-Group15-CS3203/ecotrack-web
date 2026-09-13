@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
 import { LocationMap } from '@/components/incident-map';
 
-type Decision = 'approve' | 'reject' | 'duplicate';
+type Decision = 'reject' | 'duplicate';
 
 export default function IncidentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { t } = useTranslation();
@@ -27,7 +27,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   const stagesPath = activeOrgId ? `/organisations/${activeOrgId}/workflow-stages` : null;
   const { data: stages } = useApiGet<WorkflowStage[]>(stagesPath);
 
-  const [decision, setDecision] = useState<Decision>('approve');
+  const [decision, setDecision] = useState<Decision>('reject');
   const [reason, setReason] = useState('');
   const [duplicateOfId, setDuplicateOfId] = useState('');
   const [busy, setBusy] = useState(false);
@@ -36,8 +36,6 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   const [selectedStageId, setSelectedStageId] = useState('');
   const [stageBusy, setStageBusy] = useState(false);
   const [stageError, setStageError] = useState<string | null>(null);
-  const [dismissBusy, setDismissBusy] = useState(false);
-  const [dismissError, setDismissError] = useState<string | null>(null);
   const reasonValidation = useFieldValidation(required(t('incidentDetail.verification.reasonRequired')));
   const duplicateValidation = useFieldValidation(required(t('incidentDetail.verification.originalRequired')));
 
@@ -50,9 +48,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
     setActionError(null);
     setBusy(true);
     try {
-      if (decision === 'approve') {
-        await api.patch(`/organisations/${activeOrgId}/incidents/${id}/approve`);
-      } else if (decision === 'reject') {
+      if (decision === 'reject') {
         if (!reason.trim()) throw new ApiError(400, 'A rejection reason is required');
         await api.patch(`/organisations/${activeOrgId}/incidents/${id}/reject`, { reason });
       } else {
@@ -67,36 +63,23 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
     }
   }
 
-  const decisionLabel = { approve: 'Approve incident', reject: 'Reject incident', duplicate: 'Mark as duplicate' }[decision];
+  const decisionLabel = { reject: 'Reject / dismiss incident', duplicate: 'Mark as duplicate' }[decision];
 
   const orderedStages = (stages ?? []).slice().sort((a, b) => a.position - b.position);
+  const stagesById = new Map(orderedStages.map((s) => [s.id, s]));
+  const currentStage = incident.currentStageId ? stagesById.get(incident.currentStageId) : undefined;
 
   async function updateStage() {
     if (!selectedStageId) return;
     setStageError(null);
     setStageBusy(true);
     try {
-      await api.patch(`/organisations/${activeOrgId}/incidents/${id}/stage`, { stageId: selectedStageId });
+      await api.patch(`/organisations/${activeOrgId}/incidents/${id}/stage`, { stageId: selectedStageId, expectedVersion: incident!.version });
       await mutate();
     } catch (err) {
       setStageError(err instanceof ApiError ? err.message : 'Could not update status');
     } finally {
       setStageBusy(false);
-    }
-  }
-
-  async function dismiss() {
-    setDismissError(null);
-    setDismissBusy(true);
-    try {
-      await api.patch(`/organisations/${activeOrgId}/incidents/${id}/reject`, {
-        reason: 'Dismissed by organisation admin',
-      });
-      await mutate();
-    } catch (err) {
-      setDismissError(err instanceof ApiError ? err.message : 'Could not dismiss incident');
-    } finally {
-      setDismissBusy(false);
     }
   }
 
@@ -132,7 +115,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
         <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
           <Chip tone="neutral">{incident.category.replace(/_/g, ' ')}</Chip>
           <Chip tone={incident.severity}>{`${incident.severity} severity`}</Chip>
-          <Chip tone={incident.verificationStatus}>{incident.verificationStatus}</Chip>
+          <Chip tone={incident.verificationStatus ?? 'pending'}>{incident.verificationStatus ?? 'pending'}</Chip>
         </div>
         <h1 style={{ fontSize: 19 }}>{incident.title}</h1>
         <p style={{ fontSize: 13.5, color: 'var(--text-2)', margin: '10px 0 16px' }}>{incident.description}</p>
@@ -147,18 +130,72 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
         <LocationMap
           id={incident.id}
           title={incident.title}
-          latitude={incident.latitude}
-          longitude={incident.longitude}
+          latitude={incident.location.lat}
+          longitude={incident.location.lng}
           address={incident.address}
         />
         <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 8 }}>
-          {incident.latitude.toFixed(5)}, {incident.longitude.toFixed(5)}
+          {incident.location.lat.toFixed(5)}, {incident.location.lng.toFixed(5)}
           {incident.address && ` — ${incident.address}`}
         </p>
       </div>
 
-      {incident.verificationStatus === 'pending' ? (
+      {incident.verificationStatus === 'approved' ? (
         <Card style={{ padding: 20 }}>
+          <h3 style={{ fontSize: 15, marginBottom: 14 }}>{t('incidentDetail.verification.title')}</h3>
+
+          {actionError && (
+            <div style={{ marginBottom: 12 }}>
+              <ErrorBanner message={actionError} />
+            </div>
+          )}
+
+          <SectionTitle>Actions</SectionTitle>
+
+          <Button className="btn-block" style={{ marginBottom: 8 }} onClick={() => router.push(`/tasks?incidentId=${incident.id}`)}>
+            + Create task
+          </Button>
+          <Button
+            variant="secondary"
+            className="btn-block"
+            style={{ marginBottom: 16 }}
+            onClick={() => router.push(`/events?incidentId=${incident.id}`)}
+          >
+            + Create event
+          </Button>
+
+          <div className="field">
+            <label>Update status</label>
+            {stageError && (
+              <div style={{ marginBottom: 8 }}>
+                <ErrorBanner message={stageError} />
+              </div>
+            )}
+            <select value={selectedStageId} onChange={(e) => setSelectedStageId(e.target.value)}>
+              <option value="">Select a workflow stage…</option>
+              {orderedStages.map((stage) => (
+                <option key={stage.id} value={stage.id}>
+                  {stage.name}
+                  {stage.id === incident.currentStageId ? ' (current)' : ''}
+                </option>
+              ))}
+            </select>
+            <Button
+              variant="secondary"
+              className="btn-block"
+              style={{ marginTop: 8 }}
+              disabled={stageBusy || !selectedStageId || Boolean(currentStage?.isFinal)}
+              onClick={updateStage}
+            >
+              {stageBusy ? 'Updating…' : 'Update status'}
+            </Button>
+            {currentStage?.isFinal && (
+              <p className="hint">This incident is in a final stage and can no longer be moved.</p>
+            )}
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--border)', margin: '18px 0' }} />
+
           <h3 style={{ fontSize: 15, marginBottom: 14 }}>{t('incidentDetail.verification.title')}</h3>
 
           {actionError && (
@@ -170,10 +207,10 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
           <div className="field">
             <span className="field-label">{t('incidentDetail.verification.decision')}</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {(['approve', 'reject', 'duplicate'] as Decision[]).map((d) => (
+              {(['reject', 'duplicate'] as Decision[]).map((d) => (
                 <label key={d} style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 400, fontSize: 13.5 }}>
                   <input type="radio" name="decision" checked={decision === d} onChange={() => setDecision(d)} />
-                  {d === 'approve' ? t('incidentDetail.verification.approve') : d === 'reject' ? t('incidentDetail.verification.reject') : t('incidentDetail.verification.markDuplicate')}
+                  {d === 'reject' ? t('incidentDetail.verification.reject') : t('incidentDetail.verification.markDuplicate')}
                 </label>
               ))}
             </div>
@@ -204,78 +241,16 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
             </div>
           )}
 
-          <Button variant={decision === 'reject' ? 'destructive' : 'primary'} className="btn-block" disabled={busy} onClick={submit}>
+          <Button variant="destructive" className="btn-block" disabled={busy} onClick={submit}>
             {busy ? 'Submitting…' : decisionLabel}
           </Button>
         </Card>
       ) : (
         <Card style={{ padding: 20 }}>
           <h3 style={{ fontSize: 15, marginBottom: 8 }}>Verification</h3>
-          <p style={{ fontSize: 13.5, color: 'var(--text-2)', marginBottom: 20 }}>
+          <p style={{ fontSize: 13.5, color: 'var(--text-2)' }}>
             This incident has already been {incident.verificationStatus}.
           </p>
-
-          {incident.verificationStatus === 'approved' && (
-            <>
-              <SectionTitle>Actions</SectionTitle>
-
-              <Button className="btn-block" style={{ marginBottom: 8 }} onClick={() => router.push(`/tasks?incidentId=${incident.id}`)}>
-                + Create task
-              </Button>
-              <Button
-                variant="secondary"
-                className="btn-block"
-                style={{ marginBottom: 16 }}
-                onClick={() => router.push(`/events?incidentId=${incident.id}`)}
-              >
-                + Create event
-              </Button>
-
-              <div className="field">
-                <label>Update status</label>
-                {stageError && (
-                  <div style={{ marginBottom: 8 }}>
-                    <ErrorBanner message={stageError} />
-                  </div>
-                )}
-                <select value={selectedStageId} onChange={(e) => setSelectedStageId(e.target.value)}>
-                  <option value="">Select a workflow stage…</option>
-                  {orderedStages.map((stage) => (
-                    <option key={stage.id} value={stage.id}>
-                      {stage.name}
-                      {stage.id === incident.currentStageId ? ' (current)' : ''}
-                    </option>
-                  ))}
-                </select>
-                <Button
-                  variant="secondary"
-                  className="btn-block"
-                  style={{ marginTop: 8 }}
-                  disabled={stageBusy || !selectedStageId}
-                  onClick={updateStage}
-                >
-                  {stageBusy ? 'Updating…' : 'Update status'}
-                </Button>
-              </div>
-
-              {dismissError && (
-                <div style={{ marginBottom: 8 }}>
-                  <ErrorBanner message={dismissError} />
-                </div>
-              )}
-              <Button
-                variant="destructive"
-                className="btn-block"
-                disabled={dismissBusy || Boolean(incident.currentStage?.isFinal)}
-                onClick={dismiss}
-              >
-                {dismissBusy ? 'Dismissing…' : 'Dismiss incident'}
-              </Button>
-              {incident.currentStage?.isFinal && (
-                <p className="hint">This incident is in a final stage and can no longer be dismissed.</p>
-              )}
-            </>
-          )}
         </Card>
       )}
     </div>
