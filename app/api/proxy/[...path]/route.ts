@@ -24,7 +24,17 @@ const UNSAFE_RESPONSE_HEADERS = new Set(['content-encoding', 'content-length', '
 // once (e.g. several SWR hooks firing together) share one refresh call
 // instead of each racing Asgardeo's token endpoint. Mirrors the pattern in
 // ecotrack-mobile/src/services/apiClient.ts.
-let refreshPromise: Promise<TokenResponse | null> | null = null;
+//
+// Keyed by the refresh token's own value, not a single module-global slot --
+// this route handler runs once per server process, shared across every
+// concurrently signed-in user. A single shared `let refreshPromise` would let
+// user B's request, hitting a 401 in the same window as user A's, await user
+// A's in-flight refresh and then retry ITS OWN request using user A's newly
+// refreshed access token -- a real cross-user token leak, not just a race
+// condition. Keying by the token value scopes the single-flight de-dup to
+// "this one refresh token", which is unique per user, so two different
+// users' concurrent refreshes never share an entry.
+const refreshPromises = new Map<string, Promise<TokenResponse | null>>();
 
 async function refreshAccessToken(refreshToken: string): Promise<TokenResponse | null> {
   try {
@@ -32,6 +42,17 @@ async function refreshAccessToken(refreshToken: string): Promise<TokenResponse |
   } catch {
     return null;
   }
+}
+
+function getOrStartRefresh(refreshToken: string): Promise<TokenResponse | null> {
+  let promise = refreshPromises.get(refreshToken);
+  if (!promise) {
+    promise = refreshAccessToken(refreshToken).finally(() => {
+      refreshPromises.delete(refreshToken);
+    });
+    refreshPromises.set(refreshToken, promise);
+  }
+  return promise;
 }
 
 async function forwardOnce(
@@ -70,16 +91,36 @@ async function forward(request: NextRequest, path: string[]): Promise<NextRespon
     return NextResponse.json({ message: 'The API is unreachable.' }, { status: 502 });
   }
   let refreshed: TokenResponse | null = null;
+  // Captured only for a 401 we decide NOT to retry -- upstream.body is a stream
+  // that can only be read once, so reading it here to inspect `code` means we
+  // must reuse this text for the final response instead of streaming
+  // upstream.body again below (which retrying replaces with a fresh, unread one).
+  let unauthorizedBodyText: string | null = null;
 
   if (upstream.status === 401) {
-    const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value;
-    if (refreshToken) {
-      refreshPromise ??= refreshAccessToken(refreshToken).finally(() => {
-        refreshPromise = null;
-      });
-      refreshed = await refreshPromise;
-      if (refreshed) {
-        upstream = await forwardOnce(request, path, refreshed.accessToken, body);
+    unauthorizedBodyText = await upstream.text();
+    // JwtAuthGuard (ecotrack-api) always shapes a 401 as {statusCode, code,
+    // message} with code one of TOKEN_EXPIRED/TOKEN_MISSING/TOKEN_INVALID --
+    // only the first is worth a refresh attempt. Retrying on TOKEN_MISSING
+    // (no token was ever sent) or TOKEN_INVALID (a malformed/corrupt token)
+    // can't be fixed by minting a new access token from the same refresh
+    // token, so there's no reason to spend a round trip to Asgardeo on it.
+    let code: string | undefined;
+    try {
+      code = (JSON.parse(unauthorizedBodyText) as { code?: string }).code;
+    } catch {
+      // Not JSON (e.g. NestJS's default 401 page) -- leave code undefined,
+      // which the check below already treats as "don't retry".
+    }
+
+    if (code === 'TOKEN_EXPIRED') {
+      const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value;
+      if (refreshToken) {
+        refreshed = await getOrStartRefresh(refreshToken);
+        if (refreshed) {
+          upstream = await forwardOnce(request, path, refreshed.accessToken, body);
+          unauthorizedBodyText = null;
+        }
       }
     }
   }
@@ -89,7 +130,10 @@ async function forward(request: NextRequest, path: string[]): Promise<NextRespon
     if (!UNSAFE_RESPONSE_HEADERS.has(key.toLowerCase())) responseHeaders.set(key, value);
   });
 
-  const response = new NextResponse(upstream.body, {
+  // unauthorizedBodyText is non-null exactly when upstream.body was already
+  // consumed above and never replaced by a retry -- reuse that text instead
+  // of streaming the now-empty upstream.body.
+  const response = new NextResponse(unauthorizedBodyText ?? upstream.body, {
     status: upstream.status,
     headers: responseHeaders,
   });
