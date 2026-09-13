@@ -1,3 +1,5 @@
+'use client';
+
 import { ReactNode, useEffect, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconClose } from './icons';

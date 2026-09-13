@@ -1,3 +1,5 @@
+'use client';
+
 interface IconProps {
   className?: string;
   style?: React.CSSProperties;

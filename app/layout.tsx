@@ -12,7 +12,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "EcoTrack Admin",
-  description: "EcoTrack organisation and platform administration dashboard",
+  description: "EcoTrack organisation administration dashboard",
 };
 
 export default function RootLayout({
