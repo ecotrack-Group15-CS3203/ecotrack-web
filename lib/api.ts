@@ -15,26 +15,20 @@ export class ApiError extends Error {
 
 interface RequestOptions {
   method?: string;
-  /** @deprecated The proxy owns Authorization now -- this field only exists
-   * so app/accept-invite/page.tsx (out of scope for the Asgardeo migration,
-   * still calling deleted /auth/login and /auth/register endpoints) keeps
-   * compiling. It has no effect. */
-  token?: string | null;
   body?: unknown;
-  isFormData?: boolean;
 }
 
 export async function apiFetch<T>(
   path: string,
-  { method = 'GET', body, isFormData }: RequestOptions = {},
+  { method = 'GET', body }: RequestOptions = {},
 ): Promise<T> {
   const headers: Record<string, string> = {};
-  if (body !== undefined && !isFormData) headers['Content-Type'] = 'application/json';
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
 
   const response = await fetch(`${API_URL}${path}`, {
     method,
     headers,
-    body: isFormData ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
   const text = await response.text();

@@ -22,7 +22,5 @@ export function useAuthedFetch() {
     post: <T,>(path: string, body?: unknown) => apiFetch<T>(path, { method: 'POST', body }),
     patch: <T,>(path: string, body?: unknown) => apiFetch<T>(path, { method: 'PATCH', body }),
     del: <T,>(path: string) => apiFetch<T>(path, { method: 'DELETE' }),
-    upload: <T,>(path: string, formData: FormData) =>
-      apiFetch<T>(path, { method: 'POST', body: formData, isFormData: true }),
   };
 }
