@@ -4,8 +4,13 @@ import { ID_TOKEN_COOKIE, verifyIdToken } from "@/lib/asgardeo-session";
 // This is a UX nicety, not the security boundary: /api/proxy checks the
 // session cookie server-side on every call, and NestJS validates the bearer
 // token independently. This guard just avoids rendering a signed-out shell
-// before redirecting. /login and /accept-invite are deliberately unmatched --
-// accept-invite still runs its own (currently broken) pre-Asgardeo flow.
+// before redirecting. '/', '/login', '/app' and '/invite/:path*' are
+// deliberately unmatched: the landing page never gates on auth, '/app' is the
+// landing page's own public "get the app" CTA target (as well as where a
+// signed-in non-admin gets redirected, which (org)/layout.tsx handles
+// client-side regardless of this matcher), and the invite page needs to
+// render its public org-name lookup for signed-out visitors before it asks
+// them to sign in.
 export const config = {
   matcher: [
     "/dashboard/:path*",
@@ -18,8 +23,7 @@ export const config = {
     "/workflow/:path*",
     "/reports/:path*",
     "/settings/:path*",
-    "/organisations/:path*",
-    "/platform/:path*",
+    "/organisations/new",
   ],
 };
 

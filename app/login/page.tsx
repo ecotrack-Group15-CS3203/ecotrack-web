@@ -19,7 +19,7 @@ function LoginContent() {
 
   useEffect(() => {
     if (!loading && profile) {
-      router.replace('/');
+      router.replace('/dashboard');
     }
   }, [loading, profile, router]);
 
@@ -31,7 +31,7 @@ function LoginContent() {
             EcoTrack
           </h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Organisation &amp; platform administration
+            Organisation administration
           </p>
         </div>
 

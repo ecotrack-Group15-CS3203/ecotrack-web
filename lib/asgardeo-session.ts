@@ -19,6 +19,7 @@ export const ACCESS_TOKEN_COOKIE = 'ecotrack_at';
 export const REFRESH_TOKEN_COOKIE = 'ecotrack_rt';
 export const ID_TOKEN_COOKIE = 'ecotrack_it';
 export const STATE_COOKIE = 'ecotrack_oauth_state';
+export const RETURN_TO_COOKIE = 'ecotrack_return_to';
 
 /** Shared flags for every session cookie we set. Lax, not Strict, or the
  * cookie is absent on the redirect back from Asgardeo's authorize endpoint. */
@@ -125,6 +126,13 @@ export function buildAuthorizeUrl(state: string): string {
   url.searchParams.set('scope', 'openid profile email');
   url.searchParams.set('state', state);
   return url.toString();
+}
+
+/** A same-origin relative path only -- anything else (an absolute URL, a
+ * protocol-relative `//evil.com`) could turn the post-login redirect into an
+ * open redirect. */
+export function isSafeReturnPath(path: string): boolean {
+  return path.startsWith('/') && !path.startsWith('//');
 }
 
 export function buildLogoutUrl(idToken: string): string {
