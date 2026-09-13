@@ -19,7 +19,7 @@ import {
   Spinner,
 } from '@/components/ui';
 import type {
-  Incident,
+  IncidentSummary,
   OrganisationMember,
   Task,
   TaskPriority,
@@ -33,7 +33,6 @@ const STATUS_TABS: { label: string; value: TaskStatus | 'all' }[] = [
   { label: 'Scheduled', value: 'pending' },
   { label: 'In progress', value: 'in_progress' },
   { label: 'Completed', value: 'completed' },
-  { label: 'Cancelled', value: 'cancelled' },
 ];
 
 export default function TasksPage() {
@@ -73,7 +72,7 @@ function TasksPageInner() {
     : null;
 
   const { data: approvedIncidents } =
-    useApiGet<Incident[]>(approvedIncidentsPath);
+    useApiGet<IncidentSummary[]>(approvedIncidentsPath);
 
   const volunteersPath = activeOrgId
     ? `/organisations/${activeOrgId}/members?role=volunteer`
@@ -81,6 +80,11 @@ function TasksPageInner() {
 
   const { data: volunteers } =
     useApiGet<OrganisationMember[]>(volunteersPath);
+
+  const incidentTitleById = useMemo(
+    () => new Map((approvedIncidents ?? []).map((i) => [i.id, i.title])),
+    [approvedIncidents],
+  );
 
   const filteredTasks = useMemo(() => {
     if (!tasks) return [];
@@ -98,12 +102,9 @@ function TasksPageInner() {
         return false;
       }
 
-      if (task.scheduledAt) {
-        const due = new Date(task.scheduledAt).getTime();
-
-        if (from !== null && due < from) return false;
-        if (to !== null && due > to) return false;
-      }
+      const due = new Date(task.dueDate).getTime();
+      if (from !== null && due < from) return false;
+      if (to !== null && due > to) return false;
 
       return true;
     });
@@ -153,8 +154,8 @@ function TasksPageInner() {
             </option>
 
             {(volunteers ?? []).map((v) => (
-              <option key={v.userId} value={v.userId}>
-                {v.user.fullName}
+              <option key={v.id} value={v.id}>
+                {v.fullName}
               </option>
             ))}
           </select>
@@ -243,17 +244,17 @@ function TasksPageInner() {
                   onClick={() => router.push(`/tasks/${task.id}`)}
                 >
                   {/* Task */}
-                  <td>{task.description}</td>
+                  <td>{task.title}</td>
 
                   {/* Linked incident */}
-                  <td>{task.incident.title}</td>
+                  <td>{incidentTitleById.get(task.incidentId) ?? '—'}</td>
 
                   {/* Assigned volunteer */}
                   <td>
                     {task.assignments.length === 0
                       ? '—'
                       : task.assignments
-                          .map((a) => a.volunteer.fullName)
+                          .map((a) => a.volunteer?.fullName ?? 'Unknown')
                           .join(', ')}
                   </td>
 
@@ -266,9 +267,7 @@ function TasksPageInner() {
 
                   {/* Due date */}
                   <td>
-                    {task.scheduledAt
-                      ? new Date(task.scheduledAt).toLocaleString()
-                      : '—'}
+                    {new Date(task.dueDate).toLocaleString()}
                   </td>
 
                   {/* Status */}
@@ -291,6 +290,7 @@ function TasksPageInner() {
         onClose={() => setShowCreate(false)}
         organisationId={activeOrgId ?? ''}
         approvedIncidents={approvedIncidents ?? []}
+        volunteers={volunteers ?? []}
         initialIncidentId={preselectedIncidentId}
         onCreated={async (taskId) => {
           setShowCreate(false);
@@ -308,6 +308,7 @@ function CreateTaskModal({
   onClose,
   organisationId,
   approvedIncidents,
+  volunteers,
   initialIncidentId,
   onCreated,
   api,
@@ -315,23 +316,20 @@ function CreateTaskModal({
   open: boolean;
   onClose: () => void;
   organisationId: string;
-  approvedIncidents: Incident[];
+  approvedIncidents: IncidentSummary[];
+  volunteers: OrganisationMember[];
   initialIncidentId?: string | null;
   onCreated: (taskId: string) => void;
   api: ReturnType<typeof useAuthedFetch>;
 }) {
   const { t } = useTranslation();
 
-  const initialIncident = approvedIncidents.find(
-    (i) => i.id === initialIncidentId
-  );
-
   const [incidentId, setIncidentId] = useState(
     initialIncidentId ?? ''
   );
-  const [description, setDescription] = useState(
-    initialIncident?.description ?? ''
-  );
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('high');
   const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -341,28 +339,24 @@ function CreateTaskModal({
     required(t('tasksList.createModal.incidentRequired'))
   );
 
-  const descriptionValidation = useFieldValidation(
+  const titleValidation = useFieldValidation(
     required(t('tasksList.createModal.descriptionRequired'))
+  );
+
+  const assignedToValidation = useFieldValidation(
+    required('A volunteer is required')
+  );
+
+  const dueDateValidation = useFieldValidation(
+    required('A due date is required')
   );
 
   const selectedIncident = approvedIncidents.find(
     (i) => i.id === incidentId
   );
 
-  function selectIncident(nextIncidentId: string) {
-    setIncidentId(nextIncidentId);
-
-    const incident = approvedIncidents.find(
-      (i) => i.id === nextIncidentId
-    );
-
-    if (incident) {
-      setDescription(incident.description);
-    }
-  }
-
   async function handleSubmit() {
-    if (!incidentId || !description.trim()) return;
+    if (!incidentId || !title.trim() || !assignedTo || !dueDate) return;
 
     setSubmitting(true);
     setError(null);
@@ -372,16 +366,18 @@ function CreateTaskModal({
         `/organisations/${organisationId}/tasks`,
         {
           incidentId,
-          description,
+          title,
+          description: description || undefined,
+          assignedTo,
           priority,
-          scheduledAt: dueDate
-            ? new Date(dueDate).toISOString()
-            : undefined,
+          dueDate: new Date(dueDate).toISOString(),
         }
       );
 
+      setTitle('');
       setDescription('');
       setIncidentId('');
+      setAssignedTo('');
       setDueDate('');
 
       onCreated(task.id);
@@ -411,7 +407,9 @@ function CreateTaskModal({
             disabled={
               submitting ||
               !incidentId ||
-              !description.trim()
+              !title.trim() ||
+              !assignedTo ||
+              !dueDate
             }
             onClick={handleSubmit}
           >
@@ -442,7 +440,10 @@ function CreateTaskModal({
               : undefined
           }
           value={incidentId}
-          onChange={(e) => selectIncident(e.target.value)}
+          onChange={(e) => {
+            setIncidentId(e.target.value);
+            incidentValidation.revalidate(e.target.value);
+          }}
           onBlur={(e) =>
             incidentValidation.onBlur(e.target.value)
           }
@@ -467,13 +468,38 @@ function CreateTaskModal({
         {selectedIncident && (
           <p className="hint">
             {t('tasksList.createModal.location', {
-              lat: selectedIncident.latitude.toFixed(5),
-              lng: selectedIncident.longitude.toFixed(5),
+              lat: selectedIncident.location.lat.toFixed(5),
+              lng: selectedIncident.location.lng.toFixed(5),
             })}
             {selectedIncident.address &&
               ` — ${selectedIncident.address}`}
           </p>
         )}
+      </div>
+
+      <div className="field">
+        <label htmlFor="create-task-title">Task title</label>
+        <input
+          id="create-task-title"
+          type="text"
+          aria-invalid={Boolean(titleValidation.error)}
+          aria-describedby={
+            titleValidation.error
+              ? 'create-task-title-error'
+              : undefined
+          }
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            titleValidation.revalidate(e.target.value);
+          }}
+          onBlur={(e) => titleValidation.onBlur(e.target.value)}
+          placeholder="e.g. Clear debris from riverbank"
+        />
+        <FieldError
+          id="create-task-title-error"
+          message={titleValidation.error}
+        />
       </div>
 
       <div className="field">
@@ -483,28 +509,41 @@ function CreateTaskModal({
 
         <textarea
           id="create-task-description"
-          aria-invalid={Boolean(descriptionValidation.error)}
-          aria-describedby={
-            descriptionValidation.error
-              ? 'create-task-description-error'
-              : undefined
-          }
           value={description}
-          onChange={(e) => {
-            setDescription(e.target.value);
-            descriptionValidation.revalidate(e.target.value);
-          }}
-          onBlur={(e) =>
-            descriptionValidation.onBlur(e.target.value)
-          }
+          onChange={(e) => setDescription(e.target.value)}
           placeholder={t(
             'tasksList.createModal.descriptionPlaceholder'
           )}
         />
+      </div>
 
+      <div className="field">
+        <label htmlFor="create-task-volunteer">Assigned volunteer</label>
+        <select
+          id="create-task-volunteer"
+          aria-invalid={Boolean(assignedToValidation.error)}
+          aria-describedby={
+            assignedToValidation.error
+              ? 'create-task-volunteer-error'
+              : undefined
+          }
+          value={assignedTo}
+          onChange={(e) => {
+            setAssignedTo(e.target.value);
+            assignedToValidation.revalidate(e.target.value);
+          }}
+          onBlur={(e) => assignedToValidation.onBlur(e.target.value)}
+        >
+          <option value="">Select a volunteer…</option>
+          {volunteers.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.fullName}
+            </option>
+          ))}
+        </select>
         <FieldError
-          id="create-task-description-error"
-          message={descriptionValidation.error}
+          id="create-task-volunteer-error"
+          message={assignedToValidation.error}
         />
       </div>
 
@@ -540,8 +579,22 @@ function CreateTaskModal({
         <input
           id="create-task-due"
           type="datetime-local"
+          aria-invalid={Boolean(dueDateValidation.error)}
+          aria-describedby={
+            dueDateValidation.error
+              ? 'create-task-due-error'
+              : undefined
+          }
           value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
+          onChange={(e) => {
+            setDueDate(e.target.value);
+            dueDateValidation.revalidate(e.target.value);
+          }}
+          onBlur={(e) => dueDateValidation.onBlur(e.target.value)}
+        />
+        <FieldError
+          id="create-task-due-error"
+          message={dueDateValidation.error}
         />
       </div>
     </Modal>

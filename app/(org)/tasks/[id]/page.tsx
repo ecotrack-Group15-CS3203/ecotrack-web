@@ -4,8 +4,8 @@ import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
-import { Avatar, Button, Card, Chip, Drawer, ErrorBanner, Modal, SectionTitle, Spinner, TableThumb } from '@/components/ui';
-import type { OrganisationMember, Task, TaskPriority } from '@/lib/types';
+import { Avatar, Button, Card, Chip, ErrorBanner, Modal, SectionTitle, Spinner, TableThumb } from '@/components/ui';
+import type { IncidentSummary, OrganisationMember, Task, TaskPriority } from '@/lib/types';
 import { ApiError, absoluteUrl } from '@/lib/api';
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -16,10 +16,12 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   const detailPath = activeOrgId ? `/organisations/${activeOrgId}/tasks/${id}` : null;
   const { data: task, error, mutate } = useApiGet<Task>(detailPath);
+  const incidentPath = activeOrgId && task ? `/organisations/${activeOrgId}/incidents/${task.incidentId}` : null;
+  const { data: incident } = useApiGet<IncidentSummary>(incidentPath);
   const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer` : null;
   const { data: volunteers } = useApiGet<OrganisationMember[]>(volunteersPath);
 
-  const [showAssign, setShowAssign] = useState(false);
+  const [showReassign, setShowReassign] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -27,50 +29,23 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   if (error) return <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load task'} />;
   if (!task || !activeOrgId) return <Spinner />;
 
-  async function assign(volunteerUserId: string) {
+  const currentAssignment = task.assignments.find((a) => a.status === 'assigned' || a.status === 'accepted');
+
+  async function reassign(volunteerUserId: string) {
     setActionError(null);
     setBusy(true);
     try {
-      await api.post(`/organisations/${activeOrgId}/tasks/${task!.id}/assignments`, {
-        volunteerUserIds: [volunteerUserId],
-      });
+      await api.patch(`/organisations/${activeOrgId}/tasks/${task!.id}`, { assignedTo: volunteerUserId });
+      setShowReassign(false);
       await mutate();
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Could not assign volunteer');
+      setActionError(err instanceof ApiError ? err.message : 'Could not reassign this task');
     } finally {
       setBusy(false);
     }
   }
 
-  async function unassign(assignmentId: string) {
-    setActionError(null);
-    setBusy(true);
-    try {
-      await api.del(`/organisations/${activeOrgId}/tasks/${task!.id}/assignments/${assignmentId}`);
-      await mutate();
-    } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Could not remove volunteer');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function cancelTask() {
-    setActionError(null);
-    setBusy(true);
-    try {
-      await api.patch(`/organisations/${activeOrgId}/tasks/${task!.id}`, { status: 'cancelled' });
-      await mutate();
-    } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Could not cancel task');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const unassigned = (volunteers ?? []).filter(
-    (v) => !task.assignments.some((a) => a.volunteerUserId === v.userId),
-  );
+  const otherVolunteers = (volunteers ?? []).filter((v) => v.id !== currentAssignment?.volunteerUserId);
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 22, alignItems: 'start' }}>
@@ -78,31 +53,35 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         <Button variant="text" onClick={() => router.push('/tasks')} style={{ marginBottom: 10 }}>
           ← Back to tasks
         </Button>
-        <h1 style={{ fontSize: 19 }}>{task.incident.title}</h1>
-        <p style={{ fontSize: 13.5, color: 'var(--text-2)', margin: '4px 0 10px' }}>{task.description}</p>
+        <h1 style={{ fontSize: 19 }}>{task.title}</h1>
+        {task.description && (
+          <p style={{ fontSize: 13.5, color: 'var(--text-2)', margin: '4px 0 10px' }}>{task.description}</p>
+        )}
         <div style={{ display: 'flex', gap: 6, margin: '10px 0 16px' }}>
           <Chip tone={task.priority}>{`${task.priority} priority`}</Chip>
           <Chip tone={task.status}>{task.status === 'pending' ? 'scheduled' : task.status}</Chip>
         </div>
-        {task.scheduledAt && (
-          <p style={{ fontSize: 13.5, color: 'var(--text-2)', marginBottom: 16 }}>
-            Due: {new Date(task.scheduledAt).toLocaleString()}
-          </p>
-        )}
+        <p style={{ fontSize: 13.5, color: 'var(--text-2)', marginBottom: 16 }}>
+          Due: {new Date(task.dueDate).toLocaleString()}
+        </p>
 
         <SectionTitle>Linked incident</SectionTitle>
-        <Card
-          style={{ padding: 12, display: 'flex', gap: 10, cursor: 'pointer' }}
-          onClick={() => router.push(`/incidents/${task.incident.id}`)}
-        >
-          <TableThumb gradient="linear-gradient(135deg,#F0997B,#D85A30)" />
-          <div>
-            <b style={{ fontSize: 13 }}>{task.incident.title}</b>
-            <div style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
-              {task.incident.verificationStatus === 'approved' ? 'Verified' : task.incident.verificationStatus}
+        {incident ? (
+          <Card
+            style={{ padding: 12, display: 'flex', gap: 10, cursor: 'pointer' }}
+            onClick={() => router.push(`/incidents/${incident.id}`)}
+          >
+            <TableThumb gradient="linear-gradient(135deg,#F0997B,#D85A30)" />
+            <div>
+              <b style={{ fontSize: 13 }}>{incident.title}</b>
+              <div style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
+                {incident.verificationStatus === 'approved' ? 'Verified' : incident.verificationStatus}
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        ) : (
+          <Spinner />
+        )}
 
         <SectionTitle>Progress &amp; completion evidence</SectionTitle>
         {task.notes.length === 0 && task.photos.length === 0 ? (
@@ -133,7 +112,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       <Card style={{ padding: 20 }}>
-        <h3 style={{ fontSize: 15, marginBottom: 14 }}>Assigned volunteers</h3>
+        <h3 style={{ fontSize: 15, marginBottom: 14 }}>Assigned volunteer</h3>
 
         {actionError && (
           <div style={{ marginBottom: 12 }}>
@@ -141,63 +120,59 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         )}
 
-        {task.assignments.length === 0 ? (
-          <p style={{ fontSize: 13.5, color: 'var(--text-3)', marginBottom: 16 }}>No volunteers assigned yet.</p>
+        {!currentAssignment || !currentAssignment.volunteer ? (
+          <p style={{ fontSize: 13.5, color: 'var(--text-3)', marginBottom: 16 }}>No volunteer currently assigned.</p>
         ) : (
           <div style={{ marginBottom: 16 }}>
-            {task.assignments.map((a) => (
-              <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <Avatar name={a.volunteer.fullName} />
-                <span style={{ fontSize: 13.5, flex: 1 }}>{a.volunteer.fullName}</span>
-                <Chip tone={a.status}>{a.status}</Chip>
-                <Button variant="text" onClick={() => unassign(a.id)} disabled={busy}>
-                  Remove
-                </Button>
-              </div>
-            ))}
-            <p className="hint">Remove a volunteer, then assign a different one to reassign this task.</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <Avatar name={currentAssignment.volunteer.fullName} />
+              <span style={{ fontSize: 13.5, flex: 1 }}>{currentAssignment.volunteer.fullName}</span>
+              <Chip tone={currentAssignment.status}>{currentAssignment.status}</Chip>
+            </div>
           </div>
         )}
 
-        <Button variant="secondary" className="btn-block" onClick={() => setShowAssign(true)} disabled={busy}>
-          + Assign volunteers
+        <Button
+          variant="secondary"
+          className="btn-block"
+          onClick={() => setShowReassign(true)}
+          disabled={busy || task.status === 'completed'}
+        >
+          Reassign volunteer
         </Button>
         <div style={{ borderTop: '1px solid var(--border)', margin: '18px 0' }} />
-        <Button variant="secondary" className="btn-block" onClick={() => setShowEdit(true)} style={{ marginBottom: 10 }}>
-          Edit priority &amp; date
-        </Button>
-        <Button
-          variant="destructive"
-          className="btn-block"
-          disabled={busy || task.status === 'completed' || task.status === 'cancelled'}
-          onClick={cancelTask}
-        >
-          Cancel task
+        <Button variant="secondary" className="btn-block" onClick={() => setShowEdit(true)}>
+          Edit priority &amp; due date
         </Button>
       </Card>
 
-      <Drawer open={showAssign} onClose={() => setShowAssign(false)} title="Assign volunteers">
-        {unassigned.length === 0 ? (
-          <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>All active volunteers are already assigned.</p>
+      <Modal open={showReassign} onClose={() => setShowReassign(false)} title="Reassign volunteer">
+        {otherVolunteers.length === 0 ? (
+          <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>No other volunteers available.</p>
         ) : (
-          unassigned.map((v) => (
-            <label
-              key={v.userId}
+          otherVolunteers.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => reassign(v.id)}
+              disabled={busy}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 10,
                 padding: '10px 0',
+                width: '100%',
                 borderBottom: '1px solid var(--border)',
+                background: 'none',
+                textAlign: 'left',
               }}
             >
-              <input type="checkbox" onChange={() => assign(v.userId)} disabled={busy} />
-              <Avatar name={v.user.fullName} />
-              {v.user.fullName}
-            </label>
+              <Avatar name={v.fullName} />
+              {v.fullName}
+            </button>
           ))
         )}
-      </Drawer>
+      </Modal>
 
       <EditTaskModal
         open={showEdit}
@@ -230,7 +205,7 @@ function EditTaskModal({
   api: ReturnType<typeof useAuthedFetch>;
 }) {
   const [priority, setPriority] = useState<TaskPriority>(task.priority);
-  const [scheduledAt, setScheduledAt] = useState(task.scheduledAt ? task.scheduledAt.slice(0, 16) : '');
+  const [dueDate, setDueDate] = useState(task.dueDate ? task.dueDate.slice(0, 16) : '');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -240,7 +215,7 @@ function EditTaskModal({
     try {
       await api.patch(`/organisations/${organisationId}/tasks/${task.id}`, {
         priority,
-        scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
+        dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
       });
       onSaved();
     } catch (err) {
@@ -254,7 +229,7 @@ function EditTaskModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Edit priority & date"
+      title="Edit priority & due date"
       actions={
         <>
           <Button variant="secondary" onClick={onClose}>
@@ -280,8 +255,8 @@ function EditTaskModal({
         </select>
       </div>
       <div className="field">
-        <label>Scheduled date &amp; time</label>
-        <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+        <label>Due date &amp; time</label>
+        <input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
       </div>
     </Modal>
   );
