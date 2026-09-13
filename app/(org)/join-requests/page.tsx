@@ -38,7 +38,7 @@ export default function JoinRequestsPage() {
     setActionError(null);
     try {
       await api.patch(`/organisations/${activeOrgId}/join-requests/${request.id}`, { status });
-      setToast(`${request.requester.fullName}'s request was ${status}.`);
+      setToast(`${request.requester?.fullName ?? 'This user'}'s request was ${status}.`);
       await mutate();
     } catch (caught) {
       // Keep the local list unchanged: a blocked approval remains pending until the backend accepts it.
@@ -84,8 +84,8 @@ export default function JoinRequestsPage() {
                 const isUpdating = updatingId === request.id;
                 return (
                   <tr key={request.id}>
-                    <td style={{ fontWeight: 600 }}>{request.requester.fullName}</td>
-                    <td>{request.requester.email}</td>
+                    <td style={{ fontWeight: 600 }}>{request.requester?.fullName ?? 'Unknown user'}</td>
+                    <td>{request.requester?.email ?? '—'}</td>
                     <td>{formatDate(request.createdAt)}</td>
                     <td style={{ maxWidth: 300, whiteSpace: 'normal' }}>{request.message ?? '—'}</td>
                     <td><Chip tone={request.status}>{request.status}</Chip></td>
