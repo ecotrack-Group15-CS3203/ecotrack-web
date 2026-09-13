@@ -74,13 +74,11 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         <LocationMap
           id={event.id}
           title={event.title}
-          latitude={event.latitude}
-          longitude={event.longitude}
-          address={event.address}
+          latitude={event.location.lat}
+          longitude={event.location.lng}
         />
         <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 20 }}>
-          {event.latitude.toFixed(5)}, {event.longitude.toFixed(5)}
-          {event.address && ` — ${event.address}`}
+          {event.location.lat.toFixed(5)}, {event.location.lng.toFixed(5)}
         </p>
 
         <SectionTitle>Linked incidents</SectionTitle>
@@ -98,7 +96,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
       <Card style={{ padding: 20 }}>
         <h3 style={{ fontSize: 15, marginBottom: 4 }}>RSVPs</h3>
         <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 14 }}>
-          {event.rsvps.length} volunteer{event.rsvps.length === 1 ? '' : 's'}
+          {event.rsvpCount} volunteer{event.rsvpCount === 1 ? '' : 's'}
           {event.maxAttendees ? ` / ${event.maxAttendees} max` : ''}
         </p>
 
@@ -113,9 +111,9 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         ) : (
           <div style={{ marginBottom: 16 }}>
             {event.rsvps.map((r) => (
-              <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <Avatar name={r.volunteer.fullName} />
-                <span style={{ fontSize: 13.5, flex: 1 }}>{r.volunteer.fullName}</span>
+              <div key={r.userId} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <Avatar name={r.user?.fullName ?? '?'} />
+                <span style={{ fontSize: 13.5, flex: 1 }}>{r.user?.fullName ?? 'Unknown volunteer'}</span>
               </div>
             ))}
           </div>

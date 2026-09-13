@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import { Button, Card, Chip, EmptyState, ErrorBanner, FieldError, Modal, PageHeader, Spinner } from '@/components/ui';
-import type { Event, Incident } from '@/lib/types';
+import type { EventSummary, IncidentSummary } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
@@ -28,9 +28,9 @@ function EventsPageInner() {
   const [showCreate, setShowCreate] = useState(() => Boolean(preselectedIncidentId));
 
   const eventsPath = activeOrgId ? `/organisations/${activeOrgId}/events` : null;
-  const { data: events, error, mutate } = useApiGet<Event[]>(eventsPath);
+  const { data: events, error, mutate } = useApiGet<EventSummary[]>(eventsPath);
   const approvedIncidentsPath = activeOrgId ? `/organisations/${activeOrgId}/incidents?status=approved` : null;
-  const { data: approvedIncidents } = useApiGet<Incident[]>(approvedIncidentsPath);
+  const { data: approvedIncidents } = useApiGet<IncidentSummary[]>(approvedIncidentsPath);
 
   return (
     <div>
@@ -67,10 +67,10 @@ function EventsPageInner() {
                 {new Date(event.scheduledAt).toLocaleString()}
               </p>
               <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 10 }}>
-                {event.address ?? `${event.latitude.toFixed(5)}, ${event.longitude.toFixed(5)}`}
+                {event.location.lat.toFixed(5)}, {event.location.lng.toFixed(5)}
               </p>
               <p style={{ fontSize: 12.5, color: 'var(--text-3)' }}>
-                {event.rsvps.length} RSVP{event.rsvps.length === 1 ? '' : 's'}
+                {event.rsvpCount} RSVP{event.rsvpCount === 1 ? '' : 's'}
                 {event.maxAttendees ? ` / ${event.maxAttendees} max` : ''}
               </p>
             </Card>
@@ -107,7 +107,7 @@ function CreateEventModal({
   open: boolean;
   onClose: () => void;
   organisationId: string;
-  approvedIncidents: Incident[];
+  approvedIncidents: IncidentSummary[];
   initialIncidentId?: string | null;
   onCreated: (eventId: string) => void;
   api: ReturnType<typeof useAuthedFetch>;
@@ -117,9 +117,8 @@ function CreateEventModal({
   const [incidentIds, setIncidentIds] = useState<string[]>(initialIncidentId ? [initialIncidentId] : []);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [latitude, setLatitude] = useState(initialIncident?.latitude ?? 6.9271);
-  const [longitude, setLongitude] = useState(initialIncident?.longitude ?? 79.8612);
-  const [address, setAddress] = useState(initialIncident?.address ?? '');
+  const [latitude, setLatitude] = useState(initialIncident?.location.lat ?? 6.9271);
+  const [longitude, setLongitude] = useState(initialIncident?.location.lng ?? 79.8612);
   const [scheduledAt, setScheduledAt] = useState('');
   const [endsAt, setEndsAt] = useState('');
   const [maxAttendees, setMaxAttendees] = useState('');
@@ -129,13 +128,14 @@ function CreateEventModal({
   const titleValidation = useFieldValidation(required(t('events.createModal.titleRequired')));
   const descriptionValidation = useFieldValidation(required(t('events.createModal.descriptionRequired')));
   const startValidation = useFieldValidation(required(t('events.createModal.startRequired')));
+  const endValidation = useFieldValidation(required('An end time is required'));
 
   function toggleIncident(id: string) {
     setIncidentIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   async function handleSubmit() {
-    if (incidentIds.length === 0 || !title.trim() || !description.trim() || !scheduledAt) return;
+    if (incidentIds.length === 0 || !title.trim() || !description.trim() || !scheduledAt || !endsAt) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -143,11 +143,9 @@ function CreateEventModal({
         incidentIds,
         title,
         description,
-        latitude,
-        longitude,
-        address: address || undefined,
+        location: { lat: latitude, lng: longitude },
         scheduledAt: new Date(scheduledAt).toISOString(),
-        endsAt: endsAt ? new Date(endsAt).toISOString() : undefined,
+        endsAt: new Date(endsAt).toISOString(),
         maxAttendees: maxAttendees ? Number(maxAttendees) : undefined,
       });
       setIncidentIds([]);
@@ -175,7 +173,7 @@ function CreateEventModal({
             {t('common.cancel')}
           </Button>
           <Button
-            disabled={submitting || incidentIds.length === 0 || !title.trim() || !description.trim() || !scheduledAt}
+            disabled={submitting || incidentIds.length === 0 || !title.trim() || !description.trim() || !scheduledAt || !endsAt}
             onClick={handleSubmit}
           >
             {submitting ? t('events.createModal.creating') : t('events.createModal.submit')}
@@ -224,7 +222,7 @@ function CreateEventModal({
       </div>
       <div className="field">
         <label>Location</label>
-        <LocationMap id="new-event" title={title || 'New event'} latitude={latitude} longitude={longitude} address={address} />
+        <LocationMap id="new-event" title={title || 'New event'} latitude={latitude} longitude={longitude} />
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             type="number"
@@ -241,13 +239,6 @@ function CreateEventModal({
             placeholder="Longitude"
           />
         </div>
-        <input
-          type="text"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          placeholder="Address (optional)"
-          style={{ marginTop: 8 }}
-        />
       </div>
       <div className="field">
         <label htmlFor="create-event-start">Starts</label>
@@ -255,8 +246,9 @@ function CreateEventModal({
         <FieldError id="event-start-error" message={startValidation.error} />
       </div>
       <div className="field">
-        <label>Ends</label>
-        <input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+        <label htmlFor="create-event-end">Ends</label>
+        <input id="create-event-end" aria-invalid={Boolean(endValidation.error)} aria-describedby={endValidation.error ? 'event-end-error' : undefined} type="datetime-local" value={endsAt} onChange={(e) => { setEndsAt(e.target.value); endValidation.revalidate(e.target.value); }} onBlur={(e) => endValidation.onBlur(e.target.value)} />
+        <FieldError id="event-end-error" message={endValidation.error} />
       </div>
       <div className="field">
         <label>Max attendees (optional)</label>
