@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
-import type { Incident } from '@/lib/types';
+import type { VerificationStatus } from '@/lib/types';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -15,6 +15,20 @@ export interface MapPoint {
   color?: string;
 }
 
+/** The minimal shape IncidentMap needs -- deliberately not `Incident` directly:
+ * GET .../dashboard/map returns a distinct, flatter projection (lat/lng, no
+ * address, no location object) from GET .../incidents/:id's full row, and
+ * both need to render on this same map. Callers project their own fetched
+ * shape into this one. */
+export interface MappableIncident {
+  id: string;
+  title: string;
+  lat: number;
+  lng: number;
+  address?: string | null;
+  verificationStatus: VerificationStatus | null;
+}
+
 const STATUS_COLORS: Record<string, string> = {
   pending: '#E9B44C',
   approved: '#2563EB',
@@ -24,16 +38,18 @@ const STATUS_COLORS: Record<string, string> = {
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
-export function IncidentMap({ incidents }: { incidents: Incident[] }) {
+export function IncidentMap({ incidents }: { incidents: MappableIncident[] }) {
   return (
     <MapView
       points={incidents.map((incident) => ({
         id: incident.id,
         title: incident.title,
-        latitude: incident.latitude,
-        longitude: incident.longitude,
+        latitude: incident.lat,
+        longitude: incident.lng,
         address: incident.address,
-        color: STATUS_COLORS[incident.verificationStatus],
+        // verificationStatus is null while pooled/unclaimed -- the 'pending'
+        // colour is the closest existing equivalent to that state.
+        color: STATUS_COLORS[incident.verificationStatus ?? 'pending'],
       }))}
     />
   );
