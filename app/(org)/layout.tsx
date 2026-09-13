@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
 import type { JoinRequest } from '@/lib/types';
@@ -19,19 +20,20 @@ import {
 } from '@/components/icons';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: IconDashboard },
-  { href: '/incident-pool', label: 'Incident Pool', icon: IconIncidents },
-  { href: '/incidents', label: 'Incidents', icon: IconIncidents },
-  { href: '/tasks', label: 'Tasks', icon: IconTasks },
-  { href: '/events', label: 'Events', icon: IconEvents },
-  { href: '/volunteers', label: 'Volunteers', icon: IconVolunteers },
-  { href: '/join-requests', label: 'Join Requests', icon: IconVolunteers },
-  { href: '/workflow', label: 'Workflow', icon: IconWorkflow },
-  { href: '/reports', label: 'Reports', icon: IconReports },
-  { href: '/settings', label: 'Settings', icon: IconSettings },
-];
+  { href: '/dashboard', key: 'dashboard', icon: IconDashboard },
+  { href: '/incident-pool', key: 'incidentPool', icon: IconIncidents },
+  { href: '/incidents', key: 'incidents', icon: IconIncidents },
+  { href: '/tasks', key: 'tasks', icon: IconTasks },
+  { href: '/events', key: 'events', icon: IconEvents },
+  { href: '/volunteers', key: 'volunteers', icon: IconVolunteers },
+  { href: '/join-requests', key: 'joinRequests', icon: IconVolunteers },
+  { href: '/workflow', key: 'workflow', icon: IconWorkflow },
+  { href: '/reports', key: 'reports', icon: IconReports },
+  { href: '/settings', key: 'settings', icon: IconSettings },
+] as const;
 
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const { profile, loading, activeOrgId } = useAuth();
   const router = useRouter();
   const joinRequestsPath = activeOrgId ? `/organisations/${activeOrgId}/join-requests` : null;
@@ -56,9 +58,12 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
   }
 
   const pendingJoinRequests = joinRequests?.filter((request) => request.status === 'pending').length;
-  const navItems = NAV_ITEMS.map((item) =>
-    item.href === '/join-requests' ? { ...item, badgeCount: pendingJoinRequests } : item,
-  );
+  const navItems = NAV_ITEMS.map((item) => ({
+    href: item.href,
+    icon: item.icon,
+    label: t(`nav.${item.key}`),
+    badgeCount: item.href === '/join-requests' ? pendingJoinRequests : undefined,
+  }));
 
   return (
     <AdminShell navItems={navItems} sidebarFoot={profile.organisation.name}>

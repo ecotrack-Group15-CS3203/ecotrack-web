@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
 import {
@@ -19,6 +20,7 @@ import type { OrganisationMember, Task } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 
 export default function VolunteersPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { activeOrgId } = useAuth();
   const [selectedVolunteer, setSelectedVolunteer] = useState<OrganisationMember | null>(null);
@@ -88,14 +90,14 @@ export default function VolunteersPage() {
   return (
     <div>
       <PageHeader
-        title="Volunteers"
-        description="Registered volunteers for your organisation"
-        action={<Button variant="secondary" onClick={() => router.push('/settings')}>Manage invite links</Button>}
+        title={t('volunteers.title')}
+        description={t('volunteers.description')}
+        action={<Button variant="secondary" onClick={() => router.push('/settings')}>{t('volunteers.manageInviteLinks')}</Button>}
       />
 
       {volunteersError && (
         <ErrorBanner
-          message={volunteersError instanceof ApiError ? volunteersError.message : 'Failed to load volunteers'}
+          message={volunteersError instanceof ApiError ? volunteersError.message : t('volunteers.loadError')}
         />
       )}
       {!volunteers && !volunteersError && <Spinner />}
@@ -105,19 +107,19 @@ export default function VolunteersPage() {
           <table>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Joined At</th>
+                <th>{t('volunteers.table.name')}</th>
+                <th>{t('volunteers.table.email')}</th>
+                <th>{t('volunteers.table.joinedAt')}</th>
                 <th
                   onClick={handleSortCompleted}
                   style={{ cursor: 'pointer', userSelect: 'none' }}
                   title="Click to sort by tasks completed"
                 >
-                  Tasks Completed{' '}
+                  {t('volunteers.table.tasksCompleted')}{' '}
                   {sortOrder === 'desc' ? '▼' : sortOrder === 'asc' ? '▲' : '↕'}
                 </th>
-                <th>Active Tasks</th>
-                <th>Status</th>
+                <th>{t('volunteers.table.activeTasks')}</th>
+                <th>{t('volunteers.table.status')}</th>
               </tr>
             </thead>
             <tbody>
@@ -147,7 +149,7 @@ export default function VolunteersPage() {
               {sortedVolunteers.length === 0 && (
                 <tr>
                   <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-3)', padding: '32px 0' }}>
-                    No volunteers found.
+                    {t('volunteers.table.empty')}
                   </td>
                 </tr>
               )}
@@ -160,7 +162,7 @@ export default function VolunteersPage() {
       <Drawer
         open={!!selectedVolunteer}
         onClose={() => setSelectedVolunteer(null)}
-        title="Volunteer Profile"
+        title={t('volunteers.profile.title')}
       >
         {selectedVolunteer && (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 20 }}>
@@ -173,7 +175,7 @@ export default function VolunteersPage() {
                   <Chip tone={selectedVolunteer.isActive ? 'active' : 'inactive'}>
                     {selectedVolunteer.isActive ? 'active' : 'inactive'}
                   </Chip>
-                  <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Joined {formatDate(selectedVolunteer.createdAt)}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('volunteers.profile.joined', { date: formatDate(selectedVolunteer.createdAt) })}</span>
                 </div>
               </div>
             </div>
@@ -181,12 +183,12 @@ export default function VolunteersPage() {
             {/* Contact details */}
             <div>
               <h4 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 6 }}>
-                Personal Details
+                {t('volunteers.profile.personalDetails')}
               </h4>
               <div style={{ fontSize: 13.5, display: 'grid', gridTemplateColumns: '80px 1fr', gap: 8 }}>
-                <span style={{ color: 'var(--text-2)' }}>Email:</span>
+                <span style={{ color: 'var(--text-2)' }}>{t('volunteers.profile.email')}</span>
                 <span style={{ wordBreak: 'break-all' }}>{selectedVolunteer.email}</span>
-                <span style={{ color: 'var(--text-2)' }}>Role:</span>
+                <span style={{ color: 'var(--text-2)' }}>{t('volunteers.profile.role')}</span>
                 <span style={{ textTransform: 'capitalize' }}>{selectedVolunteer.role.replace('_', ' ')}</span>
               </div>
             </div>
@@ -194,12 +196,12 @@ export default function VolunteersPage() {
             {/* Task History */}
             <div>
               <h4 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 8 }}>
-                Task History ({completedTasksCountByUser.get(selectedVolunteer.id) ?? 0} completed,{' '}
+                {t('volunteers.profile.taskHistory')} ({completedTasksCountByUser.get(selectedVolunteer.id) ?? 0} completed,{' '}
                 {activeTaskCountByUser.get(selectedVolunteer.id) ?? 0} active)
               </h4>
               {selectedVolunteerTasks.length === 0 ? (
                 <EmptyState>
-                  <p style={{ fontSize: 13, margin: 0 }}>No task history found.</p>
+                  <p style={{ fontSize: 13, margin: 0 }}>{t('volunteers.profile.noTaskHistory')}</p>
                 </EmptyState>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 200, overflowY: 'auto', paddingRight: 4 }}>
@@ -223,8 +225,8 @@ export default function VolunteersPage() {
                         <span>Priority: {task.priority}</span>
                         <span>
                           {task.status === 'completed'
-                            ? `Completed: ${formatDate(task.completedAt ?? task.dueDate)}`
-                            : `Due: ${formatDate(task.dueDate)}`}
+                            ? `${t('volunteers.profile.completed')}: ${formatDate(task.completedAt ?? task.dueDate)}`
+                            : `${t('volunteers.profile.due')}: ${formatDate(task.dueDate)}`}
                         </span>
                       </div>
                       {/* Evidence Thumbnails */}

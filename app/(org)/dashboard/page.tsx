@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
 import {
@@ -51,6 +52,7 @@ function formatDate(iso: string | null): string {
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const { activeOrgId } = useAuth();
   const statsPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/stats` : null;
   const mapPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/map` : null;
@@ -76,11 +78,13 @@ export default function DashboardPage() {
     if (!incidents) return [];
     const counts = new Map<string, number>();
     for (const incident of incidents) {
-      const label = incident.currentStageId ? (stagesById.get(incident.currentStageId)?.name ?? 'Unknown stage') : 'Unstaged';
+      const label = incident.currentStageId
+        ? (stagesById.get(incident.currentStageId)?.name ?? t('dashboard.stagesChart.unknownStage'))
+        : t('dashboard.stagesChart.unstaged');
       counts.set(label, (counts.get(label) ?? 0) + 1);
     }
     return Array.from(counts.entries()).map(([stage, count]) => ({ stage, count }));
-  }, [incidents, stagesById]);
+  }, [incidents, stagesById, t]);
 
   // SRS 3.1.17's three-way cleanup-progress split: resolved / claimed-but-stalled
   // (still at the org's earliest post-claim stage) / everything in between. The
@@ -133,7 +137,7 @@ export default function DashboardPage() {
   if (!activeOrgId) {
     return (
       <div>
-        <PageHeader title="Dashboard" description="Overview for your organisation" />
+        <PageHeader title={t('dashboard.title')} description={t('dashboard.description')} />
         <Skeleton height={96} style={{ marginBottom: 20 }} />
       </div>
     );
@@ -141,10 +145,10 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <PageHeader title="Dashboard" description="Overview for your organisation" />
+      <PageHeader title={t('dashboard.title')} description={t('dashboard.description')} />
 
       {error && (
-        <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load some dashboard data'} />
+        <ErrorBanner message={error instanceof ApiError ? error.message : t('dashboard.loadError')} />
       )}
 
       {!stats ? (
@@ -158,22 +162,22 @@ export default function DashboardPage() {
         </KpiRow>
       ) : (
         <KpiRow>
-          <KpiCard label="Total incidents" value={stats.totalIncidents} />
-          <KpiCard label="Claimed this month" value={stats.claimedThisMonth} />
-          <KpiCard label="Awaiting claim nearby" value={stats.awaitingClaimInServiceArea} tone="pending" />
-          <KpiCard label="Resolved" value={stats.resolvedIncidents} tone="resolved" />
-          <KpiCard label="Active volunteers" value={stats.activeVolunteers} />
-          <KpiCard label="Completed cleanup tasks" value={stats.completedCleanupTasks} tone="resolved" />
+          <KpiCard label={t('dashboard.kpi.totalIncidents')} value={stats.totalIncidents} />
+          <KpiCard label={t('dashboard.kpi.claimedThisMonth')} value={stats.claimedThisMonth} />
+          <KpiCard label={t('dashboard.kpi.awaitingClaim')} value={stats.awaitingClaimInServiceArea} tone="pending" />
+          <KpiCard label={t('dashboard.kpi.resolved')} value={stats.resolvedIncidents} tone="resolved" />
+          <KpiCard label={t('dashboard.kpi.activeVolunteers')} value={stats.activeVolunteers} />
+          <KpiCard label={t('dashboard.kpi.completedTasks')} value={stats.completedCleanupTasks} tone="resolved" />
         </KpiRow>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 20 }}>
         <Card style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 12 }}>Incidents by workflow stage</h3>
+          <h3 style={{ fontSize: 14, marginBottom: 12 }}>{t('dashboard.stagesChart.title')}</h3>
           {!incidents || !stages ? (
             <Skeleton height={120} />
           ) : stageDistribution.length === 0 ? (
-            <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>No incidents recorded yet.</p>
+            <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>{t('dashboard.stagesChart.empty')}</p>
           ) : (
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 154, overflowX: 'auto', paddingTop: 18 }}>
               {stageDistribution.map(({ stage, count }) => {
@@ -191,20 +195,20 @@ export default function DashboardPage() {
         </Card>
 
         <Card style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 12 }}>Cleanup progress</h3>
-          {!cleanupProgress ? <Skeleton height={16} /> : <ProgressBar progress={cleanupProgress} />}
+          <h3 style={{ fontSize: 14, marginBottom: 12 }}>{t('dashboard.progress.title')}</h3>
+          {!cleanupProgress ? <Skeleton height={16} /> : <ProgressBar progress={cleanupProgress} t={t} />}
         </Card>
       </div>
 
       <div style={{ marginTop: 20 }}>
-        <SectionTitle>Incident map</SectionTitle>
+        <SectionTitle>{t('dashboard.map.title')}</SectionTitle>
         <Card style={{ padding: 20 }}>
           {!mapIncidents ? <Skeleton height={260} /> : <IncidentMap incidents={mapIncidents} />}
         </Card>
       </div>
 
       <div style={{ marginTop: 20 }}>
-        <SectionTitle>Volunteer activity</SectionTitle>
+        <SectionTitle>{t('dashboard.volunteerActivity.title')}</SectionTitle>
         <Card>
           {!volunteers || !tasks ? (
             <div style={{ padding: 20 }}>
@@ -216,10 +220,10 @@ export default function DashboardPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Tasks completed</th>
-                  <th>Tasks pending</th>
-                  <th>Last active</th>
+                  <th>{t('dashboard.volunteerActivity.name')}</th>
+                  <th>{t('dashboard.volunteerActivity.tasksCompleted')}</th>
+                  <th>{t('dashboard.volunteerActivity.tasksPending')}</th>
+                  <th>{t('dashboard.volunteerActivity.lastActive')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -239,7 +243,7 @@ export default function DashboardPage() {
                 {volunteerActivity.length === 0 && (
                   <tr>
                     <td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-3)', padding: '32px 0' }}>
-                      No volunteers yet.
+                      {t('dashboard.volunteerActivity.empty')}
                     </td>
                   </tr>
                 )}
@@ -250,7 +254,7 @@ export default function DashboardPage() {
       </div>
 
       <div style={{ marginTop: 20 }}>
-        <SectionTitle>Recent activity</SectionTitle>
+        <SectionTitle>{t('dashboard.recentActivity.title')}</SectionTitle>
         <Card style={{ padding: 20 }}>
           {!auditLog ? (
             <>
@@ -259,7 +263,7 @@ export default function DashboardPage() {
               <Skeleton height={14} />
             </>
           ) : recentActivity.length === 0 ? (
-            <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>No activity recorded yet.</p>
+            <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>{t('dashboard.recentActivity.empty')}</p>
           ) : (
             <div className="timeline">
               {recentActivity.map((entry) => (
@@ -276,19 +280,28 @@ export default function DashboardPage() {
   );
 }
 
-function ProgressBar({ progress }: { progress: { resolvedPct: number; stalledPct: number; inProgressPct: number } }) {
+function ProgressBar({
+  progress,
+  t,
+}: {
+  progress: { resolvedPct: number; stalledPct: number; inProgressPct: number };
+  t: (key: string, opts?: Record<string, unknown>) => string;
+}) {
   const { resolvedPct, stalledPct, inProgressPct } = progress;
+  const resolvedLabel = t('dashboard.progress.resolved', { pct: resolvedPct.toFixed(0) });
+  const inProgressLabel = t('dashboard.progress.inProgress', { pct: inProgressPct.toFixed(0) });
+  const stalledLabel = t('dashboard.progress.stalled', { pct: stalledPct.toFixed(0) });
   return (
     <div>
       <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', background: '#F0EFE9' }}>
-        <div style={{ width: `${resolvedPct}%`, background: 'var(--resolved)' }} title={`Resolved: ${resolvedPct.toFixed(0)}%`} />
-        <div style={{ width: `${inProgressPct}%`, background: 'var(--progress)' }} title={`In progress: ${inProgressPct.toFixed(0)}%`} />
-        <div style={{ width: `${stalledPct}%`, background: 'var(--pending)' }} title={`Claimed, not yet advanced: ${stalledPct.toFixed(0)}%`} />
+        <div style={{ width: `${resolvedPct}%`, background: 'var(--resolved)' }} title={resolvedLabel} />
+        <div style={{ width: `${inProgressPct}%`, background: 'var(--progress)' }} title={inProgressLabel} />
+        <div style={{ width: `${stalledPct}%`, background: 'var(--pending)' }} title={stalledLabel} />
       </div>
       <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 12, color: 'var(--text-2)' }}>
-        <Legend color="var(--resolved)" label={`Resolved ${resolvedPct.toFixed(0)}%`} />
-        <Legend color="var(--progress)" label={`In progress ${inProgressPct.toFixed(0)}%`} />
-        <Legend color="var(--pending)" label={`Claimed only ${stalledPct.toFixed(0)}%`} />
+        <Legend color="var(--resolved)" label={resolvedLabel} />
+        <Legend color="var(--progress)" label={inProgressLabel} />
+        <Legend color="var(--pending)" label={stalledLabel} />
       </div>
     </div>
   );

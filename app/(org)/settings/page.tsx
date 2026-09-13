@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import { Avatar, Button, Card, Chip, ErrorBanner, Modal, PageHeader, SectionTitle, Spinner, Toast } from '@/components/ui';
@@ -19,14 +20,20 @@ function inviteUrl(token: string) {
   return `${typeof window === 'undefined' ? '' : window.location.origin}/invite/${token}`;
 }
 
-function inviteStatus(invite: InviteLink): { label: string; tone: string } {
-  if (invite.revokedAt) return { label: 'Revoked', tone: 'inactive' };
-  if (new Date(invite.expiresAt) < new Date()) return { label: 'Expired', tone: 'rejected' };
-  if (invite.maxUses !== null && invite.usesCount >= invite.maxUses) return { label: 'Exhausted', tone: 'rejected' };
-  return { label: 'Active', tone: 'active' };
+function inviteStatus(
+  invite: InviteLink,
+  t: (key: string) => string,
+): { label: string; tone: string } {
+  if (invite.revokedAt) return { label: t('settings.inviteStatus.revoked'), tone: 'inactive' };
+  if (new Date(invite.expiresAt) < new Date()) return { label: t('settings.inviteStatus.expired'), tone: 'rejected' };
+  if (invite.maxUses !== null && invite.usesCount >= invite.maxUses) {
+    return { label: t('settings.inviteStatus.exhausted'), tone: 'rejected' };
+  }
+  return { label: t('settings.inviteStatus.active'), tone: 'active' };
 }
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const { activeOrgId, refreshProfile } = useAuth();
   const api = useAuthedFetch();
 
@@ -127,9 +134,9 @@ export default function SettingsPage() {
   async function copyLink(url: string) {
     try {
       await navigator.clipboard.writeText(url);
-      setToast('Invite link copied to clipboard.');
+      setToast(t('settings.generateModal.copied'));
     } catch {
-      setToast('Could not copy the link — copy it manually.');
+      setToast(t('settings.generateModal.copyFailed'));
     }
   }
 
@@ -141,35 +148,35 @@ export default function SettingsPage() {
     setGenerateError(null);
   }
 
-  if (error) return <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load organisation'} />;
+  if (error) return <ErrorBanner message={error instanceof ApiError ? error.message : t('settings.loadError')} />;
   if (!org) return <Spinner />;
 
   return (
     <div style={{ maxWidth: 640 }}>
-      <PageHeader title="Organisation settings" description={org.name} />
+      <PageHeader title={t('settings.title')} description={org.name} />
 
       {saveError && (
         <div style={{ marginBottom: 12 }}>
           <ErrorBanner message={saveError} />
         </div>
       )}
-      {saved && <p style={{ fontSize: 13, color: 'var(--primary)', marginBottom: 12 }}>Saved.</p>}
+      {saved && <p style={{ fontSize: 13, color: 'var(--primary)', marginBottom: 12 }}>{t('settings.saved')}</p>}
 
       <div className="field">
-        <label>Organisation name</label>
+        <label>{t('settings.orgName')}</label>
         <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
       </div>
       <div className="field">
-        <label>Description</label>
+        <label>{t('settings.description')}</label>
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
       <div className="field">
-        <label>Contact email</label>
+        <label>{t('settings.contactEmail')}</label>
         <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="contact@yourorg.example" />
       </div>
 
       <div className="field">
-        <label>Service area</label>
+        <label>{t('settings.serviceArea')}</label>
         <LocationMap
           id={activeOrgId ?? 'service-area'}
           title={org.name}
@@ -186,20 +193,20 @@ export default function SettingsPage() {
             <option key={km} value={km}>{km} km radius</option>
           ))}
         </select>
-        <div className="hint">Changing the service area only affects future incident-pool matching — incidents your organisation has already claimed are not affected.</div>
+        <div className="hint">{t('settings.serviceAreaHint')}</div>
       </div>
 
       <div className="field">
-        <label>Status</label>
+        <label>{t('settings.status')}</label>
         <div>
           <Chip tone={org.isActive ? 'active' : 'inactive'}>{org.isActive ? 'active' : 'inactive'}</Chip>
         </div>
       </div>
       <Button disabled={saving || !name.trim()} onClick={save}>
-        {saving ? 'Saving…' : 'Save changes'}
+        {saving ? t('settings.saving') : t('settings.saveChanges')}
       </Button>
 
-      <SectionTitle>Members</SectionTitle>
+      <SectionTitle>{t('settings.members')}</SectionTitle>
       <Card>
         <table>
           <tbody>
@@ -218,16 +225,16 @@ export default function SettingsPage() {
         </table>
       </Card>
 
-      <SectionTitle>Invite links</SectionTitle>
+      <SectionTitle>{t('settings.inviteLinks')}</SectionTitle>
       <div style={{ marginBottom: 12 }}>
         <Button onClick={() => { closeGenerateModal(); setGenerateOpen(true); }}>
-          <IconPlus style={{ width: 16, height: 16 }} /> Generate invite link
+          <IconPlus style={{ width: 16, height: 16 }} /> {t('settings.generateInviteLink')}
         </Button>
       </div>
 
       {invitesError && (
         <div style={{ marginBottom: 12 }}>
-          <ErrorBanner message={invitesError instanceof ApiError ? invitesError.message : 'Failed to load invite links.'} />
+          <ErrorBanner message={invitesError instanceof ApiError ? invitesError.message : t('settings.inviteLinksLoadError')} />
         </div>
       )}
       {!invites && !invitesError && <Spinner />}
@@ -236,22 +243,22 @@ export default function SettingsPage() {
           <table>
             <thead>
               <tr>
-                <th>Created</th>
-                <th>Expires</th>
-                <th>Uses</th>
-                <th>Status</th>
+                <th>{t('settings.table.created')}</th>
+                <th>{t('settings.table.expires')}</th>
+                <th>{t('settings.table.uses')}</th>
+                <th>{t('settings.table.status')}</th>
                 <th aria-label="Actions" />
               </tr>
             </thead>
             <tbody>
               {invites.map((invite) => {
-                const status = inviteStatus(invite);
-                const revocable = status.label === 'Active';
+                const status = inviteStatus(invite, t);
+                const revocable = status.label === t('settings.inviteStatus.active');
                 return (
                   <tr key={invite.id}>
                     <td>{formatDate(invite.createdAt)}</td>
                     <td>{formatDate(invite.expiresAt)}</td>
-                    <td>{invite.usesCount} / {invite.maxUses ?? 'unlimited'}</td>
+                    <td>{invite.usesCount} / {invite.maxUses ?? t('common.unlimited')}</td>
                     <td><Chip tone={status.tone}>{status.label}</Chip></td>
                     <td>
                       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -262,7 +269,7 @@ export default function SettingsPage() {
                             disabled={revokingId === invite.id}
                             onClick={() => revokeInvite(invite.id)}
                           >
-                            {revokingId === invite.id ? 'Revoking…' : 'Revoke'}
+                            {revokingId === invite.id ? t('settings.revoking') : t('settings.revoke')}
                           </Button>
                         )}
                       </div>
@@ -271,14 +278,14 @@ export default function SettingsPage() {
                 );
               })}
               {invites.length === 0 && (
-                <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-3)', padding: '32px 0' }}>No invite links yet.</td></tr>
+                <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-3)', padding: '32px 0' }}>{t('settings.table.empty')}</td></tr>
               )}
             </tbody>
           </table>
         </Card>
       )}
 
-      <Modal open={generateOpen} onClose={closeGenerateModal} title="Generate invite link">
+      <Modal open={generateOpen} onClose={closeGenerateModal} title={t('settings.generateModal.title')}>
         {generateError && (
           <div style={{ marginBottom: 14 }}>
             <ErrorBanner message={generateError} />
@@ -288,31 +295,31 @@ export default function SettingsPage() {
         {generatedLink ? (
           <div>
             <p className="hint" style={{ marginBottom: 8 }}>
-              This link is shown only once — share it with the volunteers you want to invite:
+              {t('settings.generateModal.shareHint')}
             </p>
             <div style={{ display: 'flex', gap: 8 }}>
               <input type="text" value={inviteUrl(generatedLink.token)} readOnly style={{ flex: 1 }} />
-              <Button variant="secondary" onClick={() => copyLink(inviteUrl(generatedLink.token))}>Copy</Button>
+              <Button variant="secondary" onClick={() => copyLink(inviteUrl(generatedLink.token))}>{t('settings.generateModal.copy')}</Button>
             </div>
           </div>
         ) : (
           <div>
             <div className="field">
-              <label htmlFor="invite-max-uses">Max uses (leave blank for unlimited)</label>
-              <input id="invite-max-uses" type="number" min={1} value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder="Unlimited" />
+              <label htmlFor="invite-max-uses">{t('settings.generateModal.maxUses')}</label>
+              <input id="invite-max-uses" type="number" min={1} value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder={t('common.unlimited')} />
             </div>
             <div className="field">
-              <label htmlFor="invite-expires">Expires in (days)</label>
+              <label htmlFor="invite-expires">{t('settings.generateModal.expiresInDays')}</label>
               <input id="invite-expires" type="number" min={1} value={expiresInDays} onChange={(e) => setExpiresInDays(Number(e.target.value))} />
             </div>
           </div>
         )}
 
         <div className="modal-actions">
-          <Button variant="secondary" onClick={closeGenerateModal}>{generatedLink ? 'Close' : 'Cancel'}</Button>
+          <Button variant="secondary" onClick={closeGenerateModal}>{generatedLink ? t('settings.generateModal.close') : t('common.cancel')}</Button>
           {!generatedLink && (
             <Button onClick={generateInvite} disabled={generating}>
-              {generating ? 'Generating…' : 'Generate link'}
+              {generating ? t('settings.generateModal.generating') : t('settings.generateModal.generate')}
             </Button>
           )}
         </div>

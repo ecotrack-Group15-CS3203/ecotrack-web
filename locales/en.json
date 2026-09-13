@@ -33,21 +33,23 @@
     "loadError": "Failed to load some dashboard data",
     "kpi": {
       "totalIncidents": "Total incidents",
-      "pendingVerification": "Pending verification",
-      "verified": "Verified",
+      "claimedThisMonth": "Claimed this month",
+      "awaitingClaim": "Awaiting claim nearby",
       "resolved": "Resolved",
       "activeVolunteers": "Active volunteers",
       "completedTasks": "Completed cleanup tasks"
     },
     "stagesChart": {
       "title": "Incidents by workflow stage",
-      "empty": "No incidents recorded yet."
+      "empty": "No incidents recorded yet.",
+      "unstaged": "Unstaged",
+      "unknownStage": "Unknown stage"
     },
     "progress": {
       "title": "Cleanup progress",
       "resolved": "Resolved {{pct}}%",
       "inProgress": "In progress {{pct}}%",
-      "pending": "Pending {{pct}}%"
+      "stalled": "Claimed only {{pct}}%"
     },
     "map": {
       "title": "Incident map",
@@ -271,5 +273,115 @@
       "longitudePlaceholder": "Longitude",
       "addressPlaceholder": "Address (optional)"
     }
+  },
+  "settings": {
+    "title": "Organisation settings",
+    "loadError": "Failed to load organisation",
+    "orgName": "Organisation name",
+    "description": "Description",
+    "contactEmail": "Contact email",
+    "serviceArea": "Service area",
+    "serviceAreaHint": "Changing the service area only affects future incident-pool matching — incidents your organisation has already claimed are not affected.",
+    "status": "Status",
+    "saveChanges": "Save changes",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "members": "Members",
+    "inviteLinks": "Invite links",
+    "generateInviteLink": "Generate invite link",
+    "inviteLinksLoadError": "Failed to load invite links.",
+    "table": {
+      "created": "Created",
+      "expires": "Expires",
+      "uses": "Uses",
+      "status": "Status",
+      "empty": "No invite links yet."
+    },
+    "inviteStatus": {
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked",
+      "exhausted": "Exhausted"
+    },
+    "revoke": "Revoke",
+    "revoking": "Revoking…",
+    "generateModal": {
+      "title": "Generate invite link",
+      "maxUses": "Max uses (leave blank for unlimited)",
+      "expiresInDays": "Expires in (days)",
+      "generating": "Generating…",
+      "generate": "Generate link",
+      "close": "Close",
+      "shareHint": "This link is shown only once — share it with the volunteers you want to invite:",
+      "copy": "Copy",
+      "copied": "Invite link copied to clipboard.",
+      "copyFailed": "Could not copy the link — copy it manually."
+    }
+  },
+  "volunteers": {
+    "title": "Volunteers",
+    "description": "Registered volunteers for your organisation",
+    "manageInviteLinks": "Manage invite links",
+    "loadError": "Failed to load volunteers",
+    "table": {
+      "name": "Name",
+      "email": "Email",
+      "joinedAt": "Joined At",
+      "tasksCompleted": "Tasks Completed",
+      "activeTasks": "Active Tasks",
+      "status": "Status",
+      "empty": "No volunteers found."
+    },
+    "profile": {
+      "title": "Volunteer Profile",
+      "joined": "Joined {{date}}",
+      "personalDetails": "Personal Details",
+      "email": "Email:",
+      "role": "Role:",
+      "taskHistory": "Task History",
+      "noTaskHistory": "No task history found.",
+      "completed": "Completed",
+      "due": "Due"
+    }
+  },
+  "orgRegistration": {
+    "title": "Register your organisation",
+    "description": "You'll become this organisation's first admin. Its service area governs which reported incidents it can claim from the pool.",
+    "alreadyMemberTitle": "You already belong to an organisation",
+    "alreadyMemberBody": "an EcoTrack account can only belong to one organisation at a time.",
+    "goToDashboard": "Go to your dashboard",
+    "orgName": "Organisation name",
+    "orgNameRequired": "Enter your organisation name.",
+    "orgNamePlaceholder": "e.g. Green Colombo Collective",
+    "contactEmail": "Contact email",
+    "contactEmailRequired": "Enter a contact email.",
+    "contactEmailInvalid": "Enter a valid email address.",
+    "contactEmailPlaceholder": "contact@yourorg.example",
+    "descriptionLabel": "Description (optional)",
+    "descriptionPlaceholder": "What does your organisation do?",
+    "serviceArea": "Service area",
+    "serviceAreaHint": "Incidents reported inside this radius will appear in your organisation's pool.",
+    "radiusLabel": "Service area radius",
+    "submit": "Register organisation",
+    "submitting": "Registering…",
+    "alreadyMemberError": "You already belong to an organisation. Leave it before registering another.",
+    "genericError": "Could not register your organisation."
+  },
+  "invite": {
+    "notFoundTitle": "Invite link not found",
+    "notFoundBody": "This link may have been mistyped, or the invite may no longer exist.",
+    "backToHome": "Back to home",
+    "invalidTitle": "This invite is no longer valid",
+    "revoked": "This invite link has been revoked.",
+    "expired": "This invite link has expired.",
+    "exhausted": "This invite link has reached its usage limit.",
+    "joinTitle": "Join {{organisationName}} on EcoTrack",
+    "signInBody": "Sign in with an existing account, or create one, to accept this invitation as a volunteer.",
+    "signInToAccept": "Sign in to accept",
+    "consentBody": "EcoTrack needs your location to confirm you're within {{organisationName}}'s service area. Your device will ask for permission when you continue.",
+    "confirmAndJoin": "Confirm & join",
+    "confirming": "Confirming…",
+    "locationError": "Location access is required to confirm you’re within the service area. Please allow location access and try again.",
+    "genericError": "Could not accept this invitation."
   }
 }
