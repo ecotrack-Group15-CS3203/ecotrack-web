@@ -13,7 +13,15 @@ import {
   Skeleton,
   Avatar,
 } from '@/components/ui';
-import type { AuditLogEntry, DashboardStats, Incident, OrganisationMember, Task } from '@/lib/types';
+import type {
+  AuditLogEntry,
+  DashboardMapIncident,
+  DashboardStats,
+  IncidentSummary,
+  OrganisationMember,
+  Task,
+  WorkflowStage,
+} from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { IncidentMap } from '@/components/incident-map';
 
@@ -47,40 +55,68 @@ export default function DashboardPage() {
   const statsPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/stats` : null;
   const mapPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/map` : null;
   const incidentsPath = activeOrgId ? `/organisations/${activeOrgId}/incidents` : null;
+  const stagesPath = activeOrgId ? `/organisations/${activeOrgId}/workflow-stages` : null;
   const auditPath = activeOrgId ? `/organisations/${activeOrgId}/audit-logs` : null;
   const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer` : null;
   const tasksPath = activeOrgId ? `/organisations/${activeOrgId}/tasks` : null;
 
   const { data: stats, error: statsError } = useApiGet<DashboardStats>(statsPath);
-  const { data: incidents, error: incidentsError } = useApiGet<Incident[]>(mapPath);
-  const { data: workflowIncidents, error: workflowIncidentsError } = useApiGet<Incident[]>(incidentsPath);
+  const { data: mapIncidents, error: mapError } = useApiGet<DashboardMapIncident[]>(mapPath);
+  const { data: incidents, error: incidentsError } = useApiGet<IncidentSummary[]>(incidentsPath);
+  const { data: stages, error: stagesError } = useApiGet<WorkflowStage[]>(stagesPath);
   const { data: auditLog, error: auditError } = useApiGet<AuditLogEntry[]>(auditPath);
   const { data: volunteers, error: volunteersError } = useApiGet<OrganisationMember[]>(volunteersPath);
   const { data: tasks, error: tasksError } = useApiGet<Task[]>(tasksPath);
 
-  const error = statsError || incidentsError || workflowIncidentsError || auditError || volunteersError || tasksError;
+  const error = statsError || mapError || incidentsError || stagesError || auditError || volunteersError || tasksError;
+
+  const stagesById = useMemo(() => new Map((stages ?? []).map((s) => [s.id, s])), [stages]);
 
   const stageDistribution = useMemo(() => {
-    if (!workflowIncidents) return [];
+    if (!incidents) return [];
     const counts = new Map<string, number>();
-    for (const incident of workflowIncidents) {
-      const label = incident.currentStage?.name ?? 'Unstaged';
+    for (const incident of incidents) {
+      const label = incident.currentStageId ? (stagesById.get(incident.currentStageId)?.name ?? 'Unknown stage') : 'Unstaged';
       counts.set(label, (counts.get(label) ?? 0) + 1);
     }
     return Array.from(counts.entries()).map(([stage, count]) => ({ stage, count }));
-  }, [workflowIncidents]);
+  }, [incidents, stagesById]);
+
+  // SRS 3.1.17's three-way cleanup-progress split: resolved / claimed-but-stalled
+  // (still at the org's earliest post-claim stage) / everything in between. The
+  // stats endpoint only exposes a flat resolvedIncidents count, so the "claimed
+  // but not yet advanced" and "in progress" buckets are derived here from the
+  // claimed-incidents list plus stage metadata rather than the API.
+  const cleanupProgress = useMemo(() => {
+    if (!incidents || !stages || stages.length === 0) return null;
+    const total = incidents.length;
+    if (total === 0) return { resolvedPct: 0, stalledPct: 0, inProgressPct: 0 };
+    const claimedStagePosition = Math.min(...stages.map((s) => s.position).filter((p) => p > 0)) || stages[0]?.position;
+    let resolved = 0;
+    let stalled = 0;
+    for (const incident of incidents) {
+      const stage = incident.currentStageId ? stagesById.get(incident.currentStageId) : undefined;
+      if (!stage) continue;
+      if (stage.isFinal) resolved += 1;
+      else if (stage.position === claimedStagePosition) stalled += 1;
+    }
+    const inProgress = Math.max(0, total - resolved - stalled);
+    return {
+      resolvedPct: (resolved / total) * 100,
+      stalledPct: (stalled / total) * 100,
+      inProgressPct: (inProgress / total) * 100,
+    };
+  }, [incidents, stages, stagesById]);
 
   const volunteerActivity = useMemo(() => {
     if (!volunteers || !tasks) return [];
     return volunteers.map((member) => {
-      const own = tasks.filter((t) => t.assignments.some((a) => a.volunteerUserId === member.userId));
+      const own = tasks.filter((t) => t.assignments.some((a) => a.volunteerUserId === member.id));
       const completed = own.filter((t) => t.status === 'completed').length;
       const pending = own.filter((t) => t.status !== 'completed').length;
       const lastActive =
         own
-          .flatMap((t) =>
-            t.assignments.filter((a) => a.volunteerUserId === member.userId).map((a) => a.respondedAt ?? t.createdAt),
-          )
+          .flatMap((t) => t.assignments.filter((a) => a.volunteerUserId === member.id).map((a) => a.respondedAt ?? t.createdAt))
           .sort()
           .at(-1) ?? null;
       return { member, completed, pending, lastActive };
@@ -123,8 +159,8 @@ export default function DashboardPage() {
       ) : (
         <KpiRow>
           <KpiCard label="Total incidents" value={stats.totalIncidents} />
-          <KpiCard label="Pending verification" value={stats.pendingIncidents} tone="pending" />
-          <KpiCard label="Verified" value={stats.verifiedIncidents} tone="verified" />
+          <KpiCard label="Claimed this month" value={stats.claimedThisMonth} />
+          <KpiCard label="Awaiting claim nearby" value={stats.awaitingClaimInServiceArea} tone="pending" />
           <KpiCard label="Resolved" value={stats.resolvedIncidents} tone="resolved" />
           <KpiCard label="Active volunteers" value={stats.activeVolunteers} />
           <KpiCard label="Completed cleanup tasks" value={stats.completedCleanupTasks} tone="resolved" />
@@ -134,42 +170,36 @@ export default function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 20 }}>
         <Card style={{ padding: 20 }}>
           <h3 style={{ fontSize: 14, marginBottom: 12 }}>Incidents by workflow stage</h3>
-          {!workflowIncidents ? (
+          {!incidents || !stages ? (
             <Skeleton height={120} />
           ) : stageDistribution.length === 0 ? (
             <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>No incidents recorded yet.</p>
           ) : (
-            <>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 154, overflowX: 'auto', paddingTop: 18 }}>
-                {stageDistribution.map(({ stage, count }) => {
-                  const max = Math.max(1, ...stageDistribution.map((s) => s.count));
-                  return (
-                    <div key={stage} title={`${stage}: ${count}`} style={{ width: 54, height: '100%', flex: '0 0 54px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                      <strong style={{ fontSize: 12, color: 'var(--text)' }}>{count}</strong>
-                      <div style={{ width: 32, height: `${Math.max(8, (count / max) * 100)}%`, background: 'var(--progress)', borderRadius: '4px 4px 0 0' }} />
-                      <span style={{ width: 54, minHeight: 28, fontSize: 10, lineHeight: '13px', color: 'var(--text-3)', textAlign: 'center' }}>{stage}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 154, overflowX: 'auto', paddingTop: 18 }}>
+              {stageDistribution.map(({ stage, count }) => {
+                const max = Math.max(1, ...stageDistribution.map((s) => s.count));
+                return (
+                  <div key={stage} title={`${stage}: ${count}`} style={{ width: 54, height: '100%', flex: '0 0 54px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                    <strong style={{ fontSize: 12, color: 'var(--text)' }}>{count}</strong>
+                    <div style={{ width: 32, height: `${Math.max(8, (count / max) * 100)}%`, background: 'var(--progress)', borderRadius: '4px 4px 0 0' }} />
+                    <span style={{ width: 54, minHeight: 28, fontSize: 10, lineHeight: '13px', color: 'var(--text-3)', textAlign: 'center' }}>{stage}</span>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </Card>
 
         <Card style={{ padding: 20 }}>
           <h3 style={{ fontSize: 14, marginBottom: 12 }}>Cleanup progress</h3>
-          {!stats ? <Skeleton height={16} /> : <ProgressBar stats={stats} />}
+          {!cleanupProgress ? <Skeleton height={16} /> : <ProgressBar progress={cleanupProgress} />}
         </Card>
       </div>
 
       <div style={{ marginTop: 20 }}>
         <SectionTitle>Incident map</SectionTitle>
         <Card style={{ padding: 20 }}>
-          {!incidents ? (
-            <Skeleton height={260} />
-          ) : (
-            <IncidentMap incidents={incidents} />
-          )}
+          {!mapIncidents ? <Skeleton height={260} /> : <IncidentMap incidents={mapIncidents} />}
         </Card>
       </div>
 
@@ -197,8 +227,8 @@ export default function DashboardPage() {
                   <tr key={member.id}>
                     <td>
                       <div className="row-flex">
-                        <Avatar name={member.user.fullName} />
-                        {member.user.fullName}
+                        <Avatar name={member.fullName} />
+                        {member.fullName}
                       </div>
                     </td>
                     <td>{completed}</td>
@@ -246,23 +276,19 @@ export default function DashboardPage() {
   );
 }
 
-function ProgressBar({ stats }: { stats: DashboardStats }) {
-  const total = Math.max(1, stats.totalIncidents);
-  const resolvedPct = (stats.resolvedIncidents / total) * 100;
-  const inProgressPct = (Math.max(0, stats.verifiedIncidents - stats.resolvedIncidents) / total) * 100;
-  const pendingPct = (stats.pendingIncidents / total) * 100;
-
+function ProgressBar({ progress }: { progress: { resolvedPct: number; stalledPct: number; inProgressPct: number } }) {
+  const { resolvedPct, stalledPct, inProgressPct } = progress;
   return (
     <div>
       <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', background: '#F0EFE9' }}>
         <div style={{ width: `${resolvedPct}%`, background: 'var(--resolved)' }} title={`Resolved: ${resolvedPct.toFixed(0)}%`} />
         <div style={{ width: `${inProgressPct}%`, background: 'var(--progress)' }} title={`In progress: ${inProgressPct.toFixed(0)}%`} />
-        <div style={{ width: `${pendingPct}%`, background: 'var(--pending)' }} title={`Pending: ${pendingPct.toFixed(0)}%`} />
+        <div style={{ width: `${stalledPct}%`, background: 'var(--pending)' }} title={`Claimed, not yet advanced: ${stalledPct.toFixed(0)}%`} />
       </div>
       <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 12, color: 'var(--text-2)' }}>
         <Legend color="var(--resolved)" label={`Resolved ${resolvedPct.toFixed(0)}%`} />
         <Legend color="var(--progress)" label={`In progress ${inProgressPct.toFixed(0)}%`} />
-        <Legend color="var(--pending)" label={`Pending ${pendingPct.toFixed(0)}%`} />
+        <Legend color="var(--pending)" label={`Claimed only ${stalledPct.toFixed(0)}%`} />
       </div>
     </div>
   );
@@ -276,4 +302,3 @@ function Legend({ color, label }: { color: string; label: string }) {
     </span>
   );
 }
-

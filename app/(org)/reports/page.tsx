@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
 import { Card, ErrorBanner, KpiCard, KpiRow, PageHeader, Spinner } from '@/components/ui';
 import { IncidentMap } from '@/components/incident-map';
-import type { DashboardStats, Incident } from '@/lib/types';
+import type { DashboardMapIncident, DashboardStats } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 
 export default function ReportsPage() {
@@ -12,7 +12,7 @@ export default function ReportsPage() {
   const statsPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/stats` : null;
   const mapPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/map` : null;
   const { data: stats, error: statsError } = useApiGet<DashboardStats>(statsPath);
-  const { data: mapData, error: mapError } = useApiGet<Incident[]>(mapPath);
+  const { data: mapData, error: mapError } = useApiGet<DashboardMapIncident[]>(mapPath);
 
   const error = statsError || mapError;
   if (error) return <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load reports'} />;
@@ -21,11 +21,35 @@ export default function ReportsPage() {
   const resolutionRate = stats.totalIncidents === 0 ? 0 : Math.round((stats.resolvedIncidents / stats.totalIncidents) * 100);
   const maxCategory = Math.max(1, ...stats.incidentsByCategory.map((c) => c.count));
 
+  function exportCsv() {
+    const rows = [
+      ['Metric', 'Value'],
+      ['Total incidents', String(stats!.totalIncidents)],
+      ['Claimed this month', String(stats!.claimedThisMonth)],
+      ['Awaiting claim nearby', String(stats!.awaitingClaimInServiceArea)],
+      ['Resolved incidents', String(stats!.resolvedIncidents)],
+      ['Active volunteers', String(stats!.activeVolunteers)],
+      ['Completed cleanup tasks', String(stats!.completedCleanupTasks)],
+      ['Resolution rate', `${resolutionRate}%`],
+      [],
+      ['Category', 'Count'],
+      ...stats!.incidentsByCategory.map((c) => [c.category, String(c.count)]),
+    ];
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ecotrack-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <PageHeader title="Reports" description="Organisation impact and activity summary" />
-        <button className="btn btn-secondary btn-sm">Export</button>
+        <button className="btn btn-secondary btn-sm" onClick={exportCsv}>Export</button>
       </div>
 
       <KpiRow>
