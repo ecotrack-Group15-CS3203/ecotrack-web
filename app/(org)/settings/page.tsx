@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import { Avatar, Button, Card, Chip, ErrorBanner, Modal, PageHeader, SectionTitle, Spinner, Toast } from '@/components/ui';
 import { IconPlus } from '@/components/icons';
-import type { Invitation, Organisation, OrganisationMember } from '@/lib/types';
+import type { CreateInviteLinkResult, InviteLink, Organisation, OrganisationMember } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { LocationMap } from '@/components/incident-map';
 
@@ -13,6 +13,17 @@ const RADIUS_OPTIONS = [1, 5, 10, 25, 50];
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function inviteUrl(token: string) {
+  return `${typeof window === 'undefined' ? '' : window.location.origin}/invite/${token}`;
+}
+
+function inviteStatus(invite: InviteLink): { label: string; tone: string } {
+  if (invite.revokedAt) return { label: 'Revoked', tone: 'inactive' };
+  if (new Date(invite.expiresAt) < new Date()) return { label: 'Expired', tone: 'rejected' };
+  if (invite.maxUses !== null && invite.usesCount >= invite.maxUses) return { label: 'Exhausted', tone: 'rejected' };
+  return { label: 'Active', tone: 'active' };
 }
 
 export default function SettingsPage() {
@@ -23,8 +34,8 @@ export default function SettingsPage() {
   const { data: org, error, mutate } = useApiGet<Organisation>(orgPath);
   const membersPath = activeOrgId ? `/organisations/${activeOrgId}/members` : null;
   const { data: members } = useApiGet<OrganisationMember[]>(membersPath);
-  const invitesPath = activeOrgId ? `/organisations/${activeOrgId}/invitations` : null;
-  const { data: invites, error: invitesError, mutate: mutateInvites } = useApiGet<Invitation[]>(invitesPath);
+  const invitesPath = activeOrgId ? `/organisations/${activeOrgId}/invites` : null;
+  const { data: invites, error: invitesError, mutate: mutateInvites } = useApiGet<InviteLink[]>(invitesPath);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -38,10 +49,12 @@ export default function SettingsPage() {
 
   const [toast, setToast] = useState<string | null>(null);
   const [generateOpen, setGenerateOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
+  const [maxUses, setMaxUses] = useState('');
+  const [expiresInDays, setExpiresInDays] = useState(7);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
-  const [generatedLink, setGeneratedLink] = useState<Invitation | null>(null);
+  const [generatedLink, setGeneratedLink] = useState<CreateInviteLinkResult | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   useEffect(() => {
     // Populate the editable form once the org loads from SWR — not a
@@ -51,9 +64,9 @@ export default function SettingsPage() {
       setName(org.name);
       setDescription(org.description ?? '');
       setContactEmail(org.contactEmail ?? '');
-      setLatitude(org.serviceArea?.latitude ?? 0);
-      setLongitude(org.serviceArea?.longitude ?? 0);
-      setRadiusKm(org.serviceArea?.radiusKm ?? 5);
+      setLatitude(org.serviceAreaCenter?.lat ?? 0);
+      setLongitude(org.serviceAreaCenter?.lng ?? 0);
+      setRadiusKm(org.serviceAreaRadiusKm ?? 5);
     }
   }, [org]);
 
@@ -67,7 +80,8 @@ export default function SettingsPage() {
         name,
         description,
         contactEmail,
-        serviceArea: { latitude, longitude, radiusKm },
+        serviceAreaCenter: { lat: latitude, lng: longitude },
+        serviceAreaRadiusKm: radiusKm,
       });
       await mutate();
       await refreshProfile();
@@ -84,13 +98,29 @@ export default function SettingsPage() {
     setGenerating(true);
     setGenerateError(null);
     try {
-      const link = await api.post<Invitation>(`/organisations/${activeOrgId}/invitations`, { email: inviteEmail });
-      setGeneratedLink(link);
+      const result = await api.post<CreateInviteLinkResult>(`/organisations/${activeOrgId}/invites`, {
+        maxUses: maxUses.trim() ? Number(maxUses) : undefined,
+        expiresInDays,
+      });
+      setGeneratedLink(result);
       await mutateInvites();
     } catch (err) {
       setGenerateError(err instanceof ApiError ? err.message : 'Could not generate an invite link.');
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function revokeInvite(inviteId: string) {
+    if (!activeOrgId) return;
+    setRevokingId(inviteId);
+    try {
+      await api.del(`/organisations/${activeOrgId}/invites/${inviteId}`);
+      await mutateInvites();
+    } catch (err) {
+      setToast(err instanceof ApiError ? err.message : 'Could not revoke the invite link.');
+    } finally {
+      setRevokingId(null);
     }
   }
 
@@ -106,18 +136,9 @@ export default function SettingsPage() {
   function closeGenerateModal() {
     setGenerateOpen(false);
     setGeneratedLink(null);
-    setInviteEmail('');
+    setMaxUses('');
+    setExpiresInDays(7);
     setGenerateError(null);
-  }
-
-  function inviteStatus(invite: Invitation): { label: string; tone: string } {
-    const expired = new Date(invite.expiresAt) < new Date();
-    if (invite.acceptedAt) return { label: 'Accepted', tone: 'verified' };
-    return expired ? { label: 'Expired', tone: 'rejected' } : { label: 'Active', tone: 'active' };
-  }
-
-  function inviteUrl(token: string) {
-    return `${typeof window === 'undefined' ? '' : window.location.origin}/accept-invite?token=${token}`;
   }
 
   if (error) return <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load organisation'} />;
@@ -173,7 +194,6 @@ export default function SettingsPage() {
         <div>
           <Chip tone={org.isActive ? 'active' : 'inactive'}>{org.isActive ? 'active' : 'inactive'}</Chip>
         </div>
-        <div className="hint">Only a platform administrator can change organisation status.</div>
       </div>
       <Button disabled={saving || !name.trim()} onClick={save}>
         {saving ? 'Saving…' : 'Save changes'}
@@ -187,8 +207,8 @@ export default function SettingsPage() {
               <tr key={m.id}>
                 <td>
                   <div className="row-flex">
-                    <Avatar name={m.user.fullName} />
-                    {m.user.fullName}
+                    <Avatar name={m.fullName} />
+                    {m.fullName}
                   </div>
                 </td>
                 <td style={{ textTransform: 'capitalize' }}>{m.role.replace(/_/g, ' ')}</td>
@@ -218,7 +238,7 @@ export default function SettingsPage() {
               <tr>
                 <th>Created</th>
                 <th>Expires</th>
-                <th>Email</th>
+                <th>Uses</th>
                 <th>Status</th>
                 <th aria-label="Actions" />
               </tr>
@@ -226,17 +246,25 @@ export default function SettingsPage() {
             <tbody>
               {invites.map((invite) => {
                 const status = inviteStatus(invite);
+                const revocable = status.label === 'Active';
                 return (
                   <tr key={invite.id}>
                     <td>{formatDate(invite.createdAt)}</td>
                     <td>{formatDate(invite.expiresAt)}</td>
-                    <td>{invite.email}</td>
+                    <td>{invite.usesCount} / {invite.maxUses ?? 'unlimited'}</td>
                     <td><Chip tone={status.tone}>{status.label}</Chip></td>
                     <td>
                       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button size="sm" variant="secondary" onClick={() => copyLink(inviteUrl(invite.token))}>
-                          Copy link
-                        </Button>
+                        {revocable && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            disabled={revokingId === invite.id}
+                            onClick={() => revokeInvite(invite.id)}
+                          >
+                            {revokingId === invite.id ? 'Revoking…' : 'Revoke'}
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -259,7 +287,9 @@ export default function SettingsPage() {
 
         {generatedLink ? (
           <div>
-            <p className="hint" style={{ marginBottom: 8 }}>Share this link with the people you want to invite:</p>
+            <p className="hint" style={{ marginBottom: 8 }}>
+              This link is shown only once — share it with the volunteers you want to invite:
+            </p>
             <div style={{ display: 'flex', gap: 8 }}>
               <input type="text" value={inviteUrl(generatedLink.token)} readOnly style={{ flex: 1 }} />
               <Button variant="secondary" onClick={() => copyLink(inviteUrl(generatedLink.token))}>Copy</Button>
@@ -268,8 +298,12 @@ export default function SettingsPage() {
         ) : (
           <div>
             <div className="field">
-              <label htmlFor="invite-email">Volunteer email</label>
-              <input id="invite-email" type="email" required value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="volunteer@example.com" />
+              <label htmlFor="invite-max-uses">Max uses (leave blank for unlimited)</label>
+              <input id="invite-max-uses" type="number" min={1} value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder="Unlimited" />
+            </div>
+            <div className="field">
+              <label htmlFor="invite-expires">Expires in (days)</label>
+              <input id="invite-expires" type="number" min={1} value={expiresInDays} onChange={(e) => setExpiresInDays(Number(e.target.value))} />
             </div>
           </div>
         )}
@@ -277,7 +311,7 @@ export default function SettingsPage() {
         <div className="modal-actions">
           <Button variant="secondary" onClick={closeGenerateModal}>{generatedLink ? 'Close' : 'Cancel'}</Button>
           {!generatedLink && (
-            <Button onClick={generateInvite} disabled={generating || !/^\S+@\S+\.\S+$/.test(inviteEmail)}>
+            <Button onClick={generateInvite} disabled={generating}>
               {generating ? 'Generating…' : 'Generate link'}
             </Button>
           )}
