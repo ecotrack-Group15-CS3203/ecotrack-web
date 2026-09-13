@@ -4,13 +4,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { apiFetch, ApiError } from './api';
 import type { Profile } from './types';
 
-const ACTIVE_ORG_KEY = 'ecotrack_active_org';
-
 interface AuthContextValue {
   profile: Profile | null;
   loading: boolean;
+  /** Derived from profile.organisation, not stored state -- a user has at most
+   * one organisation (SRS 3.1.1), so there is nothing to switch between and
+   * nothing to persist across sessions. null for a citizen with no org. */
   activeOrgId: string | null;
-  setActiveOrgId: (organisationId: string) => void;
   /** Redirects to Asgardeo's hosted sign-in via /api/auth/login. Asgardeo owns
    * the credential UI, so there's no email/password to pass. */
   login: () => void;
@@ -19,31 +19,17 @@ interface AuthContextValue {
    * and silently re-authenticate the next sign-in. */
   logout: () => void;
   refreshProfile: () => Promise<void>;
-  /** @deprecated No-op kept only so app/accept-invite/page.tsx (out of scope
-   * for the Asgardeo migration, still calling deleted /auth/login and
-   * /auth/register endpoints) keeps compiling. Reloads the profile instead of
-   * storing the token argument, since there's no token to store any more. */
-  completeAuth: (accessToken: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [activeOrgId, setActiveOrgIdState] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async () => {
     const data = await apiFetch<Profile>('/auth/me');
     setProfile(data);
-
-    const storedOrgId = localStorage.getItem(ACTIVE_ORG_KEY);
-    const validStoredOrg = data.memberships.find((m) => m.organisationId === storedOrgId);
-    if (validStoredOrg) {
-      setActiveOrgIdState(storedOrgId);
-    } else if (data.memberships.length > 0) {
-      setActiveOrgIdState(data.memberships[0].organisationId);
-    }
   }, []);
 
   useEffect(() => {
@@ -56,46 +42,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, [loadProfile]);
 
-  const completeAuth = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- signature kept for callers, see the deprecation note above
-    async (_accessToken: string) => {
-      await loadProfile();
-    },
-    [loadProfile],
-  );
-
   const login = useCallback(() => {
     window.location.href = '/api/auth/login';
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(ACTIVE_ORG_KEY);
     setProfile(null);
-    setActiveOrgIdState(null);
     window.location.href = '/api/auth/logout';
-  }, []);
-
-  const setActiveOrgId = useCallback((organisationId: string) => {
-    localStorage.setItem(ACTIVE_ORG_KEY, organisationId);
-    setActiveOrgIdState(organisationId);
   }, []);
 
   const refreshProfile = useCallback(async () => {
     await loadProfile();
   }, [loadProfile]);
 
+  const activeOrgId = profile?.organisation?.id ?? null;
+
   const value = useMemo(
     () => ({
       profile,
       loading,
       activeOrgId,
-      setActiveOrgId,
       login,
       logout,
       refreshProfile,
-      completeAuth,
     }),
-    [profile, loading, activeOrgId, setActiveOrgId, login, logout, refreshProfile, completeAuth],
+    [profile, loading, activeOrgId, login, logout, refreshProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

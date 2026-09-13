@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
 import type { JoinRequest } from '@/lib/types';
 import { AdminShell } from '@/components/admin-shell';
-import { Spinner, EmptyState } from '@/components/ui';
+import { Spinner } from '@/components/ui';
 import {
   IconDashboard,
   IconIncidents,
@@ -32,7 +32,7 @@ const NAV_ITEMS = [
 ];
 
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
-  const { profile, loading, activeOrgId, setActiveOrgId } = useAuth();
+  const { profile, loading, activeOrgId } = useAuth();
   const router = useRouter();
   const joinRequestsPath = activeOrgId ? `/organisations/${activeOrgId}/join-requests` : null;
   const { data: joinRequests } = useApiGet<JoinRequest[]>(joinRequestsPath);
@@ -43,63 +43,25 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
       router.replace('/login');
       return;
     }
-    if (profile?.isPlatformAdmin) {
-      router.replace('/platform');
+    // The web dashboard is org-admin only (SRS scope: volunteers/citizens use the
+    // mobile app). Anyone else signed in lands on the "get the app" page instead
+    // of a dashboard they have no access to.
+    if (profile.role !== 'org_admin') {
+      router.replace('/app');
     }
   }, [loading, profile, router]);
 
-  if (loading || !profile) return <Spinner />;
-
-  const orgAdminMemberships = profile.memberships.filter((m) => m.role === 'org_admin');
-
-  if (orgAdminMemberships.length === 0) {
-    return (
-      <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center' }}>
-        <EmptyState>
-          This dashboard is for organisation administrators. Your account doesn&apos;t have an
-          organisation-administrator role.
-        </EmptyState>
-      </div>
-    );
+  if (loading || !profile || profile.role !== 'org_admin' || !profile.organisation) {
+    return <Spinner />;
   }
 
-  const activeOrg = orgAdminMemberships.find((m) => m.organisationId === activeOrgId);
   const pendingJoinRequests = joinRequests?.filter((request) => request.status === 'pending').length;
   const navItems = NAV_ITEMS.map((item) =>
     item.href === '/join-requests' ? { ...item, badgeCount: pendingJoinRequests } : item,
   );
 
   return (
-    <AdminShell
-      mode="org"
-      navItems={navItems}
-      sidebarFoot={activeOrg?.organisationName ?? orgAdminMemberships[0].organisationName}
-      orgSwitcher={
-        orgAdminMemberships.length > 1 ? (
-          <div style={{ padding: '0 20px 12px' }}>
-            <select
-              value={activeOrgId ?? ''}
-              onChange={(e) => setActiveOrgId(e.target.value)}
-              style={{
-                width: '100%',
-                background: 'rgba(255,255,255,0.08)',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.15)',
-                borderRadius: 8,
-                padding: '6px 8px',
-                fontSize: 13,
-              }}
-            >
-              {orgAdminMemberships.map((m) => (
-                <option key={m.organisationId} value={m.organisationId} style={{ color: '#000' }}>
-                  {m.organisationName}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : undefined
-      }
-    >
+    <AdminShell navItems={navItems} sidebarFoot={profile.organisation.name}>
       {children}
     </AdminShell>
   );

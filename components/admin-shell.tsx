@@ -17,15 +17,11 @@ interface NavItem {
 export function AdminShell({
   children,
   navItems,
-  mode,
   sidebarFoot,
-  orgSwitcher,
 }: {
   children: React.ReactNode;
   navItems: NavItem[];
-  mode: 'org' | 'platform';
   sidebarFoot: string;
-  orgSwitcher?: React.ReactNode;
 }) {
   const pathname = usePathname();
   const { profile, logout } = useAuth();
@@ -43,7 +39,7 @@ export function AdminShell({
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <div className={`web-sidebar ${mode === 'platform' ? 'platform-mode' : ''}`}>
+      <div className="web-sidebar">
         <div className="web-brand">
           <IconLeaf className="text-white" style={{ stroke: '#fff', width: 20, height: 20 }} />
           EcoTrack
@@ -78,7 +74,6 @@ export function AdminShell({
             );
           })}
         </div>
-        {orgSwitcher}
         <div className="web-sidebar-foot">{sidebarFoot}</div>
       </div>
 
