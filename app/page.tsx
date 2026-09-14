@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { AccountMenu } from '@/components/account-menu';
 import {
   IconEvents,
   IconLeaf,
@@ -33,9 +34,7 @@ export default function LandingPage() {
         <nav className="site-nav" aria-label="Primary">
           <a href="#how-it-works">How it works</a>
           <a href="#for-you">Who it&apos;s for</a>
-          <Link href="/login" className="btn btn-secondary btn-sm">
-            Sign in
-          </Link>
+          <AccountMenu />
         </nav>
       </header>
 

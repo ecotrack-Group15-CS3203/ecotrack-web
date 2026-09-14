@@ -50,6 +50,10 @@ export const IconDrag = (p: IconProps) => (
 );
 export const IconTrash = (p: IconProps) => <Icon {...p} d="M4 6h16M8 6V4h8v2M6 6l1 14h10l1-14" />;
 export const IconPlus = (p: IconProps) => <Icon {...p} d="M12 5v14M5 12h14" />;
+export const IconChevronDown = (p: IconProps) => <Icon {...p} d="M6 9l6 6 6-6" />;
+export const IconLogout = (p: IconProps) => (
+  <Icon {...p} d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+);
 export const IconPin = ({ className, style, label }: IconProps & { style?: React.CSSProperties; label?: string }) => (
   <svg
     className={`map-pin ${className ?? ''}`}

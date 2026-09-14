@@ -366,3 +366,76 @@ tbody tr:hover td { background: #FAFAF6; }
 @media (max-width: 560px) {
   .features-grid { grid-template-columns: 1fr; }
 }
+
+/* ===== Account menu (public header, signed-in state) ===== */
+.account-menu-placeholder { width: 92px; height: 34px; }
+.account-menu { position: relative; }
+.account-trigger {
+  display: flex; align-items: center; gap: 8px; background: none; border: 1px solid transparent;
+  border-radius: 20px; padding: 3px 10px 3px 3px; color: var(--text);
+}
+.account-trigger:hover { background: #F0EFE9; }
+.account-trigger-name { font-size: 13.5px; font-weight: 600; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-dropdown {
+  position: absolute; top: calc(100% + 8px); right: 0; width: 220px; z-index: 40;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md);
+  box-shadow: 0 16px 36px -12px rgba(20, 30, 25, 0.28), var(--shadow-card); padding: 8px; overflow: hidden;
+}
+.account-dropdown-head { padding: 8px 10px 10px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+.account-dropdown-name { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.account-dropdown-email { font-size: 12px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-dropdown-item {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; font-size: 13.5px;
+  font-weight: 500; color: var(--text-2); padding: 9px 10px; border-radius: 6px; background: none; border: none;
+}
+.account-dropdown-item:hover { background: #F0EFE9; color: var(--text); }
+
+/* ===== Get-the-app page (app/app/page.tsx) — reuses the landing page's
+   .hero / .section / .features-grid / .cta-banner / .lp-footer classes;
+   these are the pieces specific to it. ===== */
+.hero-note {
+  display: inline-flex; align-items: center; padding: 11px 18px; border-radius: var(--radius-md);
+  background: var(--pending-tint); color: var(--pending); font-size: 14px; font-weight: 600;
+}
+.callout {
+  display: flex; gap: 16px; align-items: flex-start; background: var(--primary-tint);
+  border: 1px solid #CBEADC; border-radius: var(--radius-lg); padding: 24px 28px;
+}
+.callout-icon {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px; background: #fff; color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+}
+.callout h3 { font-size: 15.5px; margin-bottom: 6px; }
+.callout p { font-size: 13.5px; color: var(--text-2); line-height: 1.5; margin: 0; }
+
+.phone-frame {
+  width: 250px; margin: 0 auto; background: #16261F; border-radius: 36px; padding: 12px;
+  box-shadow: 0 30px 60px -22px rgba(20, 30, 25, 0.4);
+}
+.phone-screen {
+  position: relative; background: var(--bg); border-radius: 24px; overflow: hidden;
+  height: 500px; display: flex; flex-direction: column;
+}
+.phone-notch {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 84px; height: 16px;
+  background: #16261F; border-radius: 0 0 10px 10px; z-index: 2;
+}
+.phone-topbar { padding: 24px 16px 8px; display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: var(--text); }
+.phone-topbar .icon { width: 16px; height: 16px; color: var(--primary); }
+.phone-body { flex: 1; padding: 6px 12px; display: flex; flex-direction: column; gap: 10px; }
+.phone-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px; box-shadow: var(--shadow-card); }
+.phone-card-thumb { width: 100%; height: 64px; border-radius: 8px; background: linear-gradient(135deg, #9FE1CB, #5DCAA5); margin-bottom: 8px; }
+.phone-card h5 { font-size: 12px; margin: 6px 0 3px; }
+.phone-card p { font-size: 10.5px; color: var(--text-3); }
+.phone-fab {
+  position: absolute; right: 14px; bottom: 66px; width: 42px; height: 42px; border-radius: 50%;
+  background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 22px -6px rgba(15, 110, 86, 0.65);
+}
+.phone-fab .icon { width: 20px; height: 20px; }
+.phone-tabbar { display: flex; justify-content: space-around; padding: 10px 8px; border-top: 1px solid var(--border); background: var(--card); }
+.phone-tabbar .icon { width: 18px; height: 18px; color: var(--text-disabled); }
+.phone-tabbar .icon--active { color: var(--primary); }
+@media (max-width: 900px) {
+  .phone-frame { display: none; }
+}
