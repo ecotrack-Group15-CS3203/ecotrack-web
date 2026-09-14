@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-typecheck-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Blocking gates: lint, typecheck, and a full production build (Turbopack) —
+      # the build step is what actually catches a module-resolution break like the
+      # react-i18next/Next 16 incompatibility this repo hit, which tsc alone does not.
+      - name: ESLint
+        run: pnpm exec eslint .
+      - name: TypeScript
+        run: pnpm exec tsc --noEmit
+      - name: Build
+        run: CI=true pnpm build
+        env:
+          # Dummy values so build-time env validation doesn't fail in CI —
+          # no real backend/Asgardeo tenant is reachable here, and none of
+          # these are needed to produce a valid production build.
+          API_URL: http://localhost:4000/v1
+          NEXT_PUBLIC_MOBILE_APP_URL: ''
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
