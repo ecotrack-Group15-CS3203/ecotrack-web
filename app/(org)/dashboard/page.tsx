@@ -20,6 +20,7 @@ import type {
   DashboardStats,
   IncidentSummary,
   OrganisationMember,
+  Paginated,
   Task,
   WorkflowStage,
 } from '@/lib/types';
@@ -56,19 +57,28 @@ export default function DashboardPage() {
   const { activeOrgId } = useAuth();
   const statsPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/stats` : null;
   const mapPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/map` : null;
-  const incidentsPath = activeOrgId ? `/organisations/${activeOrgId}/incidents` : null;
+  // limit=100 on incidents/members/tasks: the stage-distribution/cleanup-progress
+  // charts and the volunteer leaderboard below all aggregate over the complete
+  // set, so a paginated slice would silently under-count them.
+  const incidentsPath = activeOrgId ? `/organisations/${activeOrgId}/incidents?limit=100` : null;
   const stagesPath = activeOrgId ? `/organisations/${activeOrgId}/workflow-stages` : null;
+  // No limit override here: recentActivity already sorts+slices to
+  // RECENT_ACTIVITY_LIMIT (20), which is exactly the API's default page size.
   const auditPath = activeOrgId ? `/organisations/${activeOrgId}/audit-logs` : null;
-  const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer` : null;
-  const tasksPath = activeOrgId ? `/organisations/${activeOrgId}/tasks` : null;
+  const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer&limit=100` : null;
+  const tasksPath = activeOrgId ? `/organisations/${activeOrgId}/tasks?limit=100` : null;
 
   const { data: stats, error: statsError } = useApiGet<DashboardStats>(statsPath);
   const { data: mapIncidents, error: mapError } = useApiGet<DashboardMapIncident[]>(mapPath);
-  const { data: incidents, error: incidentsError } = useApiGet<IncidentSummary[]>(incidentsPath);
+  const { data: incidentsPage, error: incidentsError } = useApiGet<Paginated<IncidentSummary>>(incidentsPath);
+  const incidents = incidentsPage?.items;
   const { data: stages, error: stagesError } = useApiGet<WorkflowStage[]>(stagesPath);
-  const { data: auditLog, error: auditError } = useApiGet<AuditLogEntry[]>(auditPath);
-  const { data: volunteers, error: volunteersError } = useApiGet<OrganisationMember[]>(volunteersPath);
-  const { data: tasks, error: tasksError } = useApiGet<Task[]>(tasksPath);
+  const { data: auditLogPage, error: auditError } = useApiGet<Paginated<AuditLogEntry>>(auditPath);
+  const auditLog = auditLogPage?.items;
+  const { data: volunteersPage, error: volunteersError } = useApiGet<Paginated<OrganisationMember>>(volunteersPath);
+  const volunteers = volunteersPage?.items;
+  const { data: tasksPage, error: tasksError } = useApiGet<Paginated<Task>>(tasksPath);
+  const tasks = tasksPage?.items;
 
   const error = statsError || mapError || incidentsError || stagesError || auditError || volunteersError || tasksError;
 

@@ -6,6 +6,18 @@
 
 export type UserRole = 'citizen' | 'volunteer' | 'org_admin';
 
+/** The envelope every paginated list endpoint returns as of ecotrack-api's E6
+ * pagination sweep — join-requests, members, incidents, tasks, events, and
+ * audit-logs all moved from a bare array to this shape. Endpoints that stayed
+ * bare arrays (incident pool, workflow stages/rules, invite links) don't use
+ * this type. */
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 /** The real GET /auth/me shape. No memberships array — a user has at most one
  * organisation, stored directly on their row, not a join table. */
 export interface Profile {

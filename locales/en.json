@@ -341,7 +341,12 @@
       "taskHistory": "Task History",
       "noTaskHistory": "No task history found.",
       "completed": "Completed",
-      "due": "Due"
+      "due": "Due",
+      "removeVolunteer": "Remove Volunteer",
+      "removeConfirm": "Remove {{name}} from this organisation? Their in-progress tasks return to pending and future event RSVPs are cancelled.",
+      "cancel": "Cancel",
+      "confirmRemove": "Remove",
+      "removing": "Removing…"
     }
   },
   "orgRegistration": {

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
-import type { JoinRequest } from '@/lib/types';
+import type { Paginated } from '@/lib/types';
 import { AdminShell } from '@/components/admin-shell';
 import { Spinner } from '@/components/ui';
 import {
@@ -36,8 +36,13 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const { profile, loading, activeOrgId } = useAuth();
   const router = useRouter();
-  const joinRequestsPath = activeOrgId ? `/organisations/${activeOrgId}/join-requests` : null;
-  const { data: joinRequests } = useApiGet<JoinRequest[]>(joinRequestsPath);
+  // limit=1 + status=pending: only `total` is read here, so there's no reason to
+  // fetch every pending request just to count them (page 1 would also
+  // undercount past 20 without the server-side status filter).
+  const joinRequestsPath = activeOrgId
+    ? `/organisations/${activeOrgId}/join-requests?status=pending&limit=1`
+    : null;
+  const { data: joinRequestsPage } = useApiGet<Paginated<unknown>>(joinRequestsPath);
 
   useEffect(() => {
     if (loading) return;
@@ -57,7 +62,7 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
     return <Spinner />;
   }
 
-  const pendingJoinRequests = joinRequests?.filter((request) => request.status === 'pending').length;
+  const pendingJoinRequests = joinRequestsPage?.total;
   const navItems = NAV_ITEMS.map((item) => ({
     href: item.href,
     icon: item.icon,

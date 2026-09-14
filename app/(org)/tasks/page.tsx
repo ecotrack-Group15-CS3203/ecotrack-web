@@ -21,6 +21,7 @@ import {
 import type {
   IncidentSummary,
   OrganisationMember,
+  Paginated,
   Task,
   TaskPriority,
   TaskStatus,
@@ -59,27 +60,33 @@ function TasksPageInner() {
     Boolean(preselectedIncidentId)
   );
 
+  // limit=100 throughout: this page's status/volunteer/date filters run
+  // client-side over the full fetch, and the incident/volunteer pickers in
+  // "Create task" need the complete lists, not just page 1.
   const listPath = activeOrgId
-    ? `/organisations/${activeOrgId}/tasks${
-        statusFilter === 'all' ? '' : `?status=${statusFilter}`
+    ? `/organisations/${activeOrgId}/tasks?limit=100${
+        statusFilter === 'all' ? '' : `&status=${statusFilter}`
       }`
     : null;
 
-  const { data: tasks, error, mutate } = useApiGet<Task[]>(listPath);
+  const { data: tasksPage, error, mutate } = useApiGet<Paginated<Task>>(listPath);
+  const tasks = tasksPage?.items;
 
   const approvedIncidentsPath = activeOrgId
-    ? `/organisations/${activeOrgId}/incidents?status=approved`
+    ? `/organisations/${activeOrgId}/incidents?status=approved&limit=100`
     : null;
 
-  const { data: approvedIncidents } =
-    useApiGet<IncidentSummary[]>(approvedIncidentsPath);
+  const { data: approvedIncidentsPage } =
+    useApiGet<Paginated<IncidentSummary>>(approvedIncidentsPath);
+  const approvedIncidents = approvedIncidentsPage?.items;
 
   const volunteersPath = activeOrgId
-    ? `/organisations/${activeOrgId}/members?role=volunteer`
+    ? `/organisations/${activeOrgId}/members?role=volunteer&limit=100`
     : null;
 
-  const { data: volunteers } =
-    useApiGet<OrganisationMember[]>(volunteersPath);
+  const { data: volunteersPage } =
+    useApiGet<Paginated<OrganisationMember>>(volunteersPath);
+  const volunteers = volunteersPage?.items;
 
   const incidentTitleById = useMemo(
     () => new Map((approvedIncidents ?? []).map((i) => [i.id, i.title])),

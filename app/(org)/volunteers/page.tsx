@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth-context';
-import { useApiGet } from '@/lib/use-org-api';
+import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import {
   Avatar,
   Button,
@@ -16,21 +16,45 @@ import {
   PageHeader,
   Spinner,
 } from '@/components/ui';
-import type { OrganisationMember, Task } from '@/lib/types';
+import type { OrganisationMember, Paginated, Task } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 
 export default function VolunteersPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const { activeOrgId } = useAuth();
+  const api = useAuthedFetch();
   const [selectedVolunteer, setSelectedVolunteer] = useState<OrganisationMember | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>('desc');
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
 
-  const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer` : null;
-  const { data: volunteers, error: volunteersError } = useApiGet<OrganisationMember[]>(volunteersPath);
+  // limit=100 on both: the completed/active task counts and the sort below
+  // aggregate over the complete set, not just the first page.
+  const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer&limit=100` : null;
+  const { data: volunteersPage, error: volunteersError, mutate: mutateVolunteers } =
+    useApiGet<Paginated<OrganisationMember>>(volunteersPath);
+  const volunteers = volunteersPage?.items;
 
-  const tasksPath = activeOrgId ? `/organisations/${activeOrgId}/tasks` : null;
-  const { data: tasks } = useApiGet<Task[]>(tasksPath);
+  const tasksPath = activeOrgId ? `/organisations/${activeOrgId}/tasks?limit=100` : null;
+  const { data: tasksPage } = useApiGet<Paginated<Task>>(tasksPath);
+  const tasks = tasksPage?.items;
+
+  async function handleRemove(volunteer: OrganisationMember) {
+    if (!activeOrgId) return;
+    setRemoving(true);
+    setRemoveError(null);
+    try {
+      await api.del(`/organisations/${activeOrgId}/volunteers/${volunteer.id}`);
+      setSelectedVolunteer(null);
+      await mutateVolunteers();
+    } catch (caught) {
+      setRemoveError(caught instanceof ApiError ? caught.message : 'Unable to remove this volunteer.');
+    } finally {
+      setRemoving(false);
+    }
+  }
 
   const completedTasksCountByUser = useMemo(() => {
     const counts = new Map<string, number>();
@@ -126,7 +150,11 @@ export default function VolunteersPage() {
               {sortedVolunteers.map((v) => (
                 <tr
                   key={v.id}
-                  onClick={() => setSelectedVolunteer(v)}
+                  onClick={() => {
+                    setSelectedVolunteer(v);
+                    setConfirmingRemove(false);
+                    setRemoveError(null);
+                  }}
                   style={{ cursor: 'pointer' }}
                 >
                   <td>
@@ -252,6 +280,30 @@ export default function VolunteersPage() {
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+
+            {/* Remove volunteer (SRS 3.1.10) */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 'auto' }}>
+              {removeError && <div style={{ marginBottom: 8 }}><ErrorBanner message={removeError} /></div>}
+              {confirmingRemove ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0 }}>
+                    {t('volunteers.profile.removeConfirm', { name: selectedVolunteer.fullName })}
+                  </p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Button variant="secondary" disabled={removing} onClick={() => setConfirmingRemove(false)}>
+                      {t('volunteers.profile.cancel')}
+                    </Button>
+                    <Button variant="destructive" disabled={removing} onClick={() => handleRemove(selectedVolunteer)}>
+                      {removing ? t('volunteers.profile.removing') : t('volunteers.profile.confirmRemove')}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button variant="destructive" onClick={() => setConfirmingRemove(true)}>
+                  {t('volunteers.profile.removeVolunteer')}
+                </Button>
               )}
             </div>
           </div>

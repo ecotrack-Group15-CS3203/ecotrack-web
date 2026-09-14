@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import { Avatar, Button, Card, Chip, ErrorBanner, Modal, PageHeader, SectionTitle, Spinner, Toast } from '@/components/ui';
 import { IconPlus } from '@/components/icons';
-import type { CreateInviteLinkResult, InviteLink, Organisation, OrganisationMember } from '@/lib/types';
+import type { CreateInviteLinkResult, InviteLink, Organisation, OrganisationMember, Paginated } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { LocationMap } from '@/components/incident-map';
 
@@ -39,8 +39,12 @@ export default function SettingsPage() {
 
   const orgPath = activeOrgId ? `/organisations/${activeOrgId}` : null;
   const { data: org, error, mutate } = useApiGet<Organisation>(orgPath);
-  const membersPath = activeOrgId ? `/organisations/${activeOrgId}/members` : null;
-  const { data: members } = useApiGet<OrganisationMember[]>(membersPath);
+  // limit=100 (the API's cap): this table has no pagination controls of its
+  // own, so a full-but-bounded page beats silently truncating at the default
+  // 20 for any org with more members than that.
+  const membersPath = activeOrgId ? `/organisations/${activeOrgId}/members?limit=100` : null;
+  const { data: membersPage } = useApiGet<Paginated<OrganisationMember>>(membersPath);
+  const members = membersPage?.items;
   const invitesPath = activeOrgId ? `/organisations/${activeOrgId}/invites` : null;
   const { data: invites, error: invitesError, mutate: mutateInvites } = useApiGet<InviteLink[]>(invitesPath);
 

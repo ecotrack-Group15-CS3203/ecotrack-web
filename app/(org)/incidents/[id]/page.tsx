@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import { Button, Card, Chip, ErrorBanner, FieldError, SectionTitle, Spinner } from '@/components/ui';
-import type { Incident, WorkflowStage } from '@/lib/types';
+import type { Incident, Paginated, WorkflowStage } from '@/lib/types';
 import { ApiError, absoluteUrl } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
@@ -22,8 +22,10 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
 
   const detailPath = activeOrgId ? `/organisations/${activeOrgId}/incidents/${id}` : null;
   const { data: incident, error, mutate } = useApiGet<Incident>(detailPath);
-  const allPath = activeOrgId ? `/organisations/${activeOrgId}/incidents` : null;
-  const { data: allIncidents } = useApiGet<Incident[]>(allPath);
+  // limit=100: feeds the "duplicate of" picker below, which needs the full set.
+  const allPath = activeOrgId ? `/organisations/${activeOrgId}/incidents?limit=100` : null;
+  const { data: allIncidentsPage } = useApiGet<Paginated<Incident>>(allPath);
+  const allIncidents = allIncidentsPage?.items;
   const stagesPath = activeOrgId ? `/organisations/${activeOrgId}/workflow-stages` : null;
   const { data: stages } = useApiGet<WorkflowStage[]>(stagesPath);
 

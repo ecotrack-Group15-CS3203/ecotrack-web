@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
 import { Card, Chip, EmptyState, ErrorBanner, FilterBar, FilterPill, PageHeader, Spinner, TableThumb } from '@/components/ui';
-import type { Incident, IncidentSeverity, VerificationStatus, WorkflowStage } from '@/lib/types';
+import type { Incident, IncidentSeverity, Paginated, VerificationStatus, WorkflowStage } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 
@@ -37,10 +37,15 @@ export default function IncidentsPage() {
   const [dateTo, setDateTo] = useState('');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
+  // limit=100 (the API's cap): this page's stage/severity/date filters and
+  // sort all run client-side over whatever this fetch returns, so it needs
+  // the fullest page available rather than the default 20 — see Decision 2
+  // in the completion plan (a bounded page beats building pagination UI here).
   const listPath = activeOrgId
-    ? `/organisations/${activeOrgId}/incidents${statusFilter === 'all' ? '' : `?status=${statusFilter}`}`
+    ? `/organisations/${activeOrgId}/incidents?limit=100${statusFilter === 'all' ? '' : `&status=${statusFilter}`}`
     : null;
-  const { data: incidents, error } = useApiGet<Incident[]>(listPath);
+  const { data: incidentsPage, error } = useApiGet<Paginated<Incident>>(listPath);
+  const incidents = incidentsPage?.items;
   const stagesPath = activeOrgId ? `/organisations/${activeOrgId}/workflow-stages` : null;
   const { data: stages } = useApiGet<WorkflowStage[]>(stagesPath);
   const stagesById = useMemo(() => new Map((stages ?? []).map((s) => [s.id, s])), [stages]);

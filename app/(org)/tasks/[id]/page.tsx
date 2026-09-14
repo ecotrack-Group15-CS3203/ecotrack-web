@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import { Avatar, Button, Card, Chip, ErrorBanner, Modal, SectionTitle, Spinner, TableThumb } from '@/components/ui';
-import type { IncidentSummary, OrganisationMember, Task, TaskPriority } from '@/lib/types';
+import type { IncidentSummary, OrganisationMember, Paginated, Task, TaskPriority } from '@/lib/types';
 import { ApiError, absoluteUrl } from '@/lib/api';
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -18,8 +18,11 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const { data: task, error, mutate } = useApiGet<Task>(detailPath);
   const incidentPath = activeOrgId && task ? `/organisations/${activeOrgId}/incidents/${task.incidentId}` : null;
   const { data: incident } = useApiGet<IncidentSummary>(incidentPath);
-  const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer` : null;
-  const { data: volunteers } = useApiGet<OrganisationMember[]>(volunteersPath);
+  // limit=100: this feeds the reassignment dropdown, which needs every
+  // volunteer, not just the first page.
+  const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer&limit=100` : null;
+  const { data: volunteersPage } = useApiGet<Paginated<OrganisationMember>>(volunteersPath);
+  const volunteers = volunteersPage?.items;
 
   const [showReassign, setShowReassign] = useState(false);
   const [showEdit, setShowEdit] = useState(false);

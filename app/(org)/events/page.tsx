@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import { Button, Card, Chip, EmptyState, ErrorBanner, FieldError, Modal, PageHeader, Spinner } from '@/components/ui';
-import type { EventSummary, IncidentSummary } from '@/lib/types';
+import type { EventSummary, IncidentSummary, Paginated } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
@@ -27,10 +27,17 @@ function EventsPageInner() {
   const api = useAuthedFetch();
   const [showCreate, setShowCreate] = useState(() => Boolean(preselectedIncidentId));
 
-  const eventsPath = activeOrgId ? `/organisations/${activeOrgId}/events` : null;
-  const { data: events, error, mutate } = useApiGet<EventSummary[]>(eventsPath);
-  const approvedIncidentsPath = activeOrgId ? `/organisations/${activeOrgId}/incidents?status=approved` : null;
-  const { data: approvedIncidents } = useApiGet<IncidentSummary[]>(approvedIncidentsPath);
+  // limit=100 on both: this page lists every event with no pagination
+  // controls, and the incident picker in "Create event" needs every eligible
+  // incident, not just the first page.
+  const eventsPath = activeOrgId ? `/organisations/${activeOrgId}/events?limit=100` : null;
+  const { data: eventsPage, error, mutate } = useApiGet<Paginated<EventSummary>>(eventsPath);
+  const events = eventsPage?.items;
+  const approvedIncidentsPath = activeOrgId
+    ? `/organisations/${activeOrgId}/incidents?status=approved&limit=100`
+    : null;
+  const { data: approvedIncidentsPage } = useApiGet<Paginated<IncidentSummary>>(approvedIncidentsPath);
+  const approvedIncidents = approvedIncidentsPage?.items;
 
   return (
     <div>

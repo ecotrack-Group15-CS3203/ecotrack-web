@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
-import type { JoinRequest, JoinRequestStatus } from '@/lib/types';
+import type { JoinRequest, JoinRequestStatus, Paginated } from '@/lib/types';
 import { Button, Card, Chip, ErrorBanner, FilterBar, FilterPill, PageHeader, Spinner, Toast } from '@/components/ui';
 
 type StatusFilter = 'all' | JoinRequestStatus;
@@ -25,7 +25,8 @@ export default function JoinRequestsPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const path = activeOrgId ? `/organisations/${activeOrgId}/join-requests` : null;
-  const { data: requests, error, mutate } = useApiGet<JoinRequest[]>(path);
+  const { data, error, mutate } = useApiGet<Paginated<JoinRequest>>(path);
+  const requests = data?.items;
 
   const filteredRequests = useMemo(
     () => (requests ?? []).filter((request) => statusFilter === 'all' || request.status === statusFilter),
