@@ -9,6 +9,7 @@ import { IconPlus } from '@/components/icons';
 import type { CreateInviteLinkResult, InviteLink, Organisation, OrganisationMember, Paginated } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { LocationMap } from '@/components/incident-map';
+import { inviteStatus } from '@/lib/invite-helpers';
 
 const RADIUS_OPTIONS = [1, 5, 10, 25, 50];
 
@@ -18,18 +19,6 @@ function formatDate(value: string) {
 
 function inviteUrl(token: string) {
   return `${typeof window === 'undefined' ? '' : window.location.origin}/invite/${token}`;
-}
-
-function inviteStatus(
-  invite: InviteLink,
-  t: (key: string) => string,
-): { label: string; tone: string } {
-  if (invite.revokedAt) return { label: t('settings.inviteStatus.revoked'), tone: 'inactive' };
-  if (new Date(invite.expiresAt) < new Date()) return { label: t('settings.inviteStatus.expired'), tone: 'rejected' };
-  if (invite.maxUses !== null && invite.usesCount >= invite.maxUses) {
-    return { label: t('settings.inviteStatus.exhausted'), tone: 'rejected' };
-  }
-  return { label: t('settings.inviteStatus.active'), tone: 'active' };
 }
 
 export default function SettingsPage() {
@@ -256,14 +245,15 @@ export default function SettingsPage() {
             </thead>
             <tbody>
               {invites.map((invite) => {
-                const status = inviteStatus(invite, t);
-                const revocable = status.label === t('settings.inviteStatus.active');
+                const status = inviteStatus(invite);
+                const statusLabel = t(`settings.inviteStatus.${status.labelKey}`);
+                const revocable = status.labelKey === 'active';
                 return (
                   <tr key={invite.id}>
                     <td>{formatDate(invite.createdAt)}</td>
                     <td>{formatDate(invite.expiresAt)}</td>
                     <td>{invite.usesCount} / {invite.maxUses ?? t('common.unlimited')}</td>
-                    <td><Chip tone={status.tone}>{status.label}</Chip></td>
+                    <td><Chip tone={status.tone}>{statusLabel}</Chip></td>
                     <td>
                       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                         {revocable && (

@@ -9,11 +9,9 @@ import { Button, Card, ErrorBanner, FieldError, HelpHint, Modal, PageHeader, Spi
 import { IconDrag, IconTrash } from '@/components/icons';
 import { useTranslation } from 'react-i18next';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
+import { isColorHex, isReported, sortStages } from '@/lib/workflow-helpers';
 
 const DEFAULT_COLOR = '#0F6E56';
-const sortStages = (stages: WorkflowStage[]) => stages.slice().sort((a, b) => a.position - b.position);
-const isReported = (stage: WorkflowStage) => stage.position === 0 || stage.slug === 'reported';
-const isColorHex = (value: string) => /^#[0-9a-fA-F]{6}$/.test(value);
 
 type RuleTrigger = 'taskCreation' | 'eventCreation' | 'taskCompletion' | 'eventCompletion';
 const RULE_TRIGGERS: RuleTrigger[] = ['taskCreation', 'eventCreation', 'taskCompletion', 'eventCompletion'];
