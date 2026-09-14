@@ -152,6 +152,41 @@ export function SectionTitle({ children }: { children: ReactNode }) {
   return <div className="section-title">{children}</div>;
 }
 
+/**
+ * A "?" affordance for a control whose behavior isn't obvious from its label
+ * alone (SRS §3.7) — e.g. what a workflow stage's colour actually controls,
+ * or what a service-area radius is used for. Native `title` gives every
+ * browser's built-in hover tooltip for free; `tabIndex`+`aria-label` make the
+ * same text available to keyboard and screen-reader users, who never see a
+ * `title`-only tooltip otherwise.
+ */
+export function HelpHint({ text }: { text: string }) {
+  return (
+    <span
+      role="img"
+      aria-label={text}
+      title={text}
+      tabIndex={0}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 16,
+        height: 16,
+        borderRadius: '50%',
+        background: 'var(--surface-2, #E5E7EB)',
+        color: 'var(--text-2)',
+        fontSize: 11,
+        fontWeight: 700,
+        cursor: 'help',
+        marginLeft: 4,
+      }}
+    >
+      ?
+    </span>
+  );
+}
+
 export function EmptyState({ children }: { children: ReactNode }) {
   return <div className="empty-state">{children}</div>;
 }

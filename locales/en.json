@@ -223,6 +223,7 @@
       "nameRequired": "Enter a name for this stage.",
       "descriptionLabel": "Description (optional)",
       "colorLabel": "Color",
+      "colorHint": "Shown as this stage's badge colour throughout the incident list and detail views — pick something distinct from your other stages.",
       "adding": "Adding…",
       "submit": "Add stage"
     },

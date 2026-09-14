@@ -5,7 +5,7 @@ import { ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import type { WorkflowStage, WorkflowStageRules } from '@/lib/types';
-import { Button, Card, ErrorBanner, FieldError, Modal, PageHeader, Spinner, Toast } from '@/components/ui';
+import { Button, Card, ErrorBanner, FieldError, HelpHint, Modal, PageHeader, Spinner, Toast } from '@/components/ui';
 import { IconDrag, IconTrash } from '@/components/icons';
 import { useTranslation } from 'react-i18next';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
@@ -214,7 +214,10 @@ export default function WorkflowPage() {
           <FieldError id="new-stage-error" message={newStageValidation.error} />
         </div>
         <div className="field">
-          <label htmlFor="new-stage-color">{t('workflow.addModal.colorLabel')}</label>
+          <label htmlFor="new-stage-color">
+            {t('workflow.addModal.colorLabel')}
+            <HelpHint text={t('workflow.addModal.colorHint')} />
+          </label>
           <div style={{ display: 'flex', gap: 6 }}>
             <input id="new-stage-color" type="color" value={isColorHex(newStage.color) ? newStage.color : DEFAULT_COLOR} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} style={{ width: 42, height: 42, padding: 3 }} />
             <input value={newStage.color} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} aria-label="Colour hex" />
@@ -244,7 +247,10 @@ export default function WorkflowPage() {
             <FieldError id="edit-stage-error" message={editStageValidation.error} />
           </div>
           <div className="field">
-            <label htmlFor="edit-stage-color">{t('workflow.addModal.colorLabel')}</label>
+            <label htmlFor="edit-stage-color">
+              {t('workflow.addModal.colorLabel')}
+              <HelpHint text={t('workflow.addModal.colorHint')} />
+            </label>
             <div style={{ display: 'flex', gap: 6 }}>
               <input id="edit-stage-color" type="color" value={isColorHex(edit.color) ? edit.color : DEFAULT_COLOR} onChange={(event) => setEdit({ ...edit, color: event.target.value })} style={{ width: 42, height: 42, padding: 3 }} />
               <input value={edit.color} onChange={(event) => setEdit({ ...edit, color: event.target.value })} aria-label="Colour hex" />
