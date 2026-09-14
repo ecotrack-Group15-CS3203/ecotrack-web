@@ -1,3 +1,13 @@
 allowBuilds:
   sharp: false
   unrs-resolver: false
+# This project lives on an ntfs3-mounted drive. pnpm's default "isolated" linker
+# (a content-addressed .pnpm store with everything else symlinked into place) is
+# unreliable here: Next's bundler (both Turbopack dev and the Turbopack production
+# build) intermittently fails to resolve perfectly-present packages like
+# react-i18next through the symlink chain -- sometimes in dev, sometimes only in
+# build, depending on what's cached. A flat, non-symlinked node_modules (like
+# npm/yarn classic produce) resolves reliably on this filesystem. (A project-level
+# .npmrc with node-linker=hoisted was tried first and silently ignored by this
+# pnpm version -- it only takes effect here, in pnpm-workspace.yaml.)
+nodeLinker: hoisted
