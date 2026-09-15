@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Button, Card, ErrorBanner, Spinner } from '@/components/ui';
+import { BrandMark } from '@/components/public/public-header';
 
 const ERROR_MESSAGES: Record<string, string> = {
   state_mismatch: 'Sign-in could not be verified. Please try again.',
@@ -24,24 +26,25 @@ function LoginContent() {
   }, [loading, profile, router]);
 
   return (
-    <div className="flex flex-1 items-center justify-center px-4">
-      <Card className="w-full max-w-sm p-8">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-semibold text-emerald-700 dark:text-emerald-400">
-            EcoTrack
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Organisation administration
-          </p>
-        </div>
+    <div className="kg-auth">
+      <Card className="kg-auth-card">
+        <BrandMark />
+        <h1>Welcome back</h1>
+        <p>Sign in to EcoTrack to manage your organisation.</p>
 
-        <div className="space-y-4">
-          {error && <ErrorBanner message={error} />}
+        {error && (
+          <div style={{ marginBottom: 16, textAlign: 'left' }}>
+            <ErrorBanner message={error} />
+          </div>
+        )}
 
-          <Button onClick={login} className="w-full">
-            Sign in with Asgardeo
-          </Button>
-        </div>
+        <Button onClick={login} className="kg-btn-lg">
+          Sign in with Asgardeo
+        </Button>
+
+        <p className="kg-auth-note">
+          Reporting a hazard or volunteering? <Link href="/app">Get the mobile app</Link>
+        </p>
       </Card>
     </div>
   );

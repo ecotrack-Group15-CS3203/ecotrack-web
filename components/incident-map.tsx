@@ -62,11 +62,35 @@ export function LocationMap({
   longitude,
   address,
   radiusKm,
-}: MapPoint & { radiusKm?: number }) {
-  return <MapView points={[{ id, title, latitude, longitude, address }]} radiusKm={radiusKm} />;
+  mapStyle,
+  accentColor,
+}: MapPoint & { radiusKm?: number; mapStyle?: string; accentColor?: string }) {
+  return (
+    <MapView
+      points={[{ id, title, latitude, longitude, address }]}
+      radiusKm={radiusKm}
+      mapStyle={mapStyle}
+      accentColor={accentColor}
+    />
+  );
 }
 
-function MapView({ points, radiusKm }: { points: MapPoint[]; radiusKm?: number }) {
+// The dashboard's look. Public pages pass their own style and accent to match the
+// active theme; everything else keeps these.
+const DEFAULT_MAP_STYLE = 'mapbox://styles/mapbox/streets-v12';
+const DEFAULT_ACCENT = '#0F6E56';
+
+function MapView({
+  points,
+  radiusKm,
+  mapStyle = DEFAULT_MAP_STYLE,
+  accentColor = DEFAULT_ACCENT,
+}: {
+  points: MapPoint[];
+  radiusKm?: number;
+  mapStyle?: string;
+  accentColor?: string;
+}) {
   const mapContainer = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,7 +101,7 @@ function MapView({ points, radiusKm }: { points: MapPoint[]; radiusKm?: number }
     const initial = validPoints[0] ?? { longitude: 0, latitude: 0 };
     const instance = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
+      style: mapStyle,
       center: [initial.longitude, initial.latitude],
       zoom: validPoints.length ? 11 : 1,
       attributionControl: true,
@@ -89,7 +113,7 @@ function MapView({ points, radiusKm }: { points: MapPoint[]; radiusKm?: number }
       markerElement.type = 'button';
       markerElement.className = 'incident-map-marker';
       markerElement.setAttribute('aria-label', point.title);
-      markerElement.style.backgroundColor = point.color ?? '#0F6E56';
+      markerElement.style.backgroundColor = point.color ?? accentColor;
       const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(
         `<strong>${escapeHtml(point.title)}</strong><br><span>${escapeHtml(point.address ?? 'Location reported')}</span>`,
       );
@@ -111,8 +135,8 @@ function MapView({ points, radiusKm }: { points: MapPoint[]; radiusKm?: number }
       const [longitude, latitude] = [validPoints[0].longitude, validPoints[0].latitude];
       const addServiceArea = () => {
         instance.addSource('service-area', { type: 'geojson', data: createCircle(longitude, latitude, radiusKm) });
-        instance.addLayer({ id: 'service-area-fill', type: 'fill', source: 'service-area', paint: { 'fill-color': '#0F6E56', 'fill-opacity': 0.12 } });
-        instance.addLayer({ id: 'service-area-line', type: 'line', source: 'service-area', paint: { 'line-color': '#0F6E56', 'line-width': 2 } });
+        instance.addLayer({ id: 'service-area-fill', type: 'fill', source: 'service-area', paint: { 'fill-color': accentColor, 'fill-opacity': 0.12 } });
+        instance.addLayer({ id: 'service-area-line', type: 'line', source: 'service-area', paint: { 'line-color': accentColor, 'line-width': 2 } });
         instance.fitBounds(new mapboxgl.LngLatBounds([longitude, latitude], [longitude, latitude]).extend([longitude + radiusKm / 80, latitude + radiusKm / 111]), { padding: 48, maxZoom: 12, duration: 0 });
       };
       if (instance.isStyleLoaded()) addServiceArea();
@@ -123,7 +147,7 @@ function MapView({ points, radiusKm }: { points: MapPoint[]; radiusKm?: number }
       markers.forEach((marker) => marker.remove());
       instance.remove();
     };
-  }, [points, radiusKm]);
+  }, [points, radiusKm, mapStyle, accentColor]);
 
   if (!MAPBOX_TOKEN) {
     return <div className="map-placeholder map-token-missing">Add NEXT_PUBLIC_MAPBOX_TOKEN to view the incident map.</div>;

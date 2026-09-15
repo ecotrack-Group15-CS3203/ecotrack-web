@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { IconLeaf } from '@/components/icons';
 import { Card } from '@/components/ui';
 
 // Hardcoded English, matching every other server component in this app
@@ -60,18 +59,7 @@ export default async function PublicOrganisationPage({
   const org = await fetchOrganisation(slug);
 
   return (
-    <div>
-      <header className="site-header">
-        <Link href="/" className="site-brand">
-          <IconLeaf style={{ width: 22, height: 22 }} />
-          EcoTrack
-        </Link>
-        <Link href="/app" className="btn-text">
-          Get the app
-        </Link>
-      </header>
-
-      <main className="site-main" style={{ maxWidth: 640, paddingTop: 48, paddingBottom: 60 }}>
+    <div className="kg-narrow">
         {org ? (
           <>
             <Card style={{ padding: 28 }}>
@@ -88,13 +76,13 @@ export default async function PublicOrganisationPage({
               )}
             </Card>
 
-            <section className="site-section" style={{ marginTop: 24 }}>
+            <section style={{ marginTop: 32 }}>
               <h2 style={{ fontSize: 18, marginBottom: 10 }}>Join {org.name}</h2>
               <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 16 }}>
                 Volunteering with {org.name} — reporting hazards, taking on cleanup tasks, and
                 RSVPing to events — happens in the EcoTrack mobile app.
               </p>
-              <div className="site-hero-ctas">
+              <div className="kg-actions kg-actions--flush">
                 {MOBILE_APP_URL ? (
                   <a href={MOBILE_APP_URL} className="btn btn-primary">
                     Download EcoTrack
@@ -118,7 +106,6 @@ export default async function PublicOrganisationPage({
             </Link>
           </Card>
         )}
-      </main>
     </div>
   );
 }

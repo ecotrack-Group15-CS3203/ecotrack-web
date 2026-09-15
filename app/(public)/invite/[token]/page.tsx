@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { IconLeaf } from '@/components/icons';
 import { Card } from '@/components/ui';
 import { ID_TOKEN_COOKIE, verifyIdToken } from '@/lib/asgardeo-session';
 import { InviteAcceptClient } from './invite-accept-client';
@@ -49,15 +48,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   const [info, authenticated] = await Promise.all([fetchInviteInfo(token), isAuthenticated()]);
 
   return (
-    <div>
-      <header className="site-header">
-        <Link href="/" className="site-brand">
-          <IconLeaf style={{ width: 22, height: 22 }} />
-          EcoTrack
-        </Link>
-      </header>
-
-      <main className="site-main" style={{ maxWidth: 480, paddingTop: 48, paddingBottom: 60 }}>
+    <div className="kg-narrow" style={{ maxWidth: 520 }}>
         {info ? (
           <InviteAcceptClient token={token} info={info} authenticated={authenticated} />
         ) : (
@@ -71,7 +62,6 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
             </Link>
           </Card>
         )}
-      </main>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { ApiError } from '@/lib/api';
 import { Button, Card, ErrorBanner, FieldError, Spinner } from '@/components/ui';
 import { LocationMap } from '@/components/incident-map';
 import { useFieldValidation, required, requiredEmail } from '@/lib/use-field-validation';
+import { useThemeMode } from '@/lib/use-theme-mode';
 import type { CreateOrganisationResult } from '@/lib/types';
 
 const RADIUS_OPTIONS = [1, 5, 10, 25, 50];
@@ -36,12 +37,13 @@ export default function RegisterOrganisationPage() {
   const emailValidation = useFieldValidation(
     requiredEmail(t('orgRegistration.contactEmailRequired'), t('orgRegistration.contactEmailInvalid')),
   );
+  const isDark = useThemeMode() === 'dark';
 
   if (loading) return <Spinner />;
 
   if (profile?.organisation) {
     return (
-      <div className="site-main" style={{ maxWidth: 560, paddingTop: 64 }}>
+      <div className="kg-narrow">
         <Card style={{ padding: 28 }}>
           <h1 style={{ fontSize: 20, marginBottom: 10 }}>{t('orgRegistration.alreadyMemberTitle')}</h1>
           <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 20 }}>
@@ -82,8 +84,8 @@ export default function RegisterOrganisationPage() {
   }
 
   return (
-    <div className="site-main" style={{ maxWidth: 560, paddingTop: 40, paddingBottom: 60 }}>
-      <h1 style={{ fontSize: 24, marginBottom: 6 }}>{t('orgRegistration.title')}</h1>
+    <div className="kg-narrow">
+      <h1 style={{ fontSize: 32, marginBottom: 8 }}>{t('orgRegistration.title')}</h1>
       <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 24 }}>
         {t('orgRegistration.description')}
       </p>
@@ -160,6 +162,8 @@ export default function RegisterOrganisationPage() {
             latitude={latitude}
             longitude={longitude}
             radiusKm={radiusKm}
+            mapStyle={isDark ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11'}
+            accentColor={isDark ? '#22D3EE' : '#0891B2'}
           />
           <div style={{ display: 'flex', gap: 8, margin: '8px 0' }}>
             <input
