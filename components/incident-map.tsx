@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import type { VerificationStatus } from '@/lib/types';
+import { mapThemeFor, statusMarkerColor } from '@/lib/map-theme';
+import { useThemeMode } from '@/lib/use-theme-mode';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -29,30 +31,27 @@ export interface MappableIncident {
   verificationStatus: VerificationStatus | null;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: '#E9B44C',
-  approved: '#2563EB',
-  rejected: '#C0392B',
-  duplicate: '#64748B',
-};
-
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 export function IncidentMap({ incidents }: { incidents: MappableIncident[] }) {
-  return (
-    <MapView
-      points={incidents.map((incident) => ({
+  const mode = useThemeMode();
+  // Memoized because MapView's effect depends on `points`: a fresh array
+  // literal here would tear down and rebuild the whole Mapbox instance on
+  // every parent render, including each SWR revalidation.
+  const points = useMemo(
+    () =>
+      incidents.map((incident) => ({
         id: incident.id,
         title: incident.title,
         latitude: incident.lat,
         longitude: incident.lng,
         address: incident.address,
-        // verificationStatus is null while pooled/unclaimed -- the 'pending'
-        // colour is the closest existing equivalent to that state.
-        color: STATUS_COLORS[incident.verificationStatus ?? 'pending'],
-      }))}
-    />
+        color: statusMarkerColor(incident.verificationStatus, mode),
+      })),
+    [incidents, mode],
   );
+
+  return <MapView points={points} {...mapThemeFor(mode)} />;
 }
 
 export function LocationMap({
@@ -65,31 +64,33 @@ export function LocationMap({
   mapStyle,
   accentColor,
 }: MapPoint & { radiusKm?: number; mapStyle?: string; accentColor?: string }) {
+  const mode = useThemeMode();
+  const theme = mapThemeFor(mode);
+  const points = useMemo(
+    () => [{ id, title, latitude, longitude, address }],
+    [id, title, latitude, longitude, address],
+  );
+
   return (
     <MapView
-      points={[{ id, title, latitude, longitude, address }]}
+      points={points}
       radiusKm={radiusKm}
-      mapStyle={mapStyle}
-      accentColor={accentColor}
+      mapStyle={mapStyle ?? theme.mapStyle}
+      accentColor={accentColor ?? theme.accentColor}
     />
   );
 }
 
-// The dashboard's look. Public pages pass their own style and accent to match the
-// active theme; everything else keeps these.
-const DEFAULT_MAP_STYLE = 'mapbox://styles/mapbox/streets-v12';
-const DEFAULT_ACCENT = '#0F6E56';
-
 function MapView({
   points,
   radiusKm,
-  mapStyle = DEFAULT_MAP_STYLE,
-  accentColor = DEFAULT_ACCENT,
+  mapStyle,
+  accentColor,
 }: {
   points: MapPoint[];
   radiusKm?: number;
-  mapStyle?: string;
-  accentColor?: string;
+  mapStyle: string;
+  accentColor: string;
 }) {
   const mapContainer = useRef<HTMLDivElement>(null);
 

@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { isThemeMode, THEME_STORAGE_KEY, type ThemeMode } from '@/lib/theme';
 import { useThemeMode } from '@/lib/use-theme-mode';
-import { IconMoon, IconSun } from '../icons';
+import { IconMoon, IconSun } from './icons';
 
 function readStoredTheme(): string | null {
   try {
@@ -17,7 +17,17 @@ function applyTheme(theme: ThemeMode) {
   document.documentElement.dataset.theme = theme;
 }
 
-export function ThemeToggle() {
+/**
+ * Shared by the public header and the dashboard topbar. The class names default
+ * to the public site's glass pill; the dashboard passes its own flatter skin.
+ */
+export function ThemeToggle({
+  className = 'kg-icon-btn',
+  iconClassName = 'kg-theme-icon',
+}: {
+  className?: string;
+  iconClassName?: string;
+} = {}) {
   const mode = useThemeMode();
   const isDark = mode === 'dark';
 
@@ -45,7 +55,7 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
-      className="kg-icon-btn"
+      className={className}
       onClick={toggle}
       aria-label="Dark theme"
       aria-pressed={isDark}
@@ -54,9 +64,9 @@ export function ThemeToggle() {
       {mode === null ? (
         <span className="kg-icon-slot" aria-hidden="true" />
       ) : isDark ? (
-        <IconSun key="sun" className="kg-theme-icon" />
+        <IconSun key="sun" className={iconClassName} />
       ) : (
-        <IconMoon key="moon" className="kg-theme-icon" />
+        <IconMoon key="moon" className={iconClassName} />
       )}
     </button>
   );

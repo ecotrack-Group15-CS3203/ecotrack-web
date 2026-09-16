@@ -7,13 +7,18 @@
     "saved": "Saved.",
     "loading": "Loading…",
     "notifications": "Notifications",
+    "menu": "Menu",
     "dismissNotification": "Dismiss notification",
     "logOut": "Log out",
     "search": "Search",
     "unassigned": "Unassigned",
     "unlimited": "unlimited",
     "requiredField": "This field is required.",
-    "invalidEmail": "Enter a valid email address."
+    "invalidEmail": "Enter a valid email address.",
+    "pagination": "Pagination",
+    "showingRange": "Showing {{from}}–{{to}} of {{total}}",
+    "previousPage": "Previous page",
+    "nextPage": "Next page"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -208,10 +213,22 @@
     "saveRules": "Save rules",
     "savingRules": "Saving…",
     "rules": {
-      "taskCreation": { "label": "Task Creation", "hint": "Controls when staff can create a task for an incident, and what happens to the incident when they do." },
-      "eventCreation": { "label": "Event Creation", "hint": "Controls when staff can create an event for an incident, and what happens to the incident when they do." },
-      "taskCompletion": { "label": "Task Completion", "hint": "What happens to the incident when its task is marked complete." },
-      "eventCompletion": { "label": "Event Completion", "hint": "What happens to the incident when its event is marked complete." },
+      "taskCreation": {
+        "label": "Task Creation",
+        "hint": "Controls when staff can create a task for an incident, and what happens to the incident when they do."
+      },
+      "eventCreation": {
+        "label": "Event Creation",
+        "hint": "Controls when staff can create an event for an incident, and what happens to the incident when they do."
+      },
+      "taskCompletion": {
+        "label": "Task Completion",
+        "hint": "What happens to the incident when its task is marked complete."
+      },
+      "eventCompletion": {
+        "label": "Event Completion",
+        "hint": "What happens to the incident when its event is marked complete."
+      },
       "minimumLabel": "Requires incident to have reached",
       "anyStage": "Any stage",
       "targetLabel": "Moves incident to",
@@ -296,7 +313,9 @@
       "expires": "Expires",
       "uses": "Uses",
       "status": "Status",
-      "empty": "No invite links yet."
+      "empty": "No invite links yet.",
+      "member": "Member",
+      "role": "Role"
     },
     "inviteStatus": {
       "active": "Active",

@@ -18,14 +18,9 @@ import {
 import { IncidentMap, LocationMap } from '@/components/incident-map';
 import type { PoolIncident } from '@/lib/types';
 import { ApiError } from '@/lib/api';
+import { thumbGradient } from '@/lib/thumb-gradients';
 
 const PAGE_SIZE = 5;
-
-const THUMB_GRADIENTS = [
-  'linear-gradient(135deg,#F0997B,#D85A30)',
-  'linear-gradient(135deg,#85B7EB,#378ADD)',
-  'linear-gradient(135deg,#97C459,#639922)',
-];
 
 export default function IncidentPoolPage() {
   const { activeOrgId } = useAuth();
@@ -111,7 +106,7 @@ export default function IncidentPoolPage() {
               {pageItems.map((incident, i) => (
                 <tr key={incident.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedIncident(incident)}>
                   <td>
-                    <TableThumb gradient={THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]} />
+                    <TableThumb gradient={thumbGradient(i)} />
                   </td>
                   <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{incident.id}</td>
                   <td>{incident.title}</td>

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { AccountMenu } from '../account-menu';
 import { IconLeaf } from '../icons';
 import { HeaderCta } from './header-cta';
-import { ThemeToggle } from './theme-toggle';
+import { ThemeToggle } from '../theme-toggle';
 
 export function BrandMark() {
   return (

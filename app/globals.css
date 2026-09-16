@@ -2,10 +2,20 @@
 
 /* Design tokens ported from the EcoTrack HTML prototype, so the admin
    console matches it exactly rather than approximating with Tailwind's
-   default palette. */
+   default palette.
+
+   These are the light-mode values and the fallback for any route outside a
+   theme scope. The two theme scopes redefine what they need on top:
+   `.kg` (app/(public)/public.css) and `.eco` (app/(org)/dashboard.css).
+   Dark mode lives inside those scopes, never here, so neither surface can
+   leak its theme into the other. */
 :root {
   --primary: #0F6E56; --primary-hover: #085041; --primary-tint: #E1F5EE; --on-primary: #FFFFFF;
-  --platform: #3C3489; --platform-tint: #EEEDFE;
+  /* --primary is a fill (button backgrounds); --primary-ink is the same green as
+     text/icons. They're identical here but diverge in dark, where a fill dark
+     enough to carry white text is too dark to read as text itself. */
+  --primary-ink: #0F6E56;
+  --danger-fill: #A32D2D; --danger-fill-hover: #791F1F; --on-danger: #FFFFFF;
   --pending: #8A5A00; --pending-tint: #FAEEDA;
   --verified: #185FA5; --verified-tint: #E6F1FB;
   --progress: #534AB7; --progress-tint: #EEEDFE;
@@ -19,9 +29,15 @@
   --urgency-high: #B45900; --urgency-high-tint: #FDEBD8;
   --urgency-critical: #B4231F; --urgency-critical-tint: #FBE1DF;
   --bg: #F6F6F3; --card: #FFFFFF; --border: #DEDCD2; --border-strong: #C3C1B6;
+  --surface-2: #F0EFE9; --surface-3: #FAFAF6; --input-bg: #FFFFFF;
+  --btn-disabled-bg: #D3D1C7;
   --text: #242422; --text-2: #5F5E56; --text-3: #6B6A61; --text-disabled: #B4B2A9;
   --radius-sm: 4px; --radius-md: 10px; --radius-lg: 18px;
   --shadow-card: 0 1px 2px rgba(30,30,25,0.06), 0 1px 8px rgba(30,30,25,0.04);
+  --shadow-pop: 0 18px 48px -16px rgba(20,25,20,0.28);
+  --focus: #0F6E56;
+  --skeleton-1: #EFEEE7; --skeleton-2: #F6F5F0;
+  --toast-bg: #242422; --toast-ink: #F6F6F3;
 
   --background: var(--bg);
   --foreground: var(--text);
@@ -42,7 +58,10 @@ body {
 h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.01em; }
 button { font-family: inherit; cursor: pointer; }
 
-/* Visible focus ring for keyboard navigation across every interactive element. */
+/* Visible focus ring for keyboard navigation across every interactive element.
+   Shared with the public pages -- adding a property here (a glow, say) lands on
+   both surfaces, since `.kg :focus-visible` only overrides `outline`. Scope any
+   such addition to `.eco` or `.kg` instead. */
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
 textarea:focus-visible, [tabindex]:focus-visible {
   outline: 2px solid var(--primary);
@@ -58,33 +77,17 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .field-error { font-size: 12px; color: var(--rejected); margin-top: 5px; }
 .field input[aria-invalid="true"], .field textarea[aria-invalid="true"], .field select[aria-invalid="true"] { border-color: var(--rejected); }
 
-/* ===== Shared admin-console primitives (mirrors the prototype's CSS) ===== */
-.chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-.chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.chip-pending { background: var(--pending-tint); color: var(--pending); }
-.chip-verified { background: var(--verified-tint); color: var(--verified); }
-.chip-progress { background: var(--progress-tint); color: var(--progress); }
-.chip-resolved { background: var(--resolved-tint); color: var(--resolved); }
-.chip-rejected { background: var(--rejected-tint); color: var(--rejected); }
-.chip-neutral { background: #F0EFE9; color: var(--text-2); }
-.chip-sev-low { background: var(--sev-low-tint); color: var(--sev-low); }
-.chip-sev-med { background: var(--sev-med-tint); color: var(--sev-med); }
-.chip-sev-high { background: var(--sev-high-tint); color: var(--sev-high); }
-.chip-urgency-low { background: var(--urgency-low-tint); color: var(--urgency-low); }
-.chip-urgency-medium { background: var(--urgency-medium-tint); color: var(--urgency-medium); }
-.chip-urgency-high { background: var(--urgency-high-tint); color: var(--urgency-high); }
-.chip-urgency-critical { background: var(--urgency-critical-tint); color: var(--urgency-critical); }
-
+/* ===== Primitives shared by the dashboard and the public pages ===== */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 600; padding: 11px 18px; border-radius: var(--radius-md); transition: background .12s, opacity .12s; border: none; }
-.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary { background: var(--primary); color: var(--on-primary); }
 .btn-primary:hover { background: var(--primary-hover); }
-.btn-primary:disabled { background: #D3D1C7; color: var(--text-disabled); cursor: not-allowed; }
+.btn-primary:disabled { background: var(--btn-disabled-bg); color: var(--text-disabled); cursor: not-allowed; }
 .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border-strong); }
-.btn-secondary:hover { background: #F0EFE9; }
-.btn-destructive { background: var(--rejected); color: #fff; }
-.btn-destructive:hover { background: #791F1F; }
-.btn-destructive:disabled { background: #E9C9C9; color: #fff; cursor: not-allowed; }
-.btn-text { color: var(--primary); font-weight: 600; font-size: 14px; background: none; border: none; padding: 0; }
+.btn-secondary:hover { background: var(--surface-2); }
+.btn-destructive { background: var(--danger-fill); color: var(--on-danger); }
+.btn-destructive:hover { background: var(--danger-fill-hover); }
+.btn-destructive:disabled { background: var(--btn-disabled-bg); color: var(--text-disabled); cursor: not-allowed; }
+.btn-text { color: var(--primary-ink); font-weight: 600; font-size: 14px; background: none; border: none; padding: 0; }
 .btn-block { width: 100%; }
 .btn-sm { padding: 7px 12px; font-size: 13px; border-radius: 8px; }
 
@@ -94,94 +97,49 @@ textarea:focus-visible, [tabindex]:focus-visible {
 .field .req { color: var(--rejected); }
 .field input[type=text], .field input[type=email], .field input[type=password], .field input[type=date],
 .field input[type=datetime-local], .field textarea, .field select {
-  width: 100%; padding: 11px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font-size: 14px; background: #fff; color: var(--text);
+  width: 100%; padding: 11px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font-size: 14px; background: var(--input-bg); color: var(--text);
 }
 .field textarea { resize: vertical; min-height: 80px; }
-.field input:focus, .field textarea:focus, .field select:focus { outline: 2px solid var(--primary); outline-offset: 1px; border-color: var(--primary); }
+.field input:focus, .field textarea:focus, .field select:focus { outline: 2px solid var(--focus); outline-offset: 1px; border-color: var(--focus); }
 
 .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-card); }
 
-.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
-.kpi-card { padding: 18px 20px; }
-.kpi-num { font-size: 26px; font-weight: 700; }
-.kpi-label { font-size: 12.5px; color: var(--text-2); margin-top: 4px; }
-
-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-3); font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--border); }
-td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-tbody tr:last-child td { border-bottom: none; }
-tbody tr:hover td { background: #FAFAF6; }
-.table-thumb { width: 36px; height: 36px; border-radius: 6px; flex-shrink: 0; background: linear-gradient(135deg, #9FE1CB, #5DCAA5); }
-.row-flex { display: flex; align-items: center; gap: 10px; }
-
-.filter-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
-.filter-pill { padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border-strong); font-size: 13px; font-weight: 500; color: var(--text-2); background: #fff; }
-.filter-pill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-
-.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--primary-tint); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
-
-.section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-3); margin: 20px 0 10px; }
-.section-title:first-child { margin-top: 0; }
-
-.map-placeholder { width: 100%; height: 150px; border-radius: var(--radius-md); background:
-  repeating-linear-gradient(0deg, #DCE7DD 0 1px, transparent 1px 24px),
-  repeating-linear-gradient(90deg, #DCE7DD 0 1px, transparent 1px 24px), #EFF4EE;
-  position: relative; overflow: hidden; }
-.incident-map { width: 100%; height: 260px; border-radius: var(--radius-md); overflow: hidden; }
-.map-token-missing { display: flex; align-items: center; justify-content: center; padding: 20px; color: var(--text-3); text-align: center; }
-.incident-map-marker { width: 18px; height: 18px; border: 2px solid #fff; border-radius: 50% 50% 50% 0; box-shadow: 0 1px 4px rgba(0,0,0,.35); transform: rotate(-45deg); cursor: pointer; }
-.incident-map-marker:focus-visible { outline: 3px solid #111; outline-offset: 3px; }
-.map-pin { position: absolute; width: 20px; height: 20px; }
-
-.empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 60px 20px; color: var(--text-3); }
-.empty-state p { font-size: 13.5px; margin-bottom: 16px; max-width: 260px; }
-
-.timeline { position: relative; padding-left: 22px; }
-.timeline-item { position: relative; padding-bottom: 18px; }
-.timeline-item::before { content: ''; position: absolute; left: -22px; top: 3px; width: 9px; height: 9px; border-radius: 50%; background: var(--primary); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border-strong); }
-.timeline-item::after { content: ''; position: absolute; left: -18px; top: 12px; width: 1px; height: calc(100% - 4px); background: var(--border-strong); }
-.timeline-item:last-child::after { display: none; }
-.timeline-item .t-label { font-size: 13px; font-weight: 600; }
-.timeline-item .t-date { font-size: 12px; color: var(--text-3); }
-
-.drag-handle { color: var(--text-disabled); cursor: grab; }
-.toggle { width: 38px; height: 22px; border-radius: 12px; background: var(--border-strong); position: relative; flex-shrink: 0; border: none; }
-.toggle.on { background: var(--primary); }
-.toggle::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: left .15s; }
-.toggle.on::after { left: 19px; }
-
-/* Sidebar shell */
-.web-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 20; width: 230px; background: #16261F; color: #D9E3DC; display: flex; flex-direction: column; padding: 20px 0; overflow-y: auto; }
-.web-brand { padding: 0 20px 20px; font-size: 17px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
-.web-nav { flex: 1; padding: 8px 12px; }
-.web-nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #B7C2BA; margin-bottom: 2px; }
-.web-nav-item.active { background: rgba(255,255,255,0.1); color: #fff; }
-.web-nav-item:hover { color: #fff; }
-.web-sidebar-foot { padding: 12px 20px; font-size: 12px; color: #8A9990; border-top: 1px solid rgba(255,255,255,0.08); }
-.web-topbar { position: sticky; top: 0; z-index: 10; height: 60px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 1px solid var(--border); background: #fff; }
-.web-topbar-title { font-size: 15px; font-weight: 600; }
-.web-shell-main { flex: 1 1 auto; width: calc(100% - 230px); margin-left: 230px; min-height: 100vh; display: flex; flex-direction: column; min-width: 0; }
-
-@media (max-width: 760px) {
-  .web-sidebar { width: 190px; }
-  .web-shell-main { width: calc(100% - 190px); margin-left: 190px; }
-  .web-topbar { padding: 0 16px; }
-  .web-shell-main > div:last-child { padding: 20px 16px !important; }
-}
-
-.overlay { position: fixed; inset: 0; background: rgba(20,20,18,0.45); display: none; align-items: center; justify-content: center; z-index: 50; }
-.overlay.active { display: flex; }
-.overlay.drawer { justify-content: flex-end; align-items: stretch; }
-.modal { background: #fff; border-radius: var(--radius-lg); padding: 28px; width: 440px; max-width: calc(100vw - 32px); max-height: 90vh; overflow-y: auto; }
-.drawer-panel { background: #fff; width: 360px; max-width: calc(100vw - 32px); padding: 24px; overflow-y: auto; }
-.modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
-.modal-head h2 { font-size: 18px; }
-.close-x { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: var(--text-3); border-radius: 6px; }
-.close-x:hover { background: #F0EFE9; }
-.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--primary-tint); color: var(--primary-ink); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
 
 .icon { width: 20px; height: 20px; display: inline-block; vertical-align: middle; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #D3D1C7; border-radius: 4px; }
+/* These five were inline-styled in components/ui.tsx, which put them out of
+   reach of both theme scopes. They live here (unscoped) because the public
+   pages render ErrorBanner and Spinner too; `.eco` overrides only the sizes. */
+.error-banner {
+  border-radius: 8px;
+  border: 1px solid var(--rejected);
+  background: var(--rejected-tint);
+  color: var(--rejected);
+  padding: 10px 14px;
+  font-size: 13.5px;
+}
 
+.spinner-wrap { display: flex; align-items: center; justify-content: center; padding: 64px 0; }
+.spinner {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--primary-ink);
+  animation: eco-spin 0.7s linear infinite;
+}
+
+.help-hint {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--surface-2); color: var(--text-2);
+  font-size: 11px; font-weight: 700; cursor: help; margin-left: 4px;
+}
+
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+.page-header h1 { font-size: 22px; }
+.page-header p { font-size: 14px; color: var(--text-2); margin-top: 4px; }
+
+/* Loading animations live here rather than in an inline <style> so the
+   reduced-motion rules in dashboard.css can reach them. */
+@keyframes eco-spin { to { transform: rotate(360deg); } }
+@keyframes eco-skeleton { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }

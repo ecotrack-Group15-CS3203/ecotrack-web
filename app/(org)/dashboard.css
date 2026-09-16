@@ -1,0 +1,512 @@
+/* ===========================================================================
+   EcoTrack org dashboard theme.
+
+   Every rule here is rooted at `.eco`, the wrapper in app/(org)/layout.tsx.
+   That scoping is the whole safety story: this theme can never reach the public
+   pages, which theme themselves under `.kg` in app/(public)/public.css.
+
+   `.eco` declares its FULL palette -- light and dark -- because the dashboard's
+   mint/teal look now differs from the public pages' and from the :root defaults
+   in globals.css. :root remains the fallback for routes in neither scope, so
+   don't delete tokens from it.
+
+   The look: an airy mint wash with the sidebar and topbar floating on it as
+   rounded panels, solid white cards for anything holding data, and the
+   cyan->green gradient as a rare accent rather than a primary colour.
+   =========================================================================== */
+
+/* <html> and <body> sit outside `.eco` and can't read its tokens, so the
+   overscroll colour is duplicated here. Keep in sync with --bg below. */
+html:has(.eco), html:has(.eco) body { background: #EAF4F1; }
+html[data-theme="dark"]:has(.eco), html[data-theme="dark"]:has(.eco) body { background: #0B1416; }
+html:has(.eco) { color-scheme: light; }
+html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
+
+.eco {
+  /* ---- Type scale. Nothing in the dashboard goes below --fs-meta. ---- */
+  --fs-h1: 26px;   --fs-h2: 20px;      --fs-h3: 17px;
+  --fs-body: 15px; --fs-body-sm: 14px; --fs-meta: 13px;
+
+  /* ---- Brand ---- */
+  /* Teal-700 rather than the brighter teal of the reference: white 14px text on
+     #14B8A6 is ~2.4:1, a straight WCAG failure. #0F766E keeps the hue at 5.4:1,
+     and the same value doubles as ink on white. */
+  --primary: #0F766E;
+  --primary-hover: #115E59;
+  --primary-ink: #0F766E;
+  --primary-tint: #D8F0EC;
+  --on-primary: #FFFFFF;
+  --danger-fill: #A32D2D;
+  --danger-fill-hover: #791F1F;
+  --on-danger: #FFFFFF;
+
+  /* ---- Status. Hues stay recognisable; tints are softened for mint. ---- */
+  --pending: #8A5A00;           --pending-tint: #FBF0DB;
+  --verified: #175FA6;          --verified-tint: #E4F0FB;
+  --progress: #4F46B5;          --progress-tint: #EBEAFC;
+  --resolved: #0F766E;          --resolved-tint: #D8F0EC;
+  --rejected: #A32D2D;          --rejected-tint: #FBE9E9;
+  --sev-low: #3B6D11;           --sev-low-tint: #E8F3DC;
+  --sev-med: #854F0B;           --sev-med-tint: #FBF0DB;
+  --sev-high: #791F1F;          --sev-high-tint: #FBE9E9;
+  --urgency-low: #1E7A34;       --urgency-low-tint: #E1F5E7;
+  --urgency-medium: #6B5F00;    --urgency-medium-tint: #F9F5D6;
+  --urgency-high: #B45900;      --urgency-high-tint: #FCEBD7;
+  --urgency-critical: #B4231F;  --urgency-critical-tint: #FADFDE;
+
+  /* ---- Surfaces ---- */
+  --bg: #EAF4F1;
+  --card: #FFFFFF;
+  --surface-2: #EFF5F3;
+  --surface-3: #F6FAF9;
+  --input-bg: #FFFFFF;
+  --border: #DCE8E5;
+  --border-strong: #C0D2CE;
+  --btn-disabled-bg: #D3DEDB;
+
+  --text: #16211F;
+  --text-2: #53625E;
+  --text-3: #6A7975;
+  --text-disabled: #A8B5B2;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-panel: 18px;
+
+  --shadow-card: 0 1px 2px rgba(16,40,36,.04), 0 8px 24px -12px rgba(16,40,36,.10);
+  --shadow-pop: 0 20px 52px -18px rgba(16,40,36,.28);
+
+  /* ---- Accent, borrowed verbatim from public.css (--kg-grad / --kg-focus).
+     This shared identity is what makes the two surfaces read as one product. */
+  --grad-accent: linear-gradient(95deg, #0891B2 0%, #16A34A 55%, #4D7C0F 100%);
+  --focus: #0891B2;
+  --focus-glow: 0 0 0 3px rgba(8,145,178,.28);
+
+  /* ---- Chrome panels (sidebar, topbar) and overlays ---- */
+  --panel: rgba(255,255,255,.88);
+  --panel-border: rgba(15,42,38,.08);
+  --glass-chrome: var(--panel);
+  --glass-chrome-strong: rgba(255,255,255,.94);
+  --glass-border: rgba(15,42,38,.10);
+  --blur-chrome: blur(16px) saturate(140%);
+  --blur-overlay: blur(20px) saturate(150%);
+  --scrim: rgba(12,32,28,.42);
+
+  --sidebar-bg: var(--panel);
+  --sidebar-text: #53625E;
+  --sidebar-text-strong: #16211F;
+  --sidebar-hover-bg: rgba(15,42,38,.05);
+  --sidebar-active-bg: var(--primary-tint);
+  --sidebar-border: var(--panel-border);
+  --sidebar-foot: #6A7975;
+  --sidebar-badge-bg: #B45900;
+  --sidebar-badge-ink: #FFFFFF;
+  /* Opaque equivalent, for where blur is switched off. */
+  --sidebar-solid: #F4FAF8;
+
+  --map-grid: #D7E7E2;
+  --map-bg: #EDF5F3;
+  --marker-ring: #FFFFFF;
+  --toggle-knob: #FFFFFF;
+  --swatch-ring: rgba(0,0,0,.15);
+  --skeleton-1: #E7F0EE;
+  --skeleton-2: #F2F8F6;
+  --toast-bg: #16211F;
+  --toast-ink: #EAF4F1;
+  /* Applied to photography and generated thumbnails; full brightness on light. */
+  --thumb-dim: none;
+
+  --bg-wash:
+    radial-gradient(1200px 700px at 8% -12%, rgba(45,212,191,.18), transparent 62%),
+    radial-gradient(900px 560px at 98% 4%, rgba(129,140,248,.10), transparent 60%),
+    radial-gradient(800px 600px at 60% 100%, rgba(52,211,153,.10), transparent 62%),
+    var(--bg);
+
+  color-scheme: light;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg-wash);
+  background-attachment: fixed;
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .eco {
+  /* Foreground is a ~300-level tint of each hue; the tint behind it is a
+     12-20% alpha wash of the ~500-level. Alpha rather than flat hex so the
+     same chip composites correctly over --card, --bg and a hovered row. */
+  --primary: #12857A;
+  --primary-hover: #17A091;
+  --primary-ink: #2DD4BF;
+  --primary-tint: rgba(45,212,191,.14);
+  --on-primary: #FFFFFF;
+  --danger-fill: #B3352F;
+  --danger-fill-hover: #C9453F;
+  --on-danger: #FFFFFF;
+
+  --pending: #FBBF4A;          --pending-tint: rgba(245,158,11,.15);
+  --verified: #7DB8F0;         --verified-tint: rgba(37,99,235,.18);
+  --progress: #A5A2F0;         --progress-tint: rgba(99,102,241,.18);
+  --resolved: #2DD4BF;         --resolved-tint: rgba(45,212,191,.16);
+  --rejected: #F5928C;         --rejected-tint: rgba(239,68,68,.16);
+  --sev-low: #A3D96B;          --sev-low-tint: rgba(132,204,22,.16);
+  --sev-med: #F0B75C;          --sev-med-tint: rgba(217,119,6,.16);
+  --sev-high: #F08A84;         --sev-high-tint: rgba(220,38,38,.18);
+  --urgency-low: #6EE7A8;      --urgency-low-tint: rgba(16,185,129,.16);
+  --urgency-medium: #E3D46B;   --urgency-medium-tint: rgba(202,138,4,.18);
+  --urgency-high: #F5B063;     --urgency-high-tint: rgba(234,88,12,.18);
+  --urgency-critical: #F78A80; --urgency-critical-tint: rgba(220,38,38,.20);
+
+  --bg: #0B1416;
+  --card: #131F21;
+  --surface-2: #18262A;
+  --surface-3: #162326;
+  --input-bg: #0E181A;         /* below --card, so inputs read as wells */
+  --border: #26363A;
+  --border-strong: #35494E;
+  --btn-disabled-bg: #26363A;
+
+  --text: #E6EFEE;
+  --text-2: #A3B2B0;
+  --text-3: #8A9997;
+  --text-disabled: #5B6A68;
+
+  /* Separation in dark comes from --border, not shadow. If a card looks like
+     it's floating in soup, raise the border rather than the shadow. */
+  --shadow-card: 0 1px 2px rgba(0,0,0,.45), 0 2px 10px rgba(0,0,0,.35);
+  --shadow-pop: 0 24px 60px -20px rgba(0,0,0,.80);
+
+  --grad-accent: linear-gradient(95deg, #22D3EE 0%, #4ADE80 55%, #A3E635 100%);
+  --focus: #67E8F9;
+  --focus-glow: 0 0 0 3px rgba(103,232,249,.32);
+
+  --panel: rgba(17,28,30,.82);
+  --panel-border: rgba(255,255,255,.08);
+  --glass-chrome: var(--panel);
+  --glass-chrome-strong: rgba(19,31,33,.94);
+  --glass-border: rgba(255,255,255,.09);
+  --scrim: rgba(0,0,0,.62);
+
+  --sidebar-bg: var(--panel);
+  --sidebar-text: #A3B2B0;
+  --sidebar-text-strong: #E6EFEE;
+  --sidebar-hover-bg: rgba(255,255,255,.045);
+  --sidebar-active-bg: rgba(255,255,255,.07);
+  --sidebar-border: var(--panel-border);
+  --sidebar-foot: #7E8D8B;
+  --sidebar-badge-bg: #E9B44C;
+  --sidebar-badge-ink: #16211F;
+  --sidebar-solid: #101A1C;
+
+  --map-grid: #1E2E30;
+  --map-bg: #111C1E;
+  --marker-ring: #0B1416;
+  --toggle-knob: #E6EFEE;
+  --swatch-ring: rgba(255,255,255,.18);
+  --skeleton-1: #18262A;
+  --skeleton-2: #223336;
+  --toast-bg: #1D2E30;
+  --toast-ink: #E6EFEE;
+  --thumb-dim: brightness(.82) saturate(.92);
+
+  --bg-wash:
+    radial-gradient(1200px 700px at 8% -12%, rgba(45,212,191,.10), transparent 62%),
+    radial-gradient(900px 560px at 98% 4%, rgba(99,102,241,.08), transparent 60%),
+    var(--bg);
+
+  color-scheme: dark;
+}
+
+.eco :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; box-shadow: var(--focus-glow); }
+
+/* The display face is reserved for the wordmark, page titles and KPI numerals.
+   Applying it to h2-h4, nav, table headers or buttons is what would make an
+   admin tool read as a landing page. */
+.eco h1, .eco .kpi-num, .eco .web-brand {
+  font-family: var(--font-display), var(--font-inter), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+.eco td, .eco .kpi-num, .eco .timeline-item .t-date { font-variant-numeric: tabular-nums; }
+
+/* ===== Shared primitives, bumped for the dashboard only ===== */
+.eco .error-banner { font-size: 14.5px; }
+.eco .help-hint { width: 18px; height: 18px; font-size: 12px; }
+.eco .field label, .eco .field-label { font-size: var(--fs-body-sm); }
+
+.eco .page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+.eco .page-header h1 { font-size: var(--fs-h1); font-weight: 700; }
+.eco .page-header p { font-size: 15.5px; color: var(--text-2); margin-top: 6px; max-width: 70ch; }
+
+.eco .toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--toast-bg); color: var(--toast-ink);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-md);
+  padding: 13px 20px; font-size: 14.5px; box-shadow: var(--shadow-pop);
+  display: flex; align-items: center; gap: 12px; z-index: 100;
+}
+
+/* ===== Chips ===== */
+.eco .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 20px; font-size: var(--fs-meta); font-weight: 600; white-space: nowrap; }
+.eco .chip::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.eco .chip-pending { background: var(--pending-tint); color: var(--pending); }
+.eco .chip-verified { background: var(--verified-tint); color: var(--verified); }
+.eco .chip-progress { background: var(--progress-tint); color: var(--progress); }
+.eco .chip-resolved { background: var(--resolved-tint); color: var(--resolved); }
+.eco .chip-rejected { background: var(--rejected-tint); color: var(--rejected); }
+.eco .chip-neutral { background: var(--surface-2); color: var(--text-2); }
+.eco .chip-sev-low { background: var(--sev-low-tint); color: var(--sev-low); }
+.eco .chip-sev-med { background: var(--sev-med-tint); color: var(--sev-med); }
+.eco .chip-sev-high { background: var(--sev-high-tint); color: var(--sev-high); }
+.eco .chip-urgency-low { background: var(--urgency-low-tint); color: var(--urgency-low); }
+.eco .chip-urgency-medium { background: var(--urgency-medium-tint); color: var(--urgency-medium); }
+.eco .chip-urgency-high { background: var(--urgency-high-tint); color: var(--urgency-high); }
+.eco .chip-urgency-critical { background: var(--urgency-critical-tint); color: var(--urgency-critical); }
+
+/* ===== KPI tiles ===== */
+.eco .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.eco .kpi-card { padding: 20px 22px; }
+.eco .kpi-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.eco .kpi-icon { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; flex-shrink: 0; background: var(--surface-2); color: var(--text-2); }
+.eco .kpi-num { font-size: 32px; font-weight: 700; line-height: 1.1; }
+.eco .kpi-label { font-size: var(--fs-body-sm); color: var(--text-2); margin-top: 6px; }
+.eco .kpi-sub { font-size: var(--fs-meta); color: var(--text-3); margin-top: 4px; }
+/* One of only two places the public gradient appears. */
+.eco .kpi-num--accent {
+  background: var(--grad-accent);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+
+/* ===== Tables ===== */
+.eco table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+.eco th { text-align: left; font-size: 13.5px; color: var(--text-2); font-weight: 600; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.eco td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.eco tbody tr:last-child td { border-bottom: none; }
+.eco tbody tr td { transition: background-color .12s; }
+.eco tbody tr:hover td { background: var(--surface-3); }
+.eco .table-thumb { width: 38px; height: 38px; border-radius: 8px; flex-shrink: 0; filter: var(--thumb-dim); }
+.eco .row-flex { display: flex; align-items: center; gap: 10px; }
+.eco .row-activatable { cursor: pointer; }
+.eco .stage-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.eco .clamp-2 {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; white-space: normal;
+}
+.eco .data-table-empty { text-align: center; color: var(--text-3); padding: 40px 16px; }
+.eco .th-sort {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: none; padding: 0; font: inherit; color: inherit;
+  cursor: pointer; border-radius: 6px;
+}
+.eco .th-sort:hover { color: var(--text); }
+.eco .th-sort span { color: var(--text-3); font-size: 11px; }
+
+.eco .pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-top: 16px;
+}
+.eco .pagination-info { font-size: var(--fs-body-sm); color: var(--text-2); }
+.eco .pagination-pages { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.eco .pagination-pages .filter-pill { min-width: 38px; padding: 8px 12px; }
+.eco .pagination-pages .filter-pill:disabled { opacity: .45; cursor: not-allowed; }
+/* Uploaded photography, dimmed to sit calmly on a dark surface. */
+.eco .media-thumb { filter: var(--thumb-dim); }
+
+/* ===== Filters ===== */
+.eco .filter-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.eco .filter-pill { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border-strong); font-size: var(--fs-body-sm); font-weight: 500; color: var(--text-2); background: var(--card); transition: background-color .12s, color .12s, border-color .12s; }
+.eco .filter-pill:hover { background: var(--surface-2); color: var(--text); }
+.eco .filter-pill.active { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.eco .filter-control { padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border-strong); font-size: var(--fs-body-sm); background: var(--card); color: var(--text); }
+
+/* Sentence case, not uppercase letter-spaced -- the uppercase micro-label is
+   exactly the "robotic" quality we're moving away from. */
+.eco .section-title { font-size: 15px; font-weight: 600; color: var(--text); margin: 24px 0 12px; }
+.eco .section-title:first-child { margin-top: 0; }
+.eco .field-label { display: block; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+
+/* ===== Maps ===== */
+.eco .map-placeholder { width: 100%; height: 150px; border-radius: var(--radius-md); background:
+  repeating-linear-gradient(0deg, var(--map-grid) 0 1px, transparent 1px 24px),
+  repeating-linear-gradient(90deg, var(--map-grid) 0 1px, transparent 1px 24px), var(--map-bg);
+  position: relative; overflow: hidden; }
+.eco .incident-map { width: 100%; height: 260px; border-radius: var(--radius-md); overflow: hidden; }
+.eco .map-token-missing { display: flex; align-items: center; justify-content: center; padding: 20px; color: var(--text-3); text-align: center; }
+/* The drop shadow stays a literal: it falls on a map tile, not a themed surface. */
+.eco .incident-map-marker { width: 18px; height: 18px; border: 2px solid var(--marker-ring); border-radius: 50% 50% 50% 0; box-shadow: 0 1px 4px rgba(0,0,0,.35); transform: rotate(-45deg); cursor: pointer; }
+.eco .incident-map-marker:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.eco .map-pin { position: absolute; width: 20px; height: 20px; }
+
+/* mapbox-gl ships its own light-only popup and control styles. */
+.eco .mapboxgl-popup-content {
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-pop);
+}
+.eco .mapboxgl-popup-tip { border-top-color: var(--card); border-bottom-color: var(--card); }
+.eco .mapboxgl-popup-close-button { color: var(--text-2); }
+.eco .mapboxgl-popup-close-button:hover { background: var(--surface-2); color: var(--text); }
+.eco .mapboxgl-ctrl-group { background: var(--card); box-shadow: var(--shadow-card); }
+.eco .mapboxgl-ctrl-group button + button { border-top-color: var(--border); }
+
+.eco .empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 60px 20px; color: var(--text-3); }
+.eco .empty-state p { font-size: var(--fs-body); margin-bottom: 16px; max-width: 340px; }
+
+/* ===== Timeline ===== */
+.eco .timeline { position: relative; padding-left: 22px; }
+.eco .timeline-item { position: relative; padding-bottom: 18px; }
+/* The ring punches the dot out of the card, so it is always the card colour. */
+.eco .timeline-item::before { content: ''; position: absolute; left: -22px; top: 3px; width: 9px; height: 9px; border-radius: 50%; background: var(--primary-ink); border: 2px solid var(--card); box-shadow: 0 0 0 1px var(--border-strong); }
+.eco .timeline-item::after { content: ''; position: absolute; left: -18px; top: 12px; width: 1px; height: calc(100% - 4px); background: var(--border-strong); }
+.eco .timeline-item:last-child::after { display: none; }
+.eco .timeline-item .t-label { font-size: 14.5px; font-weight: 600; }
+.eco .timeline-item .t-date { font-size: var(--fs-meta); color: var(--text-3); }
+
+.eco .drag-handle { color: var(--text-disabled); cursor: grab; }
+.eco .toggle { width: 38px; height: 22px; border-radius: 12px; background: var(--border-strong); position: relative; flex-shrink: 0; border: none; }
+.eco .toggle.on { background: var(--primary); }
+.eco .toggle::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: var(--toggle-knob); top: 3px; left: 3px; transition: left .15s; }
+.eco .toggle.on::after { left: 19px; }
+
+.eco .stage-swatch { border: 1px solid var(--swatch-ring); }
+
+/* ===== Shell =====
+   Sidebar and topbar float as rounded panels so the page wash shows around
+   them; the content area stays transparent so cards sit directly on the wash. */
+.eco .web-shell { display: flex; min-height: 100vh; flex: 1; }
+.eco .web-sidebar {
+  position: fixed; inset: 12px auto 12px 12px; z-index: 20; width: 236px;
+  border-radius: var(--radius-panel);
+  background: var(--sidebar-bg); color: var(--sidebar-text);
+  border: 1px solid var(--sidebar-border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: var(--blur-chrome); -webkit-backdrop-filter: var(--blur-chrome);
+  display: flex; flex-direction: column; padding: 18px 0; overflow-y: auto;
+}
+.eco .web-brand { padding: 0 18px 18px; font-size: 17px; font-weight: 700; color: var(--sidebar-text-strong); display: flex; align-items: center; gap: 8px; }
+.eco .web-nav { flex: 1; padding: 8px 10px; }
+.eco .web-nav-item { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 14.5px; font-weight: 500; color: var(--sidebar-text); margin-bottom: 2px; transition: background-color .12s, color .12s; }
+.eco .web-nav-item .icon { width: 18px; height: 18px; }
+.eco .web-nav-item:hover { color: var(--sidebar-text-strong); background: var(--sidebar-hover-bg); }
+.eco .web-nav-item.active { background: var(--sidebar-active-bg); color: var(--sidebar-text-strong); }
+/* The second and last place the public gradient appears. */
+.eco .web-nav-item.active::before {
+  content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--grad-accent);
+}
+.eco .web-nav-badge {
+  margin-left: auto; min-width: 20px; padding: 1px 7px; border-radius: 999px;
+  background: var(--sidebar-badge-bg); color: var(--sidebar-badge-ink);
+  font-size: 12px; font-weight: 700; line-height: 18px; text-align: center;
+}
+.eco .web-sidebar-foot { padding: 14px 18px 0; font-size: var(--fs-meta); color: var(--sidebar-foot); border-top: 1px solid var(--sidebar-border); margin: 0 10px; }
+
+.eco .web-topbar {
+  position: sticky; top: 12px; z-index: 10; height: 60px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; margin: 12px 0 16px;
+  border-radius: 16px;
+  background: var(--glass-chrome); border: 1px solid var(--panel-border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: var(--blur-chrome); -webkit-backdrop-filter: var(--blur-chrome);
+}
+.eco .web-topbar-title { font-size: 16px; font-weight: 600; }
+.eco .web-shell-main { flex: 1 1 auto; width: calc(100% - 272px); margin-left: 260px; min-height: 100vh; display: flex; flex-direction: column; min-width: 0; }
+.eco .web-content { flex: 1; overflow-y: auto; padding: 0 0 28px; font-size: var(--fs-body); line-height: 1.55; }
+
+/* Topbar icon buttons: deliberately flatter than the public header's glass
+   pills -- in a 60px bar next to a bell and an avatar, a glass pill would be
+   the loudest thing on the page. */
+.eco .web-icon-btn {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  color: var(--text-2); background: transparent; border: 1px solid transparent;
+  transition: background-color .15s, border-color .15s, color .15s;
+}
+.eco .web-icon-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+.eco .web-theme-icon { width: 17px; height: 17px; }
+
+.eco .web-nav-toggle { display: none; }
+.eco .web-nav-scrim { position: fixed; inset: 0; z-index: 19; background: var(--scrim); }
+@media (min-width: 901px) { .eco .web-nav-scrim { display: none; } }
+
+/* Below 900px a 236px rail plus padding leaves under 500px for tables with
+   5-7 columns, so the sidebar goes fully off-canvas rather than shrinking.
+   The inset frame collapses here too, so content keeps full width. */
+@media (max-width: 900px) {
+  .eco .web-sidebar {
+    inset: 0 auto 0 0; width: 268px; border-radius: 0 var(--radius-panel) var(--radius-panel) 0;
+    transform: translateX(-100%);
+    transition: transform .22s cubic-bezier(.2,.7,.2,1);
+  }
+  .eco .web-sidebar.open { transform: none; box-shadow: var(--shadow-pop); }
+  .eco .web-shell-main { width: 100%; margin-left: 0; }
+  .eco .web-nav-toggle { display: inline-grid; }
+  .eco .web-topbar { margin: 10px 12px 14px; padding: 0 14px; top: 10px; }
+  .eco .web-content { padding: 0 12px 24px; }
+  .eco .web-content--locked { overflow: hidden; }
+}
+
+/* ===== Overlays ===== */
+.eco .overlay { position: fixed; inset: 0; background: var(--scrim); display: none; align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+.eco .overlay.active { display: flex; }
+.eco .overlay.drawer { justify-content: flex-end; align-items: stretch; }
+.eco .modal {
+  background: var(--glass-chrome-strong); color: var(--text);
+  border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+  backdrop-filter: var(--blur-overlay); -webkit-backdrop-filter: var(--blur-overlay);
+  padding: 28px; width: 440px; max-width: calc(100vw - 32px); max-height: 90vh; overflow-y: auto;
+  animation: eco-modal-in .15s ease-out;
+}
+.eco .drawer-panel {
+  background: var(--glass-chrome-strong); color: var(--text);
+  border-left: 1px solid var(--glass-border); box-shadow: var(--shadow-pop);
+  backdrop-filter: var(--blur-overlay); -webkit-backdrop-filter: var(--blur-overlay);
+  width: 380px; max-width: calc(100vw - 32px); padding: 24px; overflow-y: auto;
+  animation: eco-drawer-in .2s cubic-bezier(.2,.7,.2,1);
+}
+.eco .modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+.eco .modal-head h2 { font-size: var(--fs-h2); }
+.eco .close-x { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: var(--text-3); border-radius: 6px; transition: background-color .12s, color .12s; }
+.eco .close-x:hover { background: var(--surface-2); color: var(--text); }
+.eco .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+@keyframes eco-modal-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes eco-drawer-in { from { transform: translateX(100%); } }
+
+html:has(.eco) ::-webkit-scrollbar { width: 8px; height: 8px; }
+html:has(.eco) ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+/* ===== Motion =====
+   Spinner rotation is deliberately left running: it is the only signal that
+   work is in flight, WCAG 2.2.2 exempts loading indicators, and freezing it
+   makes the app look hung. */
+@media (prefers-reduced-motion: reduce) {
+  .eco .web-sidebar { transition: none; }
+  .eco .modal, .eco .drawer-panel { animation: none; }
+  .eco .web-nav-item, .eco .btn, .eco tbody tr td, .eco .filter-pill,
+  .eco .web-icon-btn, .eco .close-x, .eco .toggle::after,
+  .eco .board-card, .eco .segmented-knob, .eco .bar-fill { transition: none; }
+  .eco .web-theme-icon { animation: none; }
+  .eco .eco-skeleton { animation: none; background: var(--skeleton-1); }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .eco .web-sidebar, .eco .web-topbar, .eco .modal, .eco .drawer-panel, .eco .overlay {
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  .eco .web-topbar, .eco .modal, .eco .drawer-panel { background: var(--glass-chrome-strong); }
+  .eco .web-sidebar { background: var(--sidebar-solid); }
+}
+
+/* Blur is expensive on phones and buys least there. */
+@media (max-width: 760px) {
+  .eco .web-sidebar, .eco .web-topbar, .eco .modal, .eco .drawer-panel, .eco .overlay {
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  .eco .web-topbar, .eco .modal, .eco .drawer-panel { background: var(--glass-chrome-strong); }
+  .eco .web-sidebar { background: var(--sidebar-solid); }
+  .eco .kpi-row { grid-template-columns: 1fr; }
+}

@@ -53,7 +53,7 @@ export default function ReportsPage() {
       </div>
 
       <KpiRow>
-        <KpiCard label="Total incidents" value={stats.totalIncidents} />
+        <KpiCard label="Total incidents" value={stats.totalIncidents} accent />
         <KpiCard label="Completed cleanups" value={stats.completedCleanupTasks} />
         <KpiCard label="Active volunteers" value={stats.activeVolunteers} />
         <KpiCard label="Resolution rate" value={`${resolutionRate}%`} />

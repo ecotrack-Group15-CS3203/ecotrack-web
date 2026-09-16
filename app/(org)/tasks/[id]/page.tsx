@@ -7,6 +7,7 @@ import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import { Avatar, Button, Card, Chip, ErrorBanner, Modal, SectionTitle, Spinner, TableThumb } from '@/components/ui';
 import type { IncidentSummary, OrganisationMember, Paginated, Task, TaskPriority } from '@/lib/types';
 import { ApiError, absoluteUrl } from '@/lib/api';
+import { thumbGradient } from '@/lib/thumb-gradients';
 
 export default function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -74,7 +75,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             style={{ padding: 12, display: 'flex', gap: 10, cursor: 'pointer' }}
             onClick={() => router.push(`/incidents/${incident.id}`)}
           >
-            <TableThumb gradient="linear-gradient(135deg,#F0997B,#D85A30)" />
+            <TableThumb gradient={thumbGradient(0)} />
             <div>
               <b style={{ fontSize: 13 }}>{incident.title}</b>
               <div style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
@@ -103,6 +104,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     key={p.id}
+                    className="media-thumb"
                     src={absoluteUrl(p.url)}
                     alt=""
                     style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover' }}

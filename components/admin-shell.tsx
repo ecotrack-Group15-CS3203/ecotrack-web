@@ -1,10 +1,12 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Avatar } from './ui';
-import { IconBell, IconLeaf } from './icons';
+import { IconBell, IconLeaf, IconMenu } from './icons';
+import { ThemeToggle } from './theme-toggle';
 import { useTranslation } from 'react-i18next';
 
 interface NavItem {
@@ -26,10 +28,30 @@ export function AdminShell({
   const pathname = usePathname();
   const { profile, logout } = useAuth();
   const { t } = useTranslation();
+  const [navOpen, setNavOpen] = useState(false);
+  const [navPath, setNavPath] = useState(pathname);
 
   const activeItem =
     navItems.find((item) => pathname === item.href) ??
     navItems.find((item) => pathname.startsWith(item.href + '/'));
+
+  // Close the mobile drawer whenever the route changes. Adjusting during render
+  // rather than in an effect (React's "adjusting state when props change")
+  // avoids a cascading re-render, and keying off pathname rather than each
+  // Link's onClick also covers back/forward navigation.
+  if (navPath !== pathname) {
+    setNavPath(pathname);
+    setNavOpen(false);
+  }
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setNavOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [navOpen]);
 
   function handleLogout() {
     // logout() itself navigates (to /api/auth/logout, then on through
@@ -38,10 +60,10 @@ export function AdminShell({
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <div className="web-sidebar">
+    <div className="web-shell">
+      <div id="web-sidebar" className={`web-sidebar ${navOpen ? 'open' : ''}`}>
         <div className="web-brand">
-          <IconLeaf className="text-white" style={{ stroke: '#fff', width: 20, height: 20 }} />
+          <IconLeaf style={{ width: 20, height: 20 }} />
           EcoTrack
         </div>
         <div className="web-nav">
@@ -49,24 +71,10 @@ export function AdminShell({
             const active = item === activeItem;
             return (
               <Link key={item.href} href={item.href} className={`web-nav-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined}>
-                <item.icon className="w-[18px] h-[18px]" />
+                <item.icon />
                 {item.label}
                 {item.badgeCount !== undefined && item.badgeCount > 0 && (
-                  <span
-                    aria-label={`${item.badgeCount} pending`}
-                    style={{
-                      marginLeft: 'auto',
-                      minWidth: 19,
-                      padding: '1px 6px',
-                      borderRadius: 999,
-                      background: active ? 'rgba(255,255,255,0.2)' : '#E9B44C',
-                      color: active ? '#fff' : '#1E352A',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      lineHeight: '17px',
-                      textAlign: 'center',
-                    }}
-                  >
+                  <span className="web-nav-badge" aria-label={`${item.badgeCount} pending`}>
                     {item.badgeCount}
                   </span>
                 )}
@@ -77,21 +85,38 @@ export function AdminShell({
         <div className="web-sidebar-foot">{sidebarFoot}</div>
       </div>
 
+      {navOpen && <div className="web-nav-scrim" aria-hidden="true" onClick={() => setNavOpen(false)} />}
+
       <div className="web-shell-main">
         <div className="web-topbar">
-          <div className="web-topbar-title">{activeItem?.label ?? ''}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <button type="button" aria-label={t('common.notifications')} style={{ color: 'var(--text-2)' }}><IconBell aria-hidden="true" /></button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <button
+              type="button"
+              className="web-icon-btn web-nav-toggle"
+              aria-label={t('common.menu')}
+              aria-expanded={navOpen}
+              aria-controls="web-sidebar"
+              onClick={() => setNavOpen((open) => !open)}
+            >
+              <IconMenu aria-hidden="true" />
+            </button>
+            <div className="web-topbar-title">{activeItem?.label ?? ''}</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ThemeToggle className="web-icon-btn" iconClassName="web-theme-icon" />
+            <button type="button" className="web-icon-btn" aria-label={t('common.notifications')}>
+              <IconBell aria-hidden="true" />
+            </button>
             <Avatar name={profile?.fullName ?? '?'} />
             <button
               onClick={handleLogout}
-              style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}
+              style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginLeft: 6 }}
             >
               {t('common.logOut')}
             </button>
           </div>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: 28 }}>{children}</div>
+        <div className={`web-content ${navOpen ? 'web-content--locked' : ''}`}>{children}</div>
       </div>
     </div>
   );

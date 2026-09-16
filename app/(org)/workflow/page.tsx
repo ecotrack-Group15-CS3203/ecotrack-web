@@ -159,7 +159,7 @@ export default function WorkflowPage() {
         return <Card key={stage.id} style={{ padding: 16, borderLeft: `5px solid ${stage.color ?? DEFAULT_COLOR}`, opacity: busy ? 0.75 : 1 }}>
           <div draggable={!locked && !busy} onDragStart={() => setDragId(stage.id)} onDragOver={(event) => { if (!locked) event.preventDefault(); }} onDrop={() => reorder(stage.id)} onDragEnd={() => setDragId(null)} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {locked ? <span title={t('workflow.lockedHint')} style={{ color: 'var(--text-3)', fontSize: 16 }}>🔒</span> : <IconDrag className="drag-handle" style={{ width: 18, height: 18, cursor: 'grab' }} />}
-            <span aria-hidden style={{ width: 22, height: 22, borderRadius: 5, background: stage.color ?? DEFAULT_COLOR, border: '1px solid rgba(0,0,0,.15)' }} />
+            <span aria-hidden className="stage-swatch" style={{ width: 22, height: 22, borderRadius: 5, background: stage.color ?? DEFAULT_COLOR }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}><strong>{stage.name}</strong>{locked && <span className="chip chip-neutral">{t('workflow.locked')}</span>}</div>
               <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 3 }}>{stage.slug}</div>
