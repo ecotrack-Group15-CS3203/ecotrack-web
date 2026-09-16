@@ -13,7 +13,9 @@ import {
   SectionTitle,
   Skeleton,
   Avatar,
+  DataTable,
 } from '@/components/ui';
+import type { DataTableColumn } from '@/components/ui';
 import type {
   AuditLogEntry,
   DashboardMapIncident,
@@ -144,6 +146,22 @@ export default function DashboardPage() {
       .slice(0, RECENT_ACTIVITY_LIMIT);
   }, [auditLog]);
 
+  const volunteerActivityColumns: DataTableColumn<(typeof volunteerActivity)[number]>[] = [
+    {
+      key: 'name',
+      header: t('dashboard.volunteerActivity.name'),
+      render: ({ member }) => (
+        <div className="row-flex">
+          <Avatar name={member.fullName} />
+          {member.fullName}
+        </div>
+      ),
+    },
+    { key: 'completed', header: t('dashboard.volunteerActivity.tasksCompleted'), render: ({ completed }) => completed },
+    { key: 'pending', header: t('dashboard.volunteerActivity.tasksPending'), render: ({ pending }) => pending },
+    { key: 'lastActive', header: t('dashboard.volunteerActivity.lastActive'), render: ({ lastActive }) => formatDate(lastActive) },
+  ];
+
   if (!activeOrgId) {
     return (
       <div>
@@ -172,7 +190,7 @@ export default function DashboardPage() {
         </KpiRow>
       ) : (
         <KpiRow>
-          <KpiCard label={t('dashboard.kpi.totalIncidents')} value={stats.totalIncidents} />
+          <KpiCard label={t('dashboard.kpi.totalIncidents')} value={stats.totalIncidents} accent />
           <KpiCard label={t('dashboard.kpi.claimedThisMonth')} value={stats.claimedThisMonth} />
           <KpiCard label={t('dashboard.kpi.awaitingClaim')} value={stats.awaitingClaimInServiceArea} tone="pending" />
           <KpiCard label={t('dashboard.kpi.resolved')} value={stats.resolvedIncidents} tone="resolved" />
@@ -219,48 +237,14 @@ export default function DashboardPage() {
 
       <div style={{ marginTop: 20 }}>
         <SectionTitle>{t('dashboard.volunteerActivity.title')}</SectionTitle>
-        <Card>
-          {!volunteers || !tasks ? (
-            <div style={{ padding: 20 }}>
-              <Skeleton height={14} style={{ marginBottom: 12 }} />
-              <Skeleton height={14} style={{ marginBottom: 12 }} />
-              <Skeleton height={14} />
-            </div>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>{t('dashboard.volunteerActivity.name')}</th>
-                  <th>{t('dashboard.volunteerActivity.tasksCompleted')}</th>
-                  <th>{t('dashboard.volunteerActivity.tasksPending')}</th>
-                  <th>{t('dashboard.volunteerActivity.lastActive')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {volunteerActivity.map(({ member, completed, pending, lastActive }) => (
-                  <tr key={member.id}>
-                    <td>
-                      <div className="row-flex">
-                        <Avatar name={member.fullName} />
-                        {member.fullName}
-                      </div>
-                    </td>
-                    <td>{completed}</td>
-                    <td>{pending}</td>
-                    <td>{formatDate(lastActive)}</td>
-                  </tr>
-                ))}
-                {volunteerActivity.length === 0 && (
-                  <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-3)', padding: '32px 0' }}>
-                      {t('dashboard.volunteerActivity.empty')}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
-        </Card>
+        <DataTable
+          caption={t('dashboard.volunteerActivity.title')}
+          columns={volunteerActivityColumns}
+          rows={volunteerActivity}
+          getRowKey={({ member }) => member.id}
+          loading={!volunteers || !tasks}
+          empty={t('dashboard.volunteerActivity.empty')}
+        />
       </div>
 
       <div style={{ marginTop: 20 }}>
@@ -303,7 +287,7 @@ function ProgressBar({
   const stalledLabel = t('dashboard.progress.stalled', { pct: stalledPct.toFixed(0) });
   return (
     <div>
-      <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', background: '#F0EFE9' }}>
+      <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', background: 'var(--surface-2)' }}>
         <div style={{ width: `${resolvedPct}%`, background: 'var(--resolved)' }} title={resolvedLabel} />
         <div style={{ width: `${inProgressPct}%`, background: 'var(--progress)' }} title={inProgressLabel} />
         <div style={{ width: `${stalledPct}%`, background: 'var(--pending)' }} title={stalledLabel} />

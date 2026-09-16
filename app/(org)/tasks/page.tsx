@@ -7,9 +7,8 @@ import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import {
   Button,
-  Card,
   Chip,
-  EmptyState,
+  DataTable,
   ErrorBanner,
   FieldError,
   FilterBar,
@@ -18,6 +17,7 @@ import {
   PageHeader,
   Spinner,
 } from '@/components/ui';
+import type { DataTableColumn } from '@/components/ui';
 import type {
   IncidentSummary,
   OrganisationMember,
@@ -116,6 +116,40 @@ function TasksPageInner() {
       return true;
     });
   }, [tasks, volunteerFilter, dateFrom, dateTo]);
+
+  const taskColumns: DataTableColumn<Task>[] = [
+    { key: 'task', header: t('tasksList.table.task'), render: (task) => task.title },
+    {
+      key: 'incident',
+      header: t('tasksList.table.linkedIncident'),
+      render: (task) => incidentTitleById.get(task.incidentId) ?? '—',
+    },
+    {
+      key: 'volunteer',
+      header: t('tasksList.table.assignedVolunteer'),
+      render: (task) =>
+        task.assignments.length === 0
+          ? '—'
+          : task.assignments.map((assignment) => assignment.volunteer?.fullName ?? 'Unknown').join(', '),
+    },
+    {
+      key: 'priority',
+      header: t('tasksList.table.priority'),
+      render: (task) => <Chip tone={task.priority}>{task.priority}</Chip>,
+    },
+    {
+      key: 'due',
+      header: t('tasksList.table.dueDate'),
+      render: (task) => new Date(task.dueDate).toLocaleString(),
+    },
+    {
+      key: 'status',
+      header: t('tasksList.table.status'),
+      render: (task) => (
+        <Chip tone={task.status}>{task.status === 'pending' ? 'scheduled' : task.status}</Chip>
+      ),
+    },
+  ];
 
   return (
     <div>
@@ -221,75 +255,16 @@ function TasksPageInner() {
 
       {!tasks && !error && <Spinner />}
 
-      {tasks && filteredTasks.length === 0 && (
-        <Card>
-          <EmptyState>
-            <p>{t('tasksList.empty')}</p>
-          </EmptyState>
-        </Card>
-      )}
-
-      {tasks && filteredTasks.length > 0 && (
-        <Card>
-          <table>
-            <thead>
-              <tr>
-                <th>Task</th>
-                <th>Linked incident</th>
-                <th>Assigned volunteer</th>
-                <th>Priority</th>
-                <th>Due date</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredTasks.map((task) => (
-                <tr
-                  key={task.id}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => router.push(`/tasks/${task.id}`)}
-                >
-                  {/* Task */}
-                  <td>{task.title}</td>
-
-                  {/* Linked incident */}
-                  <td>{incidentTitleById.get(task.incidentId) ?? '—'}</td>
-
-                  {/* Assigned volunteer */}
-                  <td>
-                    {task.assignments.length === 0
-                      ? '—'
-                      : task.assignments
-                          .map((a) => a.volunteer?.fullName ?? 'Unknown')
-                          .join(', ')}
-                  </td>
-
-                  {/* Priority */}
-                  <td>
-                    <Chip tone={task.priority}>
-                      {task.priority}
-                    </Chip>
-                  </td>
-
-                  {/* Due date */}
-                  <td>
-                    {new Date(task.dueDate).toLocaleString()}
-                  </td>
-
-                  {/* Status */}
-                  <td>
-                    <Chip tone={task.status}>
-                      {task.status === 'pending'
-                        ? 'scheduled'
-                        : task.status}
-                    </Chip>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+      {tasks && (
+        <DataTable
+          caption={t('tasksList.title')}
+          columns={taskColumns}
+          rows={filteredTasks}
+          getRowKey={(task) => task.id}
+          rowLabel={(task) => t('tasksList.table.rowLabel', { title: task.title })}
+          onRowActivate={(task) => router.push(`/tasks/${task.id}`)}
+          empty={t('tasksList.empty')}
+        />
       )}
 
       <CreateTaskModal

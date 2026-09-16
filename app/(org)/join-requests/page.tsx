@@ -5,7 +5,8 @@ import { ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import type { JoinRequest, JoinRequestStatus, Paginated } from '@/lib/types';
-import { Button, Card, Chip, ErrorBanner, FilterBar, FilterPill, PageHeader, Spinner, Toast } from '@/components/ui';
+import { Button, Chip, DataTable, ErrorBanner, FilterBar, FilterPill, PageHeader, Spinner, Toast } from '@/components/ui';
+import type { DataTableColumn } from '@/components/ui';
 
 type StatusFilter = 'all' | JoinRequestStatus;
 
@@ -49,6 +50,47 @@ export default function JoinRequestsPage() {
     }
   }
 
+  const columns: DataTableColumn<JoinRequest>[] = [
+    {
+      key: 'requester',
+      header: 'Requester',
+      render: (request) => <strong>{request.requester?.fullName ?? 'Unknown user'}</strong>,
+    },
+    { key: 'email', header: 'Email', render: (request) => request.requester?.email ?? '—' },
+    { key: 'submitted', header: 'Submitted', render: (request) => formatDate(request.createdAt) },
+    {
+      key: 'message',
+      header: 'Message',
+      width: 320,
+      render: (request) => (
+        <span className="clamp-2" title={request.message ?? undefined}>
+          {request.message ?? '—'}
+        </span>
+      ),
+    },
+    { key: 'status', header: 'Status', render: (request) => <Chip tone={request.status}>{request.status}</Chip> },
+    {
+      key: 'actions',
+      header: <span className="sr-only">Actions</span>,
+      align: 'right',
+      render: (request) => {
+        if (request.status !== 'pending') return null;
+        const isUpdating = updatingId === request.id;
+        const who = request.requester?.fullName ?? 'this user';
+        return (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <Button size="sm" disabled={isUpdating} aria-label={`Approve ${who}`} onClick={() => updateRequest(request, 'approved')}>
+              {isUpdating ? 'Updating…' : 'Approve'}
+            </Button>
+            <Button size="sm" variant="destructive" disabled={isUpdating} aria-label={`Reject ${who}`} onClick={() => updateRequest(request, 'rejected')}>
+              Reject
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
     <div>
       <PageHeader title="Join Requests" description="Review people asking to join your organisation." />
@@ -68,49 +110,13 @@ export default function JoinRequestsPage() {
       {!requests && !error && <Spinner />}
 
       {requests && (
-        <Card>
-          <table>
-            <thead>
-              <tr>
-                <th>Requester</th>
-                <th>Email</th>
-                <th>Submitted</th>
-                <th>Message</th>
-                <th>Status</th>
-                <th aria-label="Actions" />
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRequests.map((request) => {
-                const isUpdating = updatingId === request.id;
-                return (
-                  <tr key={request.id}>
-                    <td style={{ fontWeight: 600 }}>{request.requester?.fullName ?? 'Unknown user'}</td>
-                    <td>{request.requester?.email ?? '—'}</td>
-                    <td>{formatDate(request.createdAt)}</td>
-                    <td style={{ maxWidth: 300, whiteSpace: 'normal' }}>{request.message ?? '—'}</td>
-                    <td><Chip tone={request.status}>{request.status}</Chip></td>
-                    <td>
-                      {request.status === 'pending' && (
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                          <Button size="sm" disabled={isUpdating} onClick={() => updateRequest(request, 'approved')}>
-                            {isUpdating ? 'Updating…' : 'Approve'}
-                          </Button>
-                          <Button size="sm" variant="destructive" disabled={isUpdating} onClick={() => updateRequest(request, 'rejected')}>
-                            Reject
-                          </Button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filteredRequests.length === 0 && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-3)', padding: '32px 0' }}>No {statusFilter === 'all' ? '' : statusFilter} join requests found.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </Card>
+        <DataTable
+          caption="Join requests"
+          columns={columns}
+          rows={filteredRequests}
+          getRowKey={(request) => request.id}
+          empty={`No ${statusFilter === 'all' ? '' : statusFilter} join requests found.`}
+        />
       )}
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}

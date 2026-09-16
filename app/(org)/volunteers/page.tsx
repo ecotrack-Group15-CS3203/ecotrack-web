@@ -8,14 +8,15 @@ import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import {
   Avatar,
   Button,
-  Card,
   Chip,
+  DataTable,
   Drawer,
   EmptyState,
   ErrorBanner,
   PageHeader,
   Spinner,
 } from '@/components/ui';
+import type { DataTableColumn } from '@/components/ui';
 import type { OrganisationMember, Paginated, Task } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 
@@ -111,6 +112,41 @@ export default function VolunteersPage() {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [tasks, selectedVolunteer]);
 
+  const volunteerColumns: DataTableColumn<OrganisationMember>[] = [
+    {
+      key: 'name',
+      header: t('volunteers.table.name'),
+      render: (volunteer) => (
+        <div className="row-flex">
+          <Avatar name={volunteer.fullName} />
+          {volunteer.fullName}
+        </div>
+      ),
+    },
+    { key: 'email', header: t('volunteers.table.email'), render: (volunteer) => volunteer.email },
+    { key: 'joined', header: t('volunteers.table.joinedAt'), render: (volunteer) => formatDate(volunteer.createdAt) },
+    {
+      key: 'completed',
+      header: t('volunteers.table.tasksCompleted'),
+      sort: { active: sortOrder, onToggle: handleSortCompleted },
+      render: (volunteer) => completedTasksCountByUser.get(volunteer.id) ?? 0,
+    },
+    {
+      key: 'active',
+      header: t('volunteers.table.activeTasks'),
+      render: (volunteer) => activeTaskCountByUser.get(volunteer.id) ?? 0,
+    },
+    {
+      key: 'status',
+      header: t('volunteers.table.status'),
+      render: (volunteer) => (
+        <Chip tone={volunteer.isActive ? 'active' : 'inactive'}>
+          {volunteer.isActive ? 'active' : 'inactive'}
+        </Chip>
+      ),
+    },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -127,63 +163,19 @@ export default function VolunteersPage() {
       {!volunteers && !volunteersError && <Spinner />}
 
       {volunteers && (
-        <Card>
-          <table>
-            <thead>
-              <tr>
-                <th>{t('volunteers.table.name')}</th>
-                <th>{t('volunteers.table.email')}</th>
-                <th>{t('volunteers.table.joinedAt')}</th>
-                <th
-                  onClick={handleSortCompleted}
-                  style={{ cursor: 'pointer', userSelect: 'none' }}
-                  title="Click to sort by tasks completed"
-                >
-                  {t('volunteers.table.tasksCompleted')}{' '}
-                  {sortOrder === 'desc' ? '▼' : sortOrder === 'asc' ? '▲' : '↕'}
-                </th>
-                <th>{t('volunteers.table.activeTasks')}</th>
-                <th>{t('volunteers.table.status')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedVolunteers.map((v) => (
-                <tr
-                  key={v.id}
-                  onClick={() => {
-                    setSelectedVolunteer(v);
-                    setConfirmingRemove(false);
-                    setRemoveError(null);
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <td>
-                    <div className="row-flex">
-                      <Avatar name={v.fullName} />
-                      {v.fullName}
-                    </div>
-                  </td>
-                  <td>{v.email}</td>
-                  <td>{formatDate(v.createdAt)}</td>
-                  <td>{completedTasksCountByUser.get(v.id) ?? 0}</td>
-                  <td>{activeTaskCountByUser.get(v.id) ?? 0}</td>
-                  <td>
-                    <Chip tone={v.isActive ? 'active' : 'inactive'}>
-                      {v.isActive ? 'active' : 'inactive'}
-                    </Chip>
-                  </td>
-                </tr>
-              ))}
-              {sortedVolunteers.length === 0 && (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-3)', padding: '32px 0' }}>
-                    {t('volunteers.table.empty')}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </Card>
+        <DataTable
+          caption={t('volunteers.title')}
+          columns={volunteerColumns}
+          rows={sortedVolunteers}
+          getRowKey={(volunteer) => volunteer.id}
+          rowLabel={(volunteer) => volunteer.fullName}
+          onRowActivate={(volunteer) => {
+            setSelectedVolunteer(volunteer);
+            setConfirmingRemove(false);
+            setRemoveError(null);
+          }}
+          empty={t('volunteers.table.empty')}
+        />
       )}
 
       {/* Volunteer Profile Drawer */}
@@ -240,7 +232,7 @@ export default function VolunteersPage() {
                         padding: 10,
                         border: '1px solid var(--border)',
                         borderRadius: 8,
-                        background: '#FAF9F5',
+                        background: 'var(--surface-3)',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6, marginBottom: 4 }}>
@@ -264,6 +256,7 @@ export default function VolunteersPage() {
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               key={photo.id}
+                              className="media-thumb"
                               src={photo.url}
                               alt="Evidence thumbnail"
                               style={{

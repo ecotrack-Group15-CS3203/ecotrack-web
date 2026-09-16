@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
-import { Avatar, Button, Card, Chip, ErrorBanner, Modal, PageHeader, SectionTitle, Spinner, Toast } from '@/components/ui';
+import { Avatar, Button, Chip, DataTable, ErrorBanner, Modal, PageHeader, SectionTitle, Spinner, Toast } from '@/components/ui';
+import type { DataTableColumn } from '@/components/ui';
 import { IconPlus } from '@/components/icons';
 import type { CreateInviteLinkResult, InviteLink, Organisation, OrganisationMember, Paginated } from '@/lib/types';
 import { ApiError } from '@/lib/api';
@@ -144,6 +145,59 @@ export default function SettingsPage() {
   if (error) return <ErrorBanner message={error instanceof ApiError ? error.message : t('settings.loadError')} />;
   if (!org) return <Spinner />;
 
+  const memberColumns: DataTableColumn<OrganisationMember>[] = [
+    {
+      key: 'name',
+      header: t('settings.table.member'),
+      render: (member) => (
+        <div className="row-flex">
+          <Avatar name={member.fullName} />
+          {member.fullName}
+        </div>
+      ),
+    },
+    {
+      key: 'role',
+      header: t('settings.table.role'),
+      render: (member) => <span style={{ textTransform: 'capitalize' }}>{member.role.replace(/_/g, ' ')}</span>,
+    },
+  ];
+
+  const inviteColumns: DataTableColumn<InviteLink>[] = [
+    { key: 'created', header: t('settings.table.created'), render: (invite) => formatDate(invite.createdAt) },
+    { key: 'expires', header: t('settings.table.expires'), render: (invite) => formatDate(invite.expiresAt) },
+    {
+      key: 'uses',
+      header: t('settings.table.uses'),
+      render: (invite) => `${invite.usesCount} / ${invite.maxUses ?? t('common.unlimited')}`,
+    },
+    {
+      key: 'status',
+      header: t('settings.table.status'),
+      render: (invite) => {
+        const status = inviteStatus(invite);
+        return <Chip tone={status.tone}>{t(`settings.inviteStatus.${status.labelKey}`)}</Chip>;
+      },
+    },
+    {
+      key: 'actions',
+      header: <span className="sr-only">Actions</span>,
+      align: 'right',
+      render: (invite) => {
+        if (inviteStatus(invite).labelKey !== 'active') return null;
+        return (
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={revokingId === invite.id}
+            onClick={() => revokeInvite(invite.id)}
+          >
+            {revokingId === invite.id ? t('settings.revoking') : t('settings.revoke')}
+          </Button>
+        );
+      },
+    },
+  ];
   return (
     <div style={{ maxWidth: 640 }}>
       <PageHeader title={t('settings.title')} description={org.name} />
@@ -200,23 +254,14 @@ export default function SettingsPage() {
       </Button>
 
       <SectionTitle>{t('settings.members')}</SectionTitle>
-      <Card>
-        <table>
-          <tbody>
-            {(members ?? []).map((m) => (
-              <tr key={m.id}>
-                <td>
-                  <div className="row-flex">
-                    <Avatar name={m.fullName} />
-                    {m.fullName}
-                  </div>
-                </td>
-                <td style={{ textTransform: 'capitalize' }}>{m.role.replace(/_/g, ' ')}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+      <DataTable
+        caption={t('settings.members')}
+        columns={memberColumns}
+        rows={members ?? []}
+        getRowKey={(member) => member.id}
+        loading={!members}
+        empty={t('settings.table.empty')}
+      />
 
       <SectionTitle>{t('settings.inviteLinks')}</SectionTitle>
       <div style={{ marginBottom: 12 }}>
@@ -232,51 +277,13 @@ export default function SettingsPage() {
       )}
       {!invites && !invitesError && <Spinner />}
       {invites && (
-        <Card>
-          <table>
-            <thead>
-              <tr>
-                <th>{t('settings.table.created')}</th>
-                <th>{t('settings.table.expires')}</th>
-                <th>{t('settings.table.uses')}</th>
-                <th>{t('settings.table.status')}</th>
-                <th aria-label="Actions" />
-              </tr>
-            </thead>
-            <tbody>
-              {invites.map((invite) => {
-                const status = inviteStatus(invite);
-                const statusLabel = t(`settings.inviteStatus.${status.labelKey}`);
-                const revocable = status.labelKey === 'active';
-                return (
-                  <tr key={invite.id}>
-                    <td>{formatDate(invite.createdAt)}</td>
-                    <td>{formatDate(invite.expiresAt)}</td>
-                    <td>{invite.usesCount} / {invite.maxUses ?? t('common.unlimited')}</td>
-                    <td><Chip tone={status.tone}>{statusLabel}</Chip></td>
-                    <td>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        {revocable && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            disabled={revokingId === invite.id}
-                            onClick={() => revokeInvite(invite.id)}
-                          >
-                            {revokingId === invite.id ? t('settings.revoking') : t('settings.revoke')}
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {invites.length === 0 && (
-                <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-3)', padding: '32px 0' }}>{t('settings.table.empty')}</td></tr>
-              )}
-            </tbody>
-          </table>
-        </Card>
+        <DataTable
+          caption={t('settings.inviteLinks')}
+          columns={inviteColumns}
+          rows={invites}
+          getRowKey={(invite) => invite.id}
+          empty={t('settings.table.empty')}
+        />
       )}
 
       <Modal open={generateOpen} onClose={closeGenerateModal} title={t('settings.generateModal.title')}>

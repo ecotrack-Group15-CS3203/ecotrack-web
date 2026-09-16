@@ -4,10 +4,12 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
-import { Card, Chip, EmptyState, ErrorBanner, FilterBar, FilterPill, PageHeader, Spinner, TableThumb } from '@/components/ui';
+import { Chip, DataTable, ErrorBanner, FilterBar, FilterPill, PageHeader, Spinner, TableThumb } from '@/components/ui';
+import type { DataTableColumn } from '@/components/ui';
 import type { Incident, IncidentSeverity, Paginated, VerificationStatus, WorkflowStage } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
+import { thumbGradient } from '@/lib/thumb-gradients';
 
 const STATUS_TABS: { label: string; value: VerificationStatus | 'all' }[] = [
   { label: 'All statuses', value: 'all' },
@@ -17,14 +19,6 @@ const STATUS_TABS: { label: string; value: VerificationStatus | 'all' }[] = [
 ];
 
 const SEVERITIES: IncidentSeverity[] = ['low', 'medium', 'high', 'critical'];
-
-const THUMB_GRADIENTS = [
-  'linear-gradient(135deg,#F0997B,#D85A30)',
-  'linear-gradient(135deg,#85B7EB,#378ADD)',
-  'linear-gradient(135deg,#97C459,#639922)',
-  'linear-gradient(135deg,#9FE1CB,#5DCAA5)',
-  'linear-gradient(135deg,#F5C4B3,#D85A30)',
-];
 
 export default function IncidentsPage() {
   const { t } = useTranslation();
@@ -68,6 +62,56 @@ export default function IncidentsPage() {
         return sortOrder === 'newest' ? diff : -diff;
       });
   }, [incidents, stageFilter, severityFilter, dateFrom, dateTo, sortOrder]);
+
+  const incidentColumns: DataTableColumn<Incident>[] = [
+    {
+      key: 'thumb',
+      header: t('incidentsList.table.thumbnail'),
+      width: 60,
+      render: (_incident, index) => (
+        <TableThumb alt={t('incidentsList.table.thumbnail')} gradient={thumbGradient(index)} />
+      ),
+    },
+    { key: 'title', header: t('incidentsList.table.title'), render: (incident) => incident.title },
+    {
+      key: 'category',
+      header: t('incidentsList.table.category'),
+      render: (incident) => (
+        <span style={{ textTransform: 'capitalize' }}>{incident.category.replace(/_/g, ' ')}</span>
+      ),
+    },
+    {
+      key: 'severity',
+      header: t('incidentsList.table.severity'),
+      render: (incident) => <Chip tone={incident.severity}>{incident.severity}</Chip>,
+    },
+    {
+      key: 'stage',
+      header: t('incidentsList.table.stage'),
+      render: (incident) => {
+        const stage = incident.currentStageId ? stagesById.get(incident.currentStageId) : undefined;
+        if (!stage) return '—';
+        return (
+          <span className="row-flex">
+            <span className="stage-dot" style={{ background: stage.color }} aria-hidden="true" />
+            {stage.name}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'status',
+      header: t('incidentsList.table.status'),
+      render: (incident) => (
+        <Chip tone={incident.verificationStatus ?? 'pending'}>{incident.verificationStatus ?? 'pending'}</Chip>
+      ),
+    },
+    {
+      key: 'submitted',
+      header: t('incidentsList.table.submitted'),
+      render: (incident) => new Date(incident.createdAt).toLocaleDateString(),
+    },
+  ];
 
   return (
     <div>
@@ -121,49 +165,16 @@ export default function IncidentsPage() {
       {error && <ErrorBanner message={error instanceof ApiError ? error.message : t('incidentsList.loadError')} />}
       {!incidents && !error && <Spinner />}
 
-      {incidents && filteredIncidents.length === 0 && (
-        <Card>
-          <EmptyState>
-            <p>{t('incidentsList.empty')}</p>
-          </EmptyState>
-        </Card>
-      )}
-
-      {incidents && filteredIncidents.length > 0 && (
-        <Card>
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">{t('incidentsList.table.thumbnail')}</th>
-                <th scope="col">{t('incidentsList.table.title')}</th>
-                <th scope="col">{t('incidentsList.table.category')}</th>
-                <th scope="col">{t('incidentsList.table.severity')}</th>
-                <th scope="col">{t('incidentsList.table.stage')}</th>
-                <th scope="col">{t('incidentsList.table.status')}</th>
-                <th scope="col">{t('incidentsList.table.submitted')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredIncidents.map((incident, i) => (
-                <tr key={incident.id} tabIndex={0} aria-label={t('incidentsList.table.rowLabel', { title: incident.title })} style={{ cursor: 'pointer' }} onClick={() => router.push(`/incidents/${incident.id}`)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); router.push(`/incidents/${incident.id}`); } }}>
-                  <td>
-                    <TableThumb alt={t('incidentsList.table.thumbnail')} gradient={THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]} />
-                  </td>
-                  <td>{incident.title}</td>
-                  <td style={{ textTransform: 'capitalize' }}>{incident.category.replace(/_/g, ' ')}</td>
-                  <td>
-                    <Chip tone={incident.severity}>{incident.severity}</Chip>
-                  </td>
-                  <td>{(incident.currentStageId && stagesById.get(incident.currentStageId)?.name) || '—'}</td>
-                  <td>
-                    <Chip tone={incident.verificationStatus ?? 'pending'}>{incident.verificationStatus ?? 'pending'}</Chip>
-                  </td>
-                  <td>{new Date(incident.createdAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+      {incidents && (
+        <DataTable
+          caption={t('incidentsList.title')}
+          columns={incidentColumns}
+          rows={filteredIncidents}
+          getRowKey={(incident) => incident.id}
+          rowLabel={(incident) => t('incidentsList.table.rowLabel', { title: incident.title })}
+          onRowActivate={(incident) => router.push(`/incidents/${incident.id}`)}
+          empty={t('incidentsList.empty')}
+        />
       )}
     </div>
   );
