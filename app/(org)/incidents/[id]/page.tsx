@@ -95,6 +95,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
         {incident.images[0] && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
+            className="media-thumb"
             src={absoluteUrl(incident.images[0].url)}
             alt={incident.title}
             style={{ width: '100%', height: 220, borderRadius: 10, objectFit: 'cover', marginBottom: 16 }}
@@ -106,6 +107,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={img.id}
+                className="media-thumb"
                 src={absoluteUrl(img.url)}
                 alt={`${incident.title} evidence`}
                 style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover' }}
@@ -143,16 +145,9 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
       </div>
 
       {incident.verificationStatus === 'approved' ? (
+        <>
         <Card style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 15, marginBottom: 14 }}>{t('incidentDetail.verification.title')}</h3>
-
-          {actionError && (
-            <div style={{ marginBottom: 12 }}>
-              <ErrorBanner message={actionError} />
-            </div>
-          )}
-
-          <SectionTitle>Actions</SectionTitle>
+          <h3 style={{ fontSize: 17, marginBottom: 14 }}>Actions</h3>
 
           <Button className="btn-block" style={{ marginBottom: 8 }} onClick={() => router.push(`/tasks?incidentId=${incident.id}`)}>
             + Create task
@@ -196,9 +191,10 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
             )}
           </div>
 
-          <div style={{ borderTop: '1px solid var(--border)', margin: '18px 0' }} />
+        </Card>
 
-          <h3 style={{ fontSize: 15, marginBottom: 14 }}>{t('incidentDetail.verification.title')}</h3>
+        <Card style={{ padding: 20, marginTop: 16 }}>
+          <h3 style={{ fontSize: 17, marginBottom: 14 }}>{t('incidentDetail.verification.title')}</h3>
 
           {actionError && (
             <div style={{ marginBottom: 12 }}>
@@ -247,10 +243,11 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
             {busy ? 'Submitting…' : decisionLabel}
           </Button>
         </Card>
+        </>
       ) : (
         <Card style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 15, marginBottom: 8 }}>Verification</h3>
-          <p style={{ fontSize: 13.5, color: 'var(--text-2)' }}>
+          <h3 style={{ fontSize: 17, marginBottom: 8 }}>{t('incidentDetail.verification.title')}</h3>
+          <p style={{ color: 'var(--text-2)' }}>
             This incident has already been {incident.verificationStatus}.
           </p>
         </Card>
