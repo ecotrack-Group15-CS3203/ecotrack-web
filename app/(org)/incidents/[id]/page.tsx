@@ -4,7 +4,7 @@ import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
-import { Button, Card, Chip, ErrorBanner, FieldError, SectionTitle, Spinner } from '@/components/ui';
+import { Button, Card, Chip, DetailHeader, ErrorBanner, FieldError, SectionTitle, Spinner, StatusChip } from '@/components/ui';
 import type { Incident, Paginated, WorkflowStage } from '@/lib/types';
 import { ApiError, absoluteUrl } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
@@ -86,12 +86,21 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 22, alignItems: 'start' }}>
+    <div>
+      <DetailHeader
+        backHref="/incidents"
+        backLabel={t('incidentDetail.backToIncidents')}
+        title={incident.title}
+        chips={
+          <>
+            <Chip tone="neutral">{incident.category.replace(/_/g, ' ')}</Chip>
+            <Chip tone={incident.severity}>{`${incident.severity} severity`}</Chip>
+            <StatusChip status={incident.verificationStatus ?? 'pending'} />
+          </>
+        }
+      />
+      <div className="detail-grid">
       <div>
-          <Button variant="text" onClick={() => router.push('/incidents')} style={{ marginBottom: 10 }}>
-          {t('incidentDetail.backToIncidents')}
-        </Button>
-
         {incident.images[0] && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -116,12 +125,6 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-          <Chip tone="neutral">{incident.category.replace(/_/g, ' ')}</Chip>
-          <Chip tone={incident.severity}>{`${incident.severity} severity`}</Chip>
-          <Chip tone={incident.verificationStatus ?? 'pending'}>{incident.verificationStatus ?? 'pending'}</Chip>
-        </div>
-        <h1 style={{ fontSize: 19 }}>{incident.title}</h1>
         <p style={{ fontSize: 13.5, color: 'var(--text-2)', margin: '10px 0 16px' }}>{incident.description}</p>
 
         {incident.rejectionReason && (
@@ -252,6 +255,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
           </p>
         </Card>
       )}
+      </div>
     </div>
   );
 }
