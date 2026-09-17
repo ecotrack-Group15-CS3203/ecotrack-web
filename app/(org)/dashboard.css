@@ -361,6 +361,22 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 @media (max-width: 1000px) {
   .eco .detail-grid { grid-template-columns: 1fr; }
 }
+
+/* ===== Distance slider (incident pool) ===== */
+.eco .pool-distance { display: flex; flex-direction: column; gap: 6px; min-width: 200px; flex: 1 1 220px; }
+.eco .pool-distance label { font-size: var(--fs-meta); color: var(--text-2); font-weight: 600; }
+.eco .pool-distance input[type="range"] { accent-color: var(--primary); width: 100%; }
+
+/* ===== Incident pool card grid ===== */
+.eco .pool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.eco .pool-card { padding: 0; overflow: hidden; cursor: pointer; transition: box-shadow .15s ease, transform .15s ease; }
+.eco .pool-card:hover { box-shadow: var(--shadow-pop); transform: translateY(-2px); }
+.eco .pool-card-band { height: 4px; width: 100%; }
+.eco .pool-card-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.eco .pool-card-title { font-size: 15.5px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.eco .pool-card-desc { font-size: var(--fs-body-sm); color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0; }
+.eco .pool-card-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.eco .pool-card-footer { display: flex; justify-content: space-between; font-size: var(--fs-meta); color: var(--text-3); }
 /* Uploaded photography, dimmed to sit calmly on a dark surface. */
 .eco .media-thumb { filter: var(--thumb-dim); }
 
