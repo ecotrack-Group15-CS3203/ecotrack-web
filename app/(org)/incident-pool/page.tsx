@@ -24,6 +24,7 @@ import type { IncidentCategory, IncidentSeverity, Organisation, PoolIncident } f
 import { ApiError } from '@/lib/api';
 import { thumbGradient } from '@/lib/thumb-gradients';
 import { filterPool, paginate, sortPool, type PoolFilters, type PoolSort } from '@/lib/pool-filters';
+import { relativeAge } from '@/lib/format';
 
 const PAGE_SIZE = 12;
 
@@ -39,15 +40,6 @@ const SEVERITIES: IncidentSeverity[] = ['low', 'medium', 'high', 'critical'];
 
 function categoryLabel(category: IncidentCategory) {
   return category.replace(/_/g, ' ');
-}
-
-function relativeAge(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const days = Math.floor(diffMs / 86_400_000);
-  if (days >= 1) return `${days}d`;
-  const hours = Math.floor(diffMs / 3_600_000);
-  if (hours >= 1) return `${hours}h`;
-  return 'just now';
 }
 
 function toggleInSet<T>(set: ReadonlySet<T>, value: T): Set<T> {
