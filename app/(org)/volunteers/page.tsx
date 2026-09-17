@@ -8,13 +8,17 @@ import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import {
   Avatar,
   Button,
-  Chip,
   DataTable,
   Drawer,
   EmptyState,
   ErrorBanner,
+  FilterPanel,
+  MetaList,
   PageHeader,
+  SearchInput,
+  SectionTitle,
   Spinner,
+  StatusChip,
 } from '@/components/ui';
 import type { DataTableColumn } from '@/components/ui';
 import type { OrganisationMember, Paginated, Task } from '@/lib/types';
@@ -30,6 +34,7 @@ export default function VolunteersPage() {
   const [removing, setRemoving] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // limit=100 on both: the completed/active task counts and the sort below
   // aggregate over the complete set, not just the first page.
@@ -94,6 +99,15 @@ export default function VolunteersPage() {
     return list;
   }, [volunteers, sortOrder, completedTasksCountByUser]);
 
+  const visibleVolunteers = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return sortedVolunteers;
+    return sortedVolunteers.filter(
+      (volunteer) =>
+        volunteer.fullName.toLowerCase().includes(query) || volunteer.email.toLowerCase().includes(query),
+    );
+  }, [sortedVolunteers, searchQuery]);
+
   function formatDate(dateStr: string | null) {
     if (!dateStr) return 'N/A';
     const date = new Date(dateStr);
@@ -140,9 +154,7 @@ export default function VolunteersPage() {
       key: 'status',
       header: t('volunteers.table.status'),
       render: (volunteer) => (
-        <Chip tone={volunteer.isActive ? 'active' : 'inactive'}>
-          {volunteer.isActive ? 'active' : 'inactive'}
-        </Chip>
+        <StatusChip status={volunteer.isActive ? 'active' : 'inactive'} />
       ),
     },
   ];
@@ -163,19 +175,30 @@ export default function VolunteersPage() {
       {!volunteers && !volunteersError && <Spinner />}
 
       {volunteers && (
-        <DataTable
-          caption={t('volunteers.title')}
-          columns={volunteerColumns}
-          rows={sortedVolunteers}
-          getRowKey={(volunteer) => volunteer.id}
-          rowLabel={(volunteer) => volunteer.fullName}
-          onRowActivate={(volunteer) => {
-            setSelectedVolunteer(volunteer);
-            setConfirmingRemove(false);
-            setRemoveError(null);
-          }}
-          empty={t('volunteers.table.empty')}
-        />
+        <>
+          <FilterPanel>
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              label={t('volunteers.searchLabel')}
+              placeholder={t('volunteers.searchPlaceholder')}
+              hint={t('volunteers.searchHint')}
+            />
+          </FilterPanel>
+          <DataTable
+            caption={t('volunteers.title')}
+            columns={volunteerColumns}
+            rows={visibleVolunteers}
+            getRowKey={(volunteer) => volunteer.id}
+            rowLabel={(volunteer) => volunteer.fullName}
+            onRowActivate={(volunteer) => {
+              setSelectedVolunteer(volunteer);
+              setConfirmingRemove(false);
+              setRemoveError(null);
+            }}
+            empty={t('volunteers.table.empty')}
+          />
+        </>
       )}
 
       {/* Volunteer Profile Drawer */}
@@ -192,9 +215,7 @@ export default function VolunteersPage() {
               <div>
                 <h3 style={{ fontSize: 16, fontWeight: 600 }}>{selectedVolunteer.fullName}</h3>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4 }}>
-                  <Chip tone={selectedVolunteer.isActive ? 'active' : 'inactive'}>
-                    {selectedVolunteer.isActive ? 'active' : 'inactive'}
-                  </Chip>
+                  <StatusChip status={selectedVolunteer.isActive ? 'active' : 'inactive'} />
                   <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('volunteers.profile.joined', { date: formatDate(selectedVolunteer.createdAt) })}</span>
                 </div>
               </div>
@@ -202,15 +223,16 @@ export default function VolunteersPage() {
 
             {/* Contact details */}
             <div>
-              <h4 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 6 }}>
-                {t('volunteers.profile.personalDetails')}
-              </h4>
-              <div style={{ fontSize: 13.5, display: 'grid', gridTemplateColumns: '80px 1fr', gap: 8 }}>
-                <span style={{ color: 'var(--text-2)' }}>{t('volunteers.profile.email')}</span>
-                <span style={{ wordBreak: 'break-all' }}>{selectedVolunteer.email}</span>
-                <span style={{ color: 'var(--text-2)' }}>{t('volunteers.profile.role')}</span>
-                <span style={{ textTransform: 'capitalize' }}>{selectedVolunteer.role.replace('_', ' ')}</span>
-              </div>
+              <SectionTitle>{t('volunteers.profile.personalDetails')}</SectionTitle>
+              <MetaList
+                items={[
+                  { label: t('volunteers.profile.email'), value: selectedVolunteer.email },
+                  {
+                    label: t('volunteers.profile.role'),
+                    value: <span style={{ textTransform: 'capitalize' }}>{selectedVolunteer.role.replace('_', ' ')}</span>,
+                  },
+                ]}
+              />
             </div>
 
             {/* Task History */}
@@ -239,7 +261,7 @@ export default function VolunteersPage() {
                         <span style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {task.title}
                         </span>
-                        <Chip tone={task.status}>{task.status}</Chip>
+                        <StatusChip status={task.status} domain="task" />
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--text-2)', display: 'flex', justifyContent: 'space-between' }}>
                         <span>Priority: {task.priority}</span>

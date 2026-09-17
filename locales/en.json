@@ -18,7 +18,24 @@
     "pagination": "Pagination",
     "showingRange": "Showing {{from}}–{{to}} of {{total}}",
     "previousPage": "Previous page",
-    "nextPage": "Next page"
+    "nextPage": "Next page",
+    "clearFilters": "Clear filters ({{count}})",
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "approved": "Verified",
+      "rejected": "Rejected",
+      "duplicate": "Duplicate",
+      "active": "Active",
+      "inactive": "Inactive",
+      "scheduled": "Scheduled",
+      "ongoing": "Ongoing",
+      "task": {
+        "pending": "Scheduled"
+      }
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -367,7 +384,10 @@
       "cancel": "Cancel",
       "confirmRemove": "Remove",
       "removing": "Removing…"
-    }
+    },
+    "searchLabel": "Search volunteers",
+    "searchPlaceholder": "Search by name or email",
+    "searchHint": "Filters the volunteers already loaded on this page."
   },
   "orgRegistration": {
     "title": "Register your organisation",

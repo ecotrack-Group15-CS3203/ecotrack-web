@@ -4,7 +4,7 @@ import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
-import { Avatar, Button, Card, Chip, ErrorBanner, Modal, SectionTitle, Spinner, TableThumb } from '@/components/ui';
+import { Avatar, Button, Card, Chip, DetailHeader, ErrorBanner, Modal, SectionTitle, Spinner, StatusChip, TableThumb } from '@/components/ui';
 import type { IncidentSummary, OrganisationMember, Paginated, Task, TaskPriority } from '@/lib/types';
 import { ApiError, absoluteUrl } from '@/lib/api';
 import { thumbGradient } from '@/lib/thumb-gradients';
@@ -52,23 +52,26 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const otherVolunteers = (volunteers ?? []).filter((v) => v.id !== currentAssignment?.volunteerUserId);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 22, alignItems: 'start' }}>
+    <div>
+      <DetailHeader
+        backHref="/tasks"
+        backLabel="Back to tasks"
+        title={task.title}
+        chips={
+          <>
+            <Chip tone={task.priority}>{`${task.priority} priority`}</Chip>
+            <StatusChip status={task.status} domain="task" />
+          </>
+        }
+        meta={
+          <>
+            {task.description && <p style={{ marginBottom: 6 }}>{task.description}</p>}
+            Due: {new Date(task.dueDate).toLocaleString()}
+          </>
+        }
+      />
+      <div className="detail-grid">
       <div>
-        <Button variant="text" onClick={() => router.push('/tasks')} style={{ marginBottom: 10 }}>
-          ← Back to tasks
-        </Button>
-        <h1 style={{ fontSize: 19 }}>{task.title}</h1>
-        {task.description && (
-          <p style={{ fontSize: 13.5, color: 'var(--text-2)', margin: '4px 0 10px' }}>{task.description}</p>
-        )}
-        <div style={{ display: 'flex', gap: 6, margin: '10px 0 16px' }}>
-          <Chip tone={task.priority}>{`${task.priority} priority`}</Chip>
-          <Chip tone={task.status}>{task.status === 'pending' ? 'scheduled' : task.status}</Chip>
-        </div>
-        <p style={{ fontSize: 13.5, color: 'var(--text-2)', marginBottom: 16 }}>
-          Due: {new Date(task.dueDate).toLocaleString()}
-        </p>
-
         <SectionTitle>Linked incident</SectionTitle>
         {incident ? (
           <Card
@@ -150,6 +153,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
           Edit priority &amp; due date
         </Button>
       </Card>
+      </div>
 
       <Modal open={showReassign} onClose={() => setShowReassign(false)} title="Reassign volunteer">
         {otherVolunteers.length === 0 ? (

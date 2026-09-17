@@ -14,6 +14,7 @@ import {
   Skeleton,
   Avatar,
   DataTable,
+  ProgressBar,
 } from '@/components/ui';
 import type { DataTableColumn } from '@/components/ui';
 import type {
@@ -224,7 +225,30 @@ export default function DashboardPage() {
 
         <Card style={{ padding: 20 }}>
           <h3 style={{ fontSize: 14, marginBottom: 12 }}>{t('dashboard.progress.title')}</h3>
-          {!cleanupProgress ? <Skeleton height={16} /> : <ProgressBar progress={cleanupProgress} t={t} />}
+          {!cleanupProgress ? (
+            <Skeleton height={16} />
+          ) : (
+            <ProgressBar
+              segments={[
+                {
+                  value: cleanupProgress.resolvedPct,
+                  color: 'var(--resolved)',
+                  label: t('dashboard.progress.resolved', { pct: cleanupProgress.resolvedPct.toFixed(0) }),
+                },
+                {
+                  value: cleanupProgress.inProgressPct,
+                  color: 'var(--progress)',
+                  label: t('dashboard.progress.inProgress', { pct: cleanupProgress.inProgressPct.toFixed(0) }),
+                },
+                {
+                  value: cleanupProgress.stalledPct,
+                  color: 'var(--pending)',
+                  label: t('dashboard.progress.stalled', { pct: cleanupProgress.stalledPct.toFixed(0) }),
+                },
+              ]}
+              max={100}
+            />
+          )}
         </Card>
       </div>
 
@@ -274,38 +298,3 @@ export default function DashboardPage() {
   );
 }
 
-function ProgressBar({
-  progress,
-  t,
-}: {
-  progress: { resolvedPct: number; stalledPct: number; inProgressPct: number };
-  t: (key: string, opts?: Record<string, unknown>) => string;
-}) {
-  const { resolvedPct, stalledPct, inProgressPct } = progress;
-  const resolvedLabel = t('dashboard.progress.resolved', { pct: resolvedPct.toFixed(0) });
-  const inProgressLabel = t('dashboard.progress.inProgress', { pct: inProgressPct.toFixed(0) });
-  const stalledLabel = t('dashboard.progress.stalled', { pct: stalledPct.toFixed(0) });
-  return (
-    <div>
-      <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', background: 'var(--surface-2)' }}>
-        <div style={{ width: `${resolvedPct}%`, background: 'var(--resolved)' }} title={resolvedLabel} />
-        <div style={{ width: `${inProgressPct}%`, background: 'var(--progress)' }} title={inProgressLabel} />
-        <div style={{ width: `${stalledPct}%`, background: 'var(--pending)' }} title={stalledLabel} />
-      </div>
-      <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 12, color: 'var(--text-2)' }}>
-        <Legend color="var(--resolved)" label={resolvedLabel} />
-        <Legend color="var(--progress)" label={inProgressLabel} />
-        <Legend color="var(--pending)" label={stalledLabel} />
-      </div>
-    </div>
-  );
-}
-
-function Legend({ color, label }: { color: string; label: string }) {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-      <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
-      {label}
-    </span>
-  );
-}

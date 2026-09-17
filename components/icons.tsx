@@ -42,6 +42,8 @@ export const IconOrganisations = (p: IconProps) => (
 );
 export const IconLeaf = (p: IconProps) => <Icon {...p} d="M12 2C8 6 4 9 4 14a8 8 0 0 0 16 0c0-5-4-8-8-12z" />;
 export const IconClose = (p: IconProps) => <Icon {...p} d="M18 6 6 18M6 6l12 12" />;
+export const IconSearch = (p: IconProps) => <Icon {...p} d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.35-4.35" />;
+export const IconArrowLeft = (p: IconProps) => <Icon {...p} d="M19 12H5M12 19l-7-7 7-7" />;
 export const IconBell = (p: IconProps) => (
   <Icon {...p} d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" />
 );
