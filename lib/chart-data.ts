@@ -1,4 +1,4 @@
-import type { Incident, IncidentCategory, IncidentSeverity, WorkflowStage } from './types';
+import type { IncidentCategory, IncidentSeverity, WorkflowStage } from './types';
 
 export interface Datum {
   label: string;
@@ -42,7 +42,10 @@ export function toCategorySeries(byCategory: readonly { category: string; count:
 /** Grouped by current workflow stage, in stage position order. Stages with no
  * incidents are omitted -- a bar chart has no use for a zero-height bar,
  * unlike the board's empty columns, which are the point there. */
-export function toStageSeries(incidents: readonly Incident[], stages: readonly WorkflowStage[]): Datum[] {
+export function toStageSeries(
+  incidents: readonly { currentStageId: string | null }[],
+  stages: readonly WorkflowStage[],
+): Datum[] {
   const counts = new Map<string, number>();
   for (const incident of incidents) {
     if (!incident.currentStageId) continue;
@@ -63,7 +66,7 @@ const SEVERITY_COLORS: Record<IncidentSeverity, string> = {
   low: 'var(--urgency-low)',
 };
 
-export function toSeveritySeries(incidents: readonly Incident[]): Datum[] {
+export function toSeveritySeries(incidents: readonly { severity: IncidentSeverity }[]): Datum[] {
   const counts = new Map<IncidentSeverity, number>();
   for (const incident of incidents) counts.set(incident.severity, (counts.get(incident.severity) ?? 0) + 1);
   return SEVERITY_ORDER.filter((severity) => (counts.get(severity) ?? 0) > 0).map((severity) => ({

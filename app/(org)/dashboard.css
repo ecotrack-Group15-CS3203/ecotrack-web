@@ -597,7 +597,7 @@ html:has(.eco) ::-webkit-scrollbar-thumb { background: var(--border-strong); bor
   .eco .modal, .eco .drawer-panel { animation: none; }
   .eco .web-nav-item, .eco .btn, .eco tbody tr td, .eco .filter-pill,
   .eco .web-icon-btn, .eco .close-x, .eco .toggle::after,
-  .eco .board-card, .eco .segmented-knob, .eco .bar-fill { transition: none; }
+  .eco .board-card, .eco .segmented-knob, .eco .bar-fill, .eco .attention-row { transition: none; }
   .eco .web-theme-icon { animation: none; }
   .eco .eco-skeleton { animation: none; background: var(--skeleton-1); }
 }
@@ -642,3 +642,22 @@ html:has(.eco) ::-webkit-scrollbar-thumb { background: var(--border-strong); bor
 @media (max-width: 900px) {
   .eco .chart-grid { grid-template-columns: 1fr; }
 }
+
+/* ===== Dashboard: needs-attention panel, chart-card footer, map legend ===== */
+.eco .attention-list { display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 0; padding: 0; }
+.eco .attention-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 8px; border-radius: 10px; text-decoration: none; color: inherit; transition: background .15s ease; }
+.eco .attention-row:hover { background: var(--surface-2); }
+.eco .attention-icon { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex-shrink: 0; }
+.eco .attention-icon svg { width: 16px; height: 16px; }
+.eco .attention-icon--high { background: var(--rejected-tint); color: var(--rejected); }
+.eco .attention-icon--medium { background: var(--pending-tint); color: var(--pending); }
+.eco .attention-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.eco .attention-title { font-size: var(--fs-body-sm); font-weight: 600; color: var(--text); }
+.eco .attention-detail { font-size: var(--fs-meta); color: var(--text-3); }
+
+.eco .card-footer-divider { border-top: 1px solid var(--border); margin: 16px 0; }
+
+.eco .map-legend { flex-direction: row; flex-wrap: wrap; flex: none; min-width: 0; gap: 16px; margin: 14px 0 0; }
+
+.eco .view-all-link { display: inline-block; margin-top: 10px; font-size: var(--fs-body-sm); color: var(--primary-ink); text-decoration: none; }
+.eco .view-all-link:hover { text-decoration: underline; }

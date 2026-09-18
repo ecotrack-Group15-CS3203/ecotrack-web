@@ -57,9 +57,11 @@
       "totalIncidents": "Total incidents",
       "claimedThisMonth": "Claimed this month",
       "awaitingClaim": "Awaiting claim nearby",
-      "resolved": "Resolved",
       "activeVolunteers": "Active volunteers",
-      "completedTasks": "Completed cleanup tasks"
+      "completedTasks": "Completed cleanup tasks",
+      "awaitingClaimSub": "within {{km}} km",
+      "closed": "Closed incidents",
+      "closedHint": "Incidents at any final workflow stage, including ones marked Dismissed rather than resolved."
     },
     "stagesChart": {
       "title": "Incidents by workflow stage",
@@ -75,7 +77,12 @@
     },
     "map": {
       "title": "Incident map",
-      "pinLabel": "{{status}} incident at {{lat}}, {{lng}}"
+      "pinLabel": "{{status}} incident at {{lat}}, {{lng}}",
+      "legend": {
+        "approved": "Verified",
+        "rejected": "Rejected",
+        "duplicate": "Duplicate"
+      }
     },
     "volunteerActivity": {
       "title": "Volunteer activity",
@@ -83,11 +90,17 @@
       "tasksCompleted": "Tasks completed",
       "tasksPending": "Tasks pending",
       "lastActive": "Last active",
-      "empty": "No volunteers yet."
+      "empty": "No volunteers yet.",
+      "viewAll": "View all volunteers"
     },
     "recentActivity": {
       "title": "Recent activity",
-      "empty": "No activity recorded yet."
+      "empty": "No activity recorded yet.",
+      "unknownActor": "Someone"
+    },
+    "needsAttention": {
+      "title": "Needs attention",
+      "empty": "Nothing needs your attention right now."
     }
   },
   "incidentsList": {
