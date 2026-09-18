@@ -428,5 +428,27 @@
     "confirming": "Confirming…",
     "locationError": "Location access is required to confirm you’re within the service area. Please allow location access and try again.",
     "genericError": "Could not accept this invitation."
+  },
+  "reports": {
+    "title": "Reports",
+    "description": "Organisation impact and activity summary",
+    "export": "Export",
+    "loadError": "Failed to load reports",
+    "kpi": {
+      "totalIncidents": "Total incidents",
+      "completedCleanups": "Completed cleanups",
+      "activeVolunteers": "Active volunteers",
+      "closureRate": "Closure rate",
+      "closureRateHint": "Resolved or dismissed incidents, as a share of all incidents this organisation has claimed."
+    },
+    "charts": {
+      "byCategory": "Incidents by category",
+      "bySeverity": "Incidents by severity",
+      "closureMix": "Closure mix",
+      "taskStatus": "Task status",
+      "map": "Incident map",
+      "noIncidents": "No incidents reported yet.",
+      "noTasks": "No tasks created yet."
+    }
   }
 }

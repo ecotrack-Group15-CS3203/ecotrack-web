@@ -619,3 +619,26 @@ html:has(.eco) ::-webkit-scrollbar-thumb { background: var(--border-strong); bor
   .eco .web-sidebar { background: var(--sidebar-solid); }
   .eco .kpi-row { grid-template-columns: 1fr; }
 }
+
+/* ===== Charts (components/charts.tsx) ===== */
+.eco .chart-empty { font-size: var(--fs-body-sm); color: var(--text-3); padding: 24px 0; text-align: center; margin: 0; }
+
+.eco .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+.eco .bar-chart-row { display: grid; grid-template-columns: minmax(90px, auto) 1fr auto; align-items: center; gap: 10px; }
+.eco .bar-chart-label { font-size: var(--fs-body-sm); color: var(--text-2); text-transform: capitalize; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.eco .bar-chart-track { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.eco .bar-fill { height: 100%; border-radius: 999px; transition: width .3s ease; }
+.eco .bar-chart-value { font-size: var(--fs-body-sm); font-weight: 600; color: var(--text); min-width: 28px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.eco .donut-chart { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.eco .donut-center-value { font-size: 22px; font-weight: 700; fill: var(--text); font-family: var(--font-display), var(--font-inter), system-ui, sans-serif; }
+.eco .donut-center-label { font-size: 10px; fill: var(--text-3); }
+.eco .donut-legend { display: flex; flex-direction: column; gap: 8px; font-size: var(--fs-body-sm); color: var(--text-2); flex: 1; min-width: 140px; }
+.eco .donut-legend li { display: flex; align-items: center; gap: 8px; }
+.eco .donut-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* ===== Reports chart grid ===== */
+.eco .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+@media (max-width: 900px) {
+  .eco .chart-grid { grid-template-columns: 1fr; }
+}

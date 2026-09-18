@@ -127,7 +127,7 @@ export function KpiCard({
   tone,
   accent,
 }: {
-  label: string;
+  label: ReactNode;
   value: string | number;
   sub?: string;
   icon?: ReactNode;
