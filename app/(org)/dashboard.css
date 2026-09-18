@@ -597,7 +597,8 @@ html:has(.eco) ::-webkit-scrollbar-thumb { background: var(--border-strong); bor
   .eco .modal, .eco .drawer-panel { animation: none; }
   .eco .web-nav-item, .eco .btn, .eco tbody tr td, .eco .filter-pill,
   .eco .web-icon-btn, .eco .close-x, .eco .toggle::after,
-  .eco .board-card, .eco .segmented-knob, .eco .bar-fill, .eco .attention-row { transition: none; }
+  .eco .board-card, .eco .segmented-knob, .eco .bar-fill, .eco .attention-row,
+  .eco .volunteer-card, .eco .pool-card { transition: none; }
   .eco .web-theme-icon { animation: none; }
   .eco .eco-skeleton { animation: none; background: var(--skeleton-1); }
 }
@@ -661,3 +662,15 @@ html:has(.eco) ::-webkit-scrollbar-thumb { background: var(--border-strong); bor
 
 .eco .view-all-link { display: inline-block; margin-top: 10px; font-size: var(--fs-body-sm); color: var(--primary-ink); text-decoration: none; }
 .eco .view-all-link:hover { text-decoration: underline; }
+
+/* ===== Volunteer cards ===== */
+.eco .volunteer-card { padding: 18px; cursor: pointer; display: flex; flex-direction: column; gap: 14px; transition: box-shadow .15s ease, transform .15s ease; }
+.eco .volunteer-card:hover { box-shadow: var(--shadow-pop); transform: translateY(-2px); }
+.eco .volunteer-card-head { display: flex; align-items: center; gap: 12px; }
+.eco .volunteer-card-identity { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.eco .volunteer-card-name { font-size: 16px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eco .volunteer-card-email { font-size: var(--fs-body-sm); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eco .volunteer-card-stats { display: flex; gap: 20px; }
+.eco .volunteer-card-stats div { display: flex; flex-direction: column; gap: 2px; }
+.eco .volunteer-card-stats strong { font-size: 18px; color: var(--text); }
+.eco .volunteer-card-stats span { font-size: var(--fs-meta); color: var(--text-3); }

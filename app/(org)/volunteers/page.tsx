@@ -8,19 +8,22 @@ import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import {
   Avatar,
   Button,
-  DataTable,
+  Card,
   Drawer,
   EmptyState,
   ErrorBanner,
+  FilterBar,
   FilterPanel,
+  FilterPill,
+  HelpHint,
   MetaList,
   PageHeader,
+  ProgressBar,
   SearchInput,
   SectionTitle,
-  Spinner,
+  Skeleton,
   StatusChip,
 } from '@/components/ui';
-import type { DataTableColumn } from '@/components/ui';
 import type { OrganisationMember, Paginated, Task } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 
@@ -31,6 +34,7 @@ export default function VolunteersPage() {
   const api = useAuthedFetch();
   const [selectedVolunteer, setSelectedVolunteer] = useState<OrganisationMember | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>('desc');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [removing, setRemoving] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
@@ -82,10 +86,6 @@ export default function VolunteersPage() {
     return counts;
   }, [tasks]);
 
-  const handleSortCompleted = () => {
-    setSortOrder((prev) => (prev === 'desc' ? 'asc' : prev === 'asc' ? null : 'desc'));
-  };
-
   const sortedVolunteers = useMemo(() => {
     if (!volunteers) return [];
     const list = [...volunteers];
@@ -101,12 +101,21 @@ export default function VolunteersPage() {
 
   const visibleVolunteers = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return sortedVolunteers;
-    return sortedVolunteers.filter(
-      (volunteer) =>
-        volunteer.fullName.toLowerCase().includes(query) || volunteer.email.toLowerCase().includes(query),
-    );
-  }, [sortedVolunteers, searchQuery]);
+    return sortedVolunteers
+      .filter((volunteer) => activeFilter === 'all' || (activeFilter === 'active') === volunteer.isActive)
+      .filter(
+        (volunteer) =>
+          !query || volunteer.fullName.toLowerCase().includes(query) || volunteer.email.toLowerCase().includes(query),
+      );
+  }, [sortedVolunteers, searchQuery, activeFilter]);
+
+  const activeFilterCount = (activeFilter !== 'all' ? 1 : 0) + (searchQuery.trim() ? 1 : 0) + (sortOrder !== 'desc' ? 1 : 0);
+
+  function resetFilters() {
+    setActiveFilter('all');
+    setSearchQuery('');
+    setSortOrder('desc');
+  }
 
   function formatDate(dateStr: string | null) {
     if (!dateStr) return 'N/A';
@@ -126,39 +135,6 @@ export default function VolunteersPage() {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [tasks, selectedVolunteer]);
 
-  const volunteerColumns: DataTableColumn<OrganisationMember>[] = [
-    {
-      key: 'name',
-      header: t('volunteers.table.name'),
-      render: (volunteer) => (
-        <div className="row-flex">
-          <Avatar name={volunteer.fullName} />
-          {volunteer.fullName}
-        </div>
-      ),
-    },
-    { key: 'email', header: t('volunteers.table.email'), render: (volunteer) => volunteer.email },
-    { key: 'joined', header: t('volunteers.table.joinedAt'), render: (volunteer) => formatDate(volunteer.createdAt) },
-    {
-      key: 'completed',
-      header: t('volunteers.table.tasksCompleted'),
-      sort: { active: sortOrder, onToggle: handleSortCompleted },
-      render: (volunteer) => completedTasksCountByUser.get(volunteer.id) ?? 0,
-    },
-    {
-      key: 'active',
-      header: t('volunteers.table.activeTasks'),
-      render: (volunteer) => activeTaskCountByUser.get(volunteer.id) ?? 0,
-    },
-    {
-      key: 'status',
-      header: t('volunteers.table.status'),
-      render: (volunteer) => (
-        <StatusChip status={volunteer.isActive ? 'active' : 'inactive'} />
-      ),
-    },
-  ];
-
   return (
     <div>
       <PageHeader
@@ -172,33 +148,105 @@ export default function VolunteersPage() {
           message={volunteersError instanceof ApiError ? volunteersError.message : t('volunteers.loadError')}
         />
       )}
-      {!volunteers && !volunteersError && <Spinner />}
 
-      {volunteers && (
-        <>
-          <FilterPanel>
-            <SearchInput
-              value={searchQuery}
-              onChange={setSearchQuery}
-              label={t('volunteers.searchLabel')}
-              placeholder={t('volunteers.searchPlaceholder')}
-              hint={t('volunteers.searchHint')}
-            />
-          </FilterPanel>
-          <DataTable
-            caption={t('volunteers.title')}
-            columns={volunteerColumns}
-            rows={visibleVolunteers}
-            getRowKey={(volunteer) => volunteer.id}
-            rowLabel={(volunteer) => volunteer.fullName}
-            onRowActivate={(volunteer) => {
-              setSelectedVolunteer(volunteer);
-              setConfirmingRemove(false);
-              setRemoveError(null);
-            }}
-            empty={t('volunteers.table.empty')}
-          />
-        </>
+      <FilterPanel activeCount={activeFilterCount} onReset={resetFilters}>
+        <FilterBar>
+          <FilterPill active={activeFilter === 'all'} onClick={() => setActiveFilter('all')}>
+            {t('volunteers.filters.all')}
+          </FilterPill>
+          <FilterPill active={activeFilter === 'active'} onClick={() => setActiveFilter('active')}>
+            {t('common.status.active')}
+          </FilterPill>
+          <FilterPill active={activeFilter === 'inactive'} onClick={() => setActiveFilter('inactive')}>
+            {t('common.status.inactive')}
+          </FilterPill>
+        </FilterBar>
+        <SearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          label={t('volunteers.searchLabel')}
+          placeholder={t('volunteers.searchPlaceholder')}
+          hint={t('volunteers.searchHint')}
+        />
+        <div className="field" style={{ minWidth: 220 }}>
+          <label htmlFor="volunteer-sort">{t('volunteers.filters.sortLabel')}</label>
+          <select
+            id="volunteer-sort"
+            value={sortOrder ?? ''}
+            onChange={(e) => setSortOrder(e.target.value === '' ? null : (e.target.value as 'asc' | 'desc'))}
+          >
+            <option value="">{t('volunteers.filters.sortNone')}</option>
+            <option value="desc">{t('volunteers.filters.sortMostCompleted')}</option>
+            <option value="asc">{t('volunteers.filters.sortFewestCompleted')}</option>
+          </select>
+        </div>
+      </FilterPanel>
+
+      {!volunteers && !volunteersError && (
+        <div className="pool-grid">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <Skeleton height={120} />
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {volunteers && visibleVolunteers.length === 0 && (
+        <Card>
+          <EmptyState>
+            <p>{t('volunteers.table.empty')}</p>
+          </EmptyState>
+        </Card>
+      )}
+
+      {visibleVolunteers.length > 0 && (
+        <div className="pool-grid">
+          {visibleVolunteers.map((volunteer) => {
+            const completed = completedTasksCountByUser.get(volunteer.id) ?? 0;
+            const active = activeTaskCountByUser.get(volunteer.id) ?? 0;
+            return (
+              <Card
+                key={volunteer.id}
+                className="volunteer-card"
+                onClick={() => {
+                  setSelectedVolunteer(volunteer);
+                  setConfirmingRemove(false);
+                  setRemoveError(null);
+                }}
+              >
+                <div className="volunteer-card-head">
+                  <Avatar name={volunteer.fullName} size={44} />
+                  <div className="volunteer-card-identity">
+                    <span className="volunteer-card-name">{volunteer.fullName}</span>
+                    <span className="volunteer-card-email">{volunteer.email}</span>
+                  </div>
+                  <StatusChip status={volunteer.isActive ? 'active' : 'inactive'} />
+                </div>
+                <div className="volunteer-card-stats">
+                  <div>
+                    <strong>{completed}</strong>
+                    <span>{t('volunteers.table.tasksCompleted')}</span>
+                  </div>
+                  <div>
+                    <strong>{active}</strong>
+                    <span>{t('volunteers.table.activeTasks')}</span>
+                  </div>
+                </div>
+                {completed + active > 0 && (
+                  <ProgressBar
+                    segments={[
+                      { value: completed, color: 'var(--resolved)', label: t('volunteers.table.tasksCompleted') },
+                      { value: active, color: 'var(--progress)', label: t('volunteers.table.activeTasks') },
+                    ]}
+                    showLegend={false}
+                    height={6}
+                  />
+                )}
+              </Card>
+            );
+          })}
+        </div>
       )}
 
       {/* Volunteer Profile Drawer */}
@@ -216,7 +264,10 @@ export default function VolunteersPage() {
                 <h3 style={{ fontSize: 16, fontWeight: 600 }}>{selectedVolunteer.fullName}</h3>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4 }}>
                   <StatusChip status={selectedVolunteer.isActive ? 'active' : 'inactive'} />
-                  <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{t('volunteers.profile.joined', { date: formatDate(selectedVolunteer.createdAt) })}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                    {t('volunteers.profile.memberSince', { date: formatDate(selectedVolunteer.createdAt) })}
+                  </span>
+                  <HelpHint text={t('volunteers.profile.memberSinceHint')} />
                 </div>
               </div>
             </div>
@@ -237,10 +288,12 @@ export default function VolunteersPage() {
 
             {/* Task History */}
             <div>
-              <h4 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 8 }}>
-                {t('volunteers.profile.taskHistory')} ({completedTasksCountByUser.get(selectedVolunteer.id) ?? 0} completed,{' '}
-                {activeTaskCountByUser.get(selectedVolunteer.id) ?? 0} active)
-              </h4>
+              <SectionTitle>
+                {t('volunteers.profile.taskHistoryCount', {
+                  completed: completedTasksCountByUser.get(selectedVolunteer.id) ?? 0,
+                  active: activeTaskCountByUser.get(selectedVolunteer.id) ?? 0,
+                })}
+              </SectionTitle>
               {selectedVolunteerTasks.length === 0 ? (
                 <EmptyState>
                   <p style={{ fontSize: 13, margin: 0 }}>{t('volunteers.profile.noTaskHistory')}</p>

@@ -11,3 +11,18 @@ export function relativeAge(iso: string, now: number = Date.now()): string {
   if (minutes >= 1) return `${minutes}m`;
   return 'just now';
 }
+
+/** "Sat, 4 Oct, 9:00 AM" in the viewer's own locale and timezone -- events
+ * are physical meetups, so a browser-local time is what a volunteer needs to
+ * show up on time, not a fixed format. No unit test: this is a thin,
+ * branchless wrapper over Intl.DateTimeFormat, not logic that can be wrong
+ * independent of the browser's own locale data. */
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
