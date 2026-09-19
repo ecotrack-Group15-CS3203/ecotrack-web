@@ -280,6 +280,9 @@
       "slugHint": "The slug is set when the stage is created and can't be changed.",
       "savingChanges": "Saving…",
       "submit": "Save changes"
+    },
+    "flowStrip": {
+      "label": "Workflow stage order"
     }
   },
   "incidentPool": {
@@ -341,6 +344,7 @@
   },
   "settings": {
     "title": "Organisation settings",
+    "orgProfile": "Organisation profile",
     "loadError": "Failed to load organisation",
     "orgName": "Organisation name",
     "description": "Description",
@@ -383,7 +387,8 @@
       "copy": "Copy",
       "copied": "Invite link copied to clipboard.",
       "copyFailed": "Could not copy the link — copy it manually."
-    }
+    },
+    "inviteLinksHint": "The link is shown only once when generated. Revoke and generate a new one if it is lost."
   },
   "volunteers": {
     "title": "Volunteers",

@@ -280,6 +280,7 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 }
 
 /* ===== Tables ===== */
+.eco .table-scroll { overflow-x: auto; }
 .eco table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
 .eco th { text-align: left; font-size: 13.5px; color: var(--text-2); font-weight: 600; padding: 12px 16px; border-bottom: 1px solid var(--border); }
 .eco td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
@@ -360,6 +361,20 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 .eco .detail-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 22px; align-items: start; }
 @media (max-width: 1000px) {
   .eco .detail-grid { grid-template-columns: 1fr; }
+}
+
+/* /settings -- a fixed 380px right rail rather than detail-grid's
+   proportional 1fr, since the invite-links card doesn't need to grow with
+   the viewport the way a detail sidebar does. */
+.eco .settings-grid { display: grid; grid-template-columns: 1fr 380px; gap: 22px; align-items: start; max-width: 1100px; }
+.eco .settings-grid > .settings-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+/* min-width: 0 overrides the grid item default of min-width: auto, which
+   would otherwise let the invite table's intrinsic width push this column
+   wider than its 380px track instead of letting .table-scroll handle it. */
+.eco .settings-grid > .settings-aside { position: sticky; top: 20px; min-width: 0; }
+@media (max-width: 1000px) {
+  .eco .settings-grid { grid-template-columns: 1fr; }
+  .eco .settings-grid > .settings-aside { position: static; }
 }
 
 /* ===== Distance slider (incident pool) ===== */
@@ -480,6 +495,13 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 .eco .toggle.on::after { left: 19px; }
 
 .eco .stage-swatch { border: 1px solid var(--swatch-ring); }
+
+/* ===== Workflow stage-flow strip ===== */
+.eco .stage-flow-strip { display: flex; align-items: center; gap: 6px; overflow-x: auto; padding: 16px 18px; margin-bottom: 16px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.eco .stage-flow-item { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.eco .stage-flow-chip { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 999px; border: 1.5px solid; font-size: var(--fs-body-sm); font-weight: 600; white-space: nowrap; }
+.eco .stage-flow-chip--locked { border-color: var(--border-strong); color: var(--text-3); }
+.eco .stage-flow-arrow { color: var(--text-3); font-size: 14px; flex-shrink: 0; }
 
 /* ===== Shell =====
    Sidebar and topbar float as rounded panels so the page wash shows around

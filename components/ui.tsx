@@ -388,87 +388,89 @@ export function DataTable<T>({
 }) {
   return (
     <Card>
-      <table>
-        {caption && <caption className="sr-only">{caption}</caption>}
-        <thead>
-          <tr>
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                style={{ width: column.width, textAlign: column.align }}
-                aria-sort={
-                  column.sort
-                    ? column.sort.active === 'asc'
-                      ? 'ascending'
-                      : column.sort.active === 'desc'
-                        ? 'descending'
-                        : 'none'
-                    : undefined
-                }
-              >
-                {column.sort ? (
-                  <button type="button" className="th-sort" onClick={column.sort.onToggle}>
-                    {column.header}
-                    <span aria-hidden="true">
-                      {column.sort.active === 'desc' ? '▼' : column.sort.active === 'asc' ? '▲' : '↕'}
-                    </span>
-                  </button>
-                ) : (
-                  column.header
-                )}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {loading && rows.length === 0
-            ? [0, 1, 2].map((placeholder) => (
-                <tr key={`skeleton-${placeholder}`}>
+      <div className="table-scroll">
+        <table>
+          {caption && <caption className="sr-only">{caption}</caption>}
+          <thead>
+            <tr>
+              {columns.map((column) => (
+                <th
+                  key={column.key}
+                  style={{ width: column.width, textAlign: column.align }}
+                  aria-sort={
+                    column.sort
+                      ? column.sort.active === 'asc'
+                        ? 'ascending'
+                        : column.sort.active === 'desc'
+                          ? 'descending'
+                          : 'none'
+                      : undefined
+                  }
+                >
+                  {column.sort ? (
+                    <button type="button" className="th-sort" onClick={column.sort.onToggle}>
+                      {column.header}
+                      <span aria-hidden="true">
+                        {column.sort.active === 'desc' ? '▼' : column.sort.active === 'asc' ? '▲' : '↕'}
+                      </span>
+                    </button>
+                  ) : (
+                    column.header
+                  )}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading && rows.length === 0
+              ? [0, 1, 2].map((placeholder) => (
+                  <tr key={`skeleton-${placeholder}`}>
+                    {columns.map((column) => (
+                      <td key={column.key}>
+                        <Skeleton height={14} />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              : null}
+            {!loading && rows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="data-table-empty">
+                  {empty}
+                </td>
+              </tr>
+            ) : null}
+            {rows.map((row, index) => {
+              const activate = onRowActivate ? () => onRowActivate(row) : undefined;
+              return (
+                <tr
+                  key={getRowKey(row)}
+                  className={activate ? 'row-activatable' : undefined}
+                  tabIndex={activate ? 0 : undefined}
+                  aria-label={activate && rowLabel ? rowLabel(row) : undefined}
+                  onClick={activate}
+                  onKeyDown={
+                    activate
+                      ? (event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            activate();
+                          }
+                        }
+                      : undefined
+                  }
+                >
                   {columns.map((column) => (
-                    <td key={column.key}>
-                      <Skeleton height={14} />
+                    <td key={column.key} style={{ textAlign: column.align }}>
+                      {column.render(row, index)}
                     </td>
                   ))}
                 </tr>
-              ))
-            : null}
-          {!loading && rows.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="data-table-empty">
-                {empty}
-              </td>
-            </tr>
-          ) : null}
-          {rows.map((row, index) => {
-            const activate = onRowActivate ? () => onRowActivate(row) : undefined;
-            return (
-              <tr
-                key={getRowKey(row)}
-                className={activate ? 'row-activatable' : undefined}
-                tabIndex={activate ? 0 : undefined}
-                aria-label={activate && rowLabel ? rowLabel(row) : undefined}
-                onClick={activate}
-                onKeyDown={
-                  activate
-                    ? (event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          activate();
-                        }
-                      }
-                    : undefined
-                }
-              >
-                {columns.map((column) => (
-                  <td key={column.key} style={{ textAlign: column.align }}>
-                    {column.render(row, index)}
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </Card>
   );
 }

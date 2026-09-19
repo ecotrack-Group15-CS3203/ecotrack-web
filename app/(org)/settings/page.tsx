@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
-import { Avatar, Button, Chip, DataTable, ErrorBanner, Modal, PageHeader, SectionTitle, Spinner, Toast } from '@/components/ui';
+import { Avatar, Button, Card, Chip, DataTable, ErrorBanner, Modal, PageHeader, SectionTitle, Spinner, Toast } from '@/components/ui';
 import type { DataTableColumn } from '@/components/ui';
 import { IconPlus } from '@/components/icons';
 import type { CreateInviteLinkResult, InviteLink, Organisation, OrganisationMember, Paginated } from '@/lib/types';
@@ -199,92 +199,106 @@ export default function SettingsPage() {
     },
   ];
   return (
-    <div style={{ maxWidth: 640 }}>
+    <div>
       <PageHeader title={t('settings.title')} description={org.name} />
 
-      {saveError && (
-        <div style={{ marginBottom: 12 }}>
-          <ErrorBanner message={saveError} />
+      <div className="settings-grid">
+        <div className="settings-main">
+          <Card style={{ padding: 20 }}>
+            <SectionTitle>{t('settings.orgProfile')}</SectionTitle>
+
+            {saveError && (
+              <div style={{ marginBottom: 12 }}>
+                <ErrorBanner message={saveError} />
+              </div>
+            )}
+            {saved && <p style={{ fontSize: 13, color: 'var(--primary)', marginBottom: 12 }}>{t('settings.saved')}</p>}
+
+            <div className="field">
+              <label>{t('settings.orgName')}</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div className="field">
+              <label>{t('settings.description')}</label>
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+            </div>
+            <div className="field">
+              <label>{t('settings.contactEmail')}</label>
+              <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="contact@yourorg.example" />
+            </div>
+            <div className="field">
+              <label>{t('settings.status')}</label>
+              <div>
+                <Chip tone={org.isActive ? 'active' : 'inactive'}>{org.isActive ? 'active' : 'inactive'}</Chip>
+              </div>
+            </div>
+            <Button disabled={saving || !name.trim()} onClick={save}>
+              {saving ? t('settings.saving') : t('settings.saveChanges')}
+            </Button>
+          </Card>
+
+          <Card style={{ padding: 20 }}>
+            <SectionTitle>{t('settings.serviceArea')}</SectionTitle>
+            <LocationMap
+              id={activeOrgId ?? 'service-area'}
+              title={org.name}
+              latitude={latitude}
+              longitude={longitude}
+              radiusKm={radiusKm}
+            />
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 8 }}>
+              <input type="number" step="0.0001" value={latitude} onChange={(e) => setLatitude(Number(e.target.value))} placeholder="Latitude" />
+              <input type="number" step="0.0001" value={longitude} onChange={(e) => setLongitude(Number(e.target.value))} placeholder="Longitude" />
+            </div>
+            <select value={radiusKm} onChange={(e) => setRadiusKm(Number(e.target.value))}>
+              {RADIUS_OPTIONS.map((km) => (
+                <option key={km} value={km}>{km} km radius</option>
+              ))}
+            </select>
+            <div className="hint">{t('settings.serviceAreaHint')}</div>
+          </Card>
+
+          <Card style={{ padding: 20 }}>
+            <SectionTitle>{t('settings.members')}</SectionTitle>
+            <DataTable
+              caption={t('settings.members')}
+              columns={memberColumns}
+              rows={members ?? []}
+              getRowKey={(member) => member.id}
+              loading={!members}
+              empty={t('settings.table.empty')}
+            />
+          </Card>
         </div>
-      )}
-      {saved && <p style={{ fontSize: 13, color: 'var(--primary)', marginBottom: 12 }}>{t('settings.saved')}</p>}
 
-      <div className="field">
-        <label>{t('settings.orgName')}</label>
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
-      </div>
-      <div className="field">
-        <label>{t('settings.description')}</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-      </div>
-      <div className="field">
-        <label>{t('settings.contactEmail')}</label>
-        <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="contact@yourorg.example" />
-      </div>
+        <div className="settings-aside">
+          <Card style={{ padding: 20 }}>
+            <SectionTitle>{t('settings.inviteLinks')}</SectionTitle>
+            <p className="hint" style={{ marginBottom: 12 }}>{t('settings.inviteLinksHint')}</p>
+            <div style={{ marginBottom: 12 }}>
+              <Button onClick={() => { closeGenerateModal(); setGenerateOpen(true); }}>
+                <IconPlus style={{ width: 16, height: 16 }} /> {t('settings.generateInviteLink')}
+              </Button>
+            </div>
 
-      <div className="field">
-        <label>{t('settings.serviceArea')}</label>
-        <LocationMap
-          id={activeOrgId ?? 'service-area'}
-          title={org.name}
-          latitude={latitude}
-          longitude={longitude}
-          radiusKm={radiusKm}
-        />
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-          <input type="number" step="0.0001" value={latitude} onChange={(e) => setLatitude(Number(e.target.value))} placeholder="Latitude" />
-          <input type="number" step="0.0001" value={longitude} onChange={(e) => setLongitude(Number(e.target.value))} placeholder="Longitude" />
-        </div>
-        <select value={radiusKm} onChange={(e) => setRadiusKm(Number(e.target.value))}>
-          {RADIUS_OPTIONS.map((km) => (
-            <option key={km} value={km}>{km} km radius</option>
-          ))}
-        </select>
-        <div className="hint">{t('settings.serviceAreaHint')}</div>
-      </div>
-
-      <div className="field">
-        <label>{t('settings.status')}</label>
-        <div>
-          <Chip tone={org.isActive ? 'active' : 'inactive'}>{org.isActive ? 'active' : 'inactive'}</Chip>
+            {invitesError && (
+              <div style={{ marginBottom: 12 }}>
+                <ErrorBanner message={invitesError instanceof ApiError ? invitesError.message : t('settings.inviteLinksLoadError')} />
+              </div>
+            )}
+            {!invites && !invitesError && <Spinner />}
+            {invites && (
+              <DataTable
+                caption={t('settings.inviteLinks')}
+                columns={inviteColumns}
+                rows={invites}
+                getRowKey={(invite) => invite.id}
+                empty={t('settings.table.empty')}
+              />
+            )}
+          </Card>
         </div>
       </div>
-      <Button disabled={saving || !name.trim()} onClick={save}>
-        {saving ? t('settings.saving') : t('settings.saveChanges')}
-      </Button>
-
-      <SectionTitle>{t('settings.members')}</SectionTitle>
-      <DataTable
-        caption={t('settings.members')}
-        columns={memberColumns}
-        rows={members ?? []}
-        getRowKey={(member) => member.id}
-        loading={!members}
-        empty={t('settings.table.empty')}
-      />
-
-      <SectionTitle>{t('settings.inviteLinks')}</SectionTitle>
-      <div style={{ marginBottom: 12 }}>
-        <Button onClick={() => { closeGenerateModal(); setGenerateOpen(true); }}>
-          <IconPlus style={{ width: 16, height: 16 }} /> {t('settings.generateInviteLink')}
-        </Button>
-      </div>
-
-      {invitesError && (
-        <div style={{ marginBottom: 12 }}>
-          <ErrorBanner message={invitesError instanceof ApiError ? invitesError.message : t('settings.inviteLinksLoadError')} />
-        </div>
-      )}
-      {!invites && !invitesError && <Spinner />}
-      {invites && (
-        <DataTable
-          caption={t('settings.inviteLinks')}
-          columns={inviteColumns}
-          rows={invites}
-          getRowKey={(invite) => invite.id}
-          empty={t('settings.table.empty')}
-        />
-      )}
 
       <Modal open={generateOpen} onClose={closeGenerateModal} title={t('settings.generateModal.title')}>
         {generateError && (

@@ -51,6 +51,9 @@ export const IconDrag = (p: IconProps) => (
   <Icon {...p} d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />
 );
 export const IconTrash = (p: IconProps) => <Icon {...p} d="M4 6h16M8 6V4h8v2M6 6l1 14h10l1-14" />;
+export const IconLock = (p: IconProps) => (
+  <Icon {...p} d="M6 11V7a6 6 0 0 1 12 0v4M5 11h14v10H5zM12 15v3" />
+);
 export const IconPlus = (p: IconProps) => <Icon {...p} d="M12 5v14M5 12h14" />;
 export const IconChevronDown = (p: IconProps) => <Icon {...p} d="M6 9l6 6 6-6" />;
 export const IconArrowRight = (p: IconProps) => <Icon {...p} d="M5 12h14M13 6l6 6-6 6" />;
