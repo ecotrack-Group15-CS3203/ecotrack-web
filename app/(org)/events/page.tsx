@@ -222,7 +222,7 @@ function CreateEventModal({
   const titleValidation = useFieldValidation(required(t('events.createModal.titleRequired')));
   const descriptionValidation = useFieldValidation(required(t('events.createModal.descriptionRequired')));
   const startValidation = useFieldValidation(required(t('events.createModal.startRequired')));
-  const endValidation = useFieldValidation(required('An end time is required'));
+  const endValidation = useFieldValidation(required(t('events.createModal.endRequired')));
 
   function toggleIncident(id: string) {
     setIncidentIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -250,7 +250,7 @@ function CreateEventModal({
       setMaxAttendees('');
       onCreated(event.id);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not create event');
+      setError(err instanceof ApiError ? err.message : t('events.createModal.createError'));
     } finally {
       setSubmitting(false);
     }
@@ -315,43 +315,43 @@ function CreateEventModal({
         <FieldError id="event-description-error" message={descriptionValidation.error} />
       </div>
       <div className="field">
-        <label>Location</label>
-        <LocationMap id="new-event" title={title || 'New event'} latitude={latitude} longitude={longitude} />
+        <label>{t('events.createModal.locationLabel')}</label>
+        <LocationMap id="new-event" title={title || t('events.createModal.newEventTitle')} latitude={latitude} longitude={longitude} />
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             type="number"
             step="0.0001"
             value={latitude}
             onChange={(e) => setLatitude(Number(e.target.value))}
-            placeholder="Latitude"
+            placeholder={t('events.createModal.latitudePlaceholder')}
           />
           <input
             type="number"
             step="0.0001"
             value={longitude}
             onChange={(e) => setLongitude(Number(e.target.value))}
-            placeholder="Longitude"
+            placeholder={t('events.createModal.longitudePlaceholder')}
           />
         </div>
       </div>
       <div className="field">
-        <label htmlFor="create-event-start">Starts</label>
+        <label htmlFor="create-event-start">{t('events.createModal.startsLabel')}</label>
         <input id="create-event-start" aria-invalid={Boolean(startValidation.error)} aria-describedby={startValidation.error ? 'event-start-error' : undefined} type="datetime-local" value={scheduledAt} onChange={(e) => { setScheduledAt(e.target.value); startValidation.revalidate(e.target.value); }} onBlur={(e) => startValidation.onBlur(e.target.value)} />
         <FieldError id="event-start-error" message={startValidation.error} />
       </div>
       <div className="field">
-        <label htmlFor="create-event-end">Ends</label>
+        <label htmlFor="create-event-end">{t('events.createModal.endsLabel')}</label>
         <input id="create-event-end" aria-invalid={Boolean(endValidation.error)} aria-describedby={endValidation.error ? 'event-end-error' : undefined} type="datetime-local" value={endsAt} onChange={(e) => { setEndsAt(e.target.value); endValidation.revalidate(e.target.value); }} onBlur={(e) => endValidation.onBlur(e.target.value)} />
         <FieldError id="event-end-error" message={endValidation.error} />
       </div>
       <div className="field">
-        <label>Max attendees (optional)</label>
+        <label>{t('events.createModal.maxAttendeesLabel')}</label>
         <input
           type="number"
           min={1}
           value={maxAttendees}
           onChange={(e) => setMaxAttendees(e.target.value)}
-          placeholder="Unlimited"
+          placeholder={t('common.unlimited')}
         />
       </div>
     </Modal>

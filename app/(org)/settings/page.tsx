@@ -88,7 +88,7 @@ export default function SettingsPage() {
       await refreshProfile();
       setSaved(true);
     } catch (err) {
-      setSaveError(err instanceof ApiError ? err.message : 'Could not save changes');
+      setSaveError(err instanceof ApiError ? err.message : t('settings.saveError'));
     } finally {
       setSaving(false);
     }
@@ -106,7 +106,7 @@ export default function SettingsPage() {
       setGeneratedLink(result);
       await mutateInvites();
     } catch (err) {
-      setGenerateError(err instanceof ApiError ? err.message : 'Could not generate an invite link.');
+      setGenerateError(err instanceof ApiError ? err.message : t('settings.generateModal.generateError'));
     } finally {
       setGenerating(false);
     }
@@ -119,7 +119,7 @@ export default function SettingsPage() {
       await api.del(`/organisations/${activeOrgId}/invites/${inviteId}`);
       await mutateInvites();
     } catch (err) {
-      setToast(err instanceof ApiError ? err.message : 'Could not revoke the invite link.');
+      setToast(err instanceof ApiError ? err.message : t('settings.revokeError'));
     } finally {
       setRevokingId(null);
     }
@@ -181,7 +181,7 @@ export default function SettingsPage() {
     },
     {
       key: 'actions',
-      header: <span className="sr-only">Actions</span>,
+      header: <span className="sr-only">{t('settings.table.actions')}</span>,
       align: 'right',
       render: (invite) => {
         if (inviteStatus(invite).labelKey !== 'active') return null;
@@ -224,7 +224,7 @@ export default function SettingsPage() {
             </div>
             <div className="field">
               <label>{t('settings.contactEmail')}</label>
-              <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="contact@yourorg.example" />
+              <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder={t('settings.contactEmailPlaceholder')} />
             </div>
             <div className="field">
               <label>{t('settings.status')}</label>
@@ -247,12 +247,12 @@ export default function SettingsPage() {
               radiusKm={radiusKm}
             />
             <div style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 8 }}>
-              <input type="number" step="0.0001" value={latitude} onChange={(e) => setLatitude(Number(e.target.value))} placeholder="Latitude" />
-              <input type="number" step="0.0001" value={longitude} onChange={(e) => setLongitude(Number(e.target.value))} placeholder="Longitude" />
+              <input type="number" step="0.0001" value={latitude} onChange={(e) => setLatitude(Number(e.target.value))} placeholder={t('settings.latitudePlaceholder')} />
+              <input type="number" step="0.0001" value={longitude} onChange={(e) => setLongitude(Number(e.target.value))} placeholder={t('settings.longitudePlaceholder')} />
             </div>
             <select value={radiusKm} onChange={(e) => setRadiusKm(Number(e.target.value))}>
               {RADIUS_OPTIONS.map((km) => (
-                <option key={km} value={km}>{km} km radius</option>
+                <option key={km} value={km}>{t('settings.radiusOption', { km })}</option>
               ))}
             </select>
             <div className="hint">{t('settings.serviceAreaHint')}</div>

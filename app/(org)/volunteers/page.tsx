@@ -60,7 +60,7 @@ export default function VolunteersPage() {
       setSelectedVolunteer(null);
       await mutateVolunteers();
     } catch (caught) {
-      setRemoveError(caught instanceof ApiError ? caught.message : 'Unable to remove this volunteer.');
+      setRemoveError(caught instanceof ApiError ? caught.message : t('volunteers.profile.removeError'));
     } finally {
       setRemoving(false);
     }
@@ -118,7 +118,7 @@ export default function VolunteersPage() {
   }
 
   function formatDate(dateStr: string | null) {
-    if (!dateStr) return 'N/A';
+    if (!dateStr) return t('common.notAvailable');
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -317,7 +317,7 @@ export default function VolunteersPage() {
                         <StatusChip status={task.status} domain="task" />
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--text-2)', display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Priority: {task.priority}</span>
+                        <span>{t('volunteers.profile.priority', { priority: task.priority })}</span>
                         <span>
                           {task.status === 'completed'
                             ? `${t('volunteers.profile.completed')}: ${formatDate(task.completedAt ?? task.dueDate)}`
@@ -333,7 +333,7 @@ export default function VolunteersPage() {
                               key={photo.id}
                               className="media-thumb"
                               src={photo.url}
-                              alt="Evidence thumbnail"
+                              alt={t('volunteers.profile.evidenceThumbnail')}
                               style={{
                                 width: 44,
                                 height: 44,

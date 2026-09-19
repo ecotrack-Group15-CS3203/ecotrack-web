@@ -16,12 +16,7 @@ import { thumbGradient } from '@/lib/thumb-gradients';
 import { buildBoard } from '@/lib/board';
 import { PipelineBoard, ViewToggle } from './pipeline-board';
 
-const STATUS_TABS: { label: string; value: VerificationStatus | 'all' }[] = [
-  { label: 'All statuses', value: 'all' },
-  { label: 'Approved', value: 'approved' },
-  { label: 'Rejected', value: 'rejected' },
-  { label: 'Duplicate', value: 'duplicate' },
-];
+const STATUS_TABS: (VerificationStatus | 'all')[] = ['all', 'approved', 'rejected', 'duplicate'];
 
 const SEVERITIES: IncidentSeverity[] = ['low', 'medium', 'high', 'critical'];
 const VIEW_STORAGE_KEY = 'ecotrack.incidents.view';
@@ -151,9 +146,9 @@ function IncidentsPageInner() {
       });
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
-        setMoveError('This incident changed elsewhere — refreshed.');
+        setMoveError(t('incidentsList.moveConflict'));
       } else {
-        setMoveError(err instanceof ApiError ? err.message : 'Could not move this incident.');
+        setMoveError(err instanceof ApiError ? err.message : t('incidentsList.moveError'));
         if (snapshot) await mutate(snapshot, { revalidate: false });
       }
     } finally {
@@ -240,9 +235,9 @@ function IncidentsPageInner() {
       />
 
       <FilterBar>
-        {STATUS_TABS.map((tab) => (
-          <FilterPill key={tab.value} active={statusFilter === tab.value} onClick={() => setStatusFilter(tab.value)}>
-            {t(`incidentsList.statusTabs.${tab.value}`)}
+        {STATUS_TABS.map((status) => (
+          <FilterPill key={status} active={statusFilter === status} onClick={() => setStatusFilter(status)}>
+            {t(`incidentsList.statusTabs.${status}`)}
           </FilterPill>
         ))}
       </FilterBar>
@@ -251,9 +246,9 @@ function IncidentsPageInner() {
         <SearchInput
           value={query}
           onChange={setQuery}
-          label="Search incidents"
-          placeholder="Search by title"
-          hint="Filters the loaded incidents."
+          label={t('incidentsList.filters.searchLabel')}
+          placeholder={t('incidentsList.filters.searchPlaceholder')}
+          hint={t('incidentsList.filters.searchHint')}
         />
         {view === 'list' && (
           <>
@@ -304,9 +299,7 @@ function IncidentsPageInner() {
       {!incidents && !error && <Spinner />}
 
       {incidentsPage && incidentsPage.total > incidentsPage.items.length && (
-        <div className="cap-warning">
-          Showing the 100 most recent of {incidentsPage.total}. Narrow the status filter to see the rest.
-        </div>
+        <div className="cap-warning">{t('incidentsList.capWarning', { total: incidentsPage.total })}</div>
       )}
 
       {incidents && view === 'list' && (

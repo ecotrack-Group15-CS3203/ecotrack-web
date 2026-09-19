@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import { Chip, UrgencyBadge } from '@/components/ui';
 import { thumbGradient } from '@/lib/thumb-gradients';
 import { relativeAge } from '@/lib/format';
@@ -10,15 +11,16 @@ import type { Incident, WorkflowStage } from '@/lib/types';
 /** Toggle between the table and the pipeline board. A plain segmented
  * control rather than a shared primitive -- this is its only consumer. */
 export function ViewToggle({ view, onChange }: { view: 'list' | 'board'; onChange: (view: 'list' | 'board') => void }) {
+  const { t } = useTranslation();
   return (
-    <div className="view-toggle" role="group" aria-label="View">
+    <div className="view-toggle" role="group" aria-label={t('incidentsList.view.label')}>
       <button
         type="button"
         className={`view-toggle-btn ${view === 'list' ? 'active' : ''}`}
         aria-pressed={view === 'list'}
         onClick={() => onChange('list')}
       >
-        List
+        {t('incidentsList.view.list')}
       </button>
       <button
         type="button"
@@ -26,7 +28,7 @@ export function ViewToggle({ view, onChange }: { view: 'list' | 'board'; onChang
         aria-pressed={view === 'board'}
         onClick={() => onChange('board')}
       >
-        Board
+        {t('incidentsList.view.board')}
       </button>
     </div>
   );
@@ -75,20 +77,25 @@ function BoardColumnView({
   onMove: (incident: Incident, targetStage: WorkflowStage) => void;
   movingId: string | null;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="board-column">
       <div className="board-column-head" style={{ borderTopColor: stage?.color ?? 'var(--border-strong)' }}>
-        <span className="board-column-title">{stage ? stage.name : 'Needs a stage'}</span>
+        <span className="board-column-title">{stage ? stage.name : t('incidentsList.board.unplacedColumn')}</span>
         <span className="board-column-count">{incidents.length}</span>
         {stage?.isFinal && (
-          <span className="board-column-final" title="Final stage" aria-label="Final stage">
+          <span className="board-column-final" title={t('incidentsList.board.finalStage')} aria-label={t('incidentsList.board.finalStage')}>
             ✓
           </span>
         )}
       </div>
       <div className="board-column-body">
         {incidents.length === 0 ? (
-          <div className="board-empty">No incidents in {stage ? stage.name : 'this group'}</div>
+          <div className="board-empty">
+            {stage
+              ? t('incidentsList.board.emptyColumn', { stage: stage.name })
+              : t('incidentsList.board.emptyColumnFallback')}
+          </div>
         ) : (
           incidents.map((incident, index) => (
             <BoardCard
@@ -119,6 +126,7 @@ function BoardCard({
   onMove: (incident: Incident, targetStage: WorkflowStage) => void;
   busy: boolean;
 }) {
+  const { t } = useTranslation();
   const currentStage = incident.currentStageId ? stages.find((s) => s.id === incident.currentStageId) : undefined;
   const next = currentStage ? nextStageFor(currentStage, stages) : null;
 
@@ -139,7 +147,7 @@ function BoardCard({
         <span>{relativeAge(incident.createdAt)}</span>
         {next && (
           <button type="button" className="board-card-advance" disabled={busy} onClick={() => onMove(incident, next)}>
-            {busy ? 'Moving…' : `→ ${next.name}`}
+            {busy ? t('incidentsList.board.moving') : t('incidentsList.board.advanceTo', { stage: next.name })}
           </button>
         )}
       </div>
@@ -148,7 +156,7 @@ function BoardCard({
           mis-click. This is the more permissive of the two and should win. */}
       <select
         className="board-card-move"
-        aria-label={`Move ${incident.title} to a different stage`}
+        aria-label={t('incidentsList.board.moveToLabel', { title: incident.title })}
         value=""
         disabled={busy}
         onChange={(event) => {
@@ -158,7 +166,7 @@ function BoardCard({
         }}
       >
         <option value="" disabled>
-          Move to…
+          {t('incidentsList.board.moveTo')}
         </option>
         {stages
           .filter((s) => s.id !== incident.currentStageId && s.position > 0)

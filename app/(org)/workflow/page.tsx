@@ -67,8 +67,8 @@ export default function WorkflowPage() {
       await api.post(`/organisations/${activeOrgId}/workflow-stages`, { ...newStage });
       setNewStage({ name: '', description: '', color: DEFAULT_COLOR });
       setAddOpen(false);
-      setToast('Stage added.'); await mutateStages();
-    } catch (error) { showError(error, 'Unable to add the stage.'); } finally { setBusy(false); }
+      setToast(t('workflow.toasts.added')); await mutateStages();
+    } catch (error) { showError(error, t('workflow.errors.addFailed')); } finally { setBusy(false); }
   }
 
   function openEdit(stage: WorkflowStage) {
@@ -86,8 +86,8 @@ export default function WorkflowPage() {
         color: edit.color,
         isFinal: edit.isFinal,
       });
-      setEditing(null); setToast('Stage updated.'); await mutateStages();
-    } catch (error) { showError(error, 'Unable to update the stage.'); } finally { setBusy(false); }
+      setEditing(null); setToast(t('workflow.toasts.updated')); await mutateStages();
+    } catch (error) { showError(error, t('workflow.errors.updateFailed')); } finally { setBusy(false); }
   }
 
   async function toggleFinal(stage: WorkflowStage) {
@@ -95,7 +95,7 @@ export default function WorkflowPage() {
     try {
       await api.patch(`/organisations/${activeOrgId}/workflow-stages/${stage.id}`, { isFinal: !stage.isFinal });
       await mutateStages();
-    } catch (error) { showError(error, 'Unable to update the stage.'); } finally { setBusy(false); }
+    } catch (error) { showError(error, t('workflow.errors.updateFailed')); } finally { setBusy(false); }
   }
 
   async function confirmDelete() {
@@ -104,8 +104,8 @@ export default function WorkflowPage() {
     try {
       await api.del(`/organisations/${activeOrgId}/workflow-stages/${deleteTarget.id}`);
       setDeleteTarget(null);
-      setToast('Stage deleted.'); await mutateStages();
-    } catch (error) { showError(error, 'Unable to delete the stage.'); setDeleteTarget(null); } finally { setBusy(false); }
+      setToast(t('workflow.toasts.deleted')); await mutateStages();
+    } catch (error) { showError(error, t('workflow.errors.deleteFailed')); setDeleteTarget(null); } finally { setBusy(false); }
   }
 
   async function reorder(targetId: string) {
@@ -120,7 +120,7 @@ export default function WorkflowPage() {
     try {
       await api.patch(`/organisations/${activeOrgId}/workflow-stages/reorder`, { orderedStageIds: next.map((stage) => stage.id) });
       await mutateStages();
-    } catch (error) { showError(error, 'Unable to reorder stages.'); } finally { setBusy(false); setDragId(null); }
+    } catch (error) { showError(error, t('workflow.errors.reorderFailed')); } finally { setBusy(false); setDragId(null); }
   }
 
   async function moveStage(stageId: string, direction: -1 | 1) {
@@ -226,7 +226,7 @@ export default function WorkflowPage() {
           </label>
           <div style={{ display: 'flex', gap: 6 }}>
             <input id="new-stage-color" type="color" value={isColorHex(newStage.color) ? newStage.color : DEFAULT_COLOR} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} style={{ width: 42, height: 42, padding: 3 }} />
-            <input value={newStage.color} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} aria-label="Colour hex" />
+            <input value={newStage.color} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} aria-label={t('workflow.addModal.colorHexLabel')} />
           </div>
         </div>
       </div>
@@ -259,7 +259,7 @@ export default function WorkflowPage() {
             </label>
             <div style={{ display: 'flex', gap: 6 }}>
               <input id="edit-stage-color" type="color" value={isColorHex(edit.color) ? edit.color : DEFAULT_COLOR} onChange={(event) => setEdit({ ...edit, color: event.target.value })} style={{ width: 42, height: 42, padding: 3 }} />
-              <input value={edit.color} onChange={(event) => setEdit({ ...edit, color: event.target.value })} aria-label="Colour hex" />
+              <input value={edit.color} onChange={(event) => setEdit({ ...edit, color: event.target.value })} aria-label={t('workflow.addModal.colorHexLabel')} />
             </div>
           </div>
         </div>

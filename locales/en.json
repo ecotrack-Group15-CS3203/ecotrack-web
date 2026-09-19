@@ -35,7 +35,8 @@
       "task": {
         "pending": "Scheduled"
       }
-    }
+    },
+    "notAvailable": "N/A"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -124,7 +125,10 @@
       "oldestFirst": "Oldest first",
       "sortLabel": "Sort incidents",
       "dateFromLabel": "Filter by submission date, from",
-      "dateToLabel": "Filter by submission date, to"
+      "dateToLabel": "Filter by submission date, to",
+      "searchLabel": "Search incidents",
+      "searchPlaceholder": "Search by title",
+      "searchHint": "Filters the loaded incidents."
     },
     "table": {
       "thumbnail": "Thumbnail",
@@ -135,6 +139,24 @@
       "status": "Status",
       "submitted": "Submitted",
       "rowLabel": "View incident: {{title}}"
+    },
+    "capWarning": "Showing the 100 most recent of {{total}}. Narrow the status filter to see the rest.",
+    "moveConflict": "This incident changed elsewhere — refreshed.",
+    "moveError": "Could not move this incident.",
+    "view": {
+      "label": "View",
+      "list": "List",
+      "board": "Board"
+    },
+    "board": {
+      "unplacedColumn": "Needs a stage",
+      "finalStage": "Final stage",
+      "emptyColumn": "No incidents in {{stage}}",
+      "emptyColumnFallback": "No incidents in this group",
+      "moving": "Moving…",
+      "advanceTo": "→ {{stage}}",
+      "moveTo": "Move to…",
+      "moveToLabel": "Move {{title}} to a different stage"
     }
   },
   "incidentDetail": {
@@ -272,7 +294,8 @@
       "colorLabel": "Color",
       "colorHint": "Shown as this stage's badge colour throughout the incident list and detail views — pick something distinct from your other stages.",
       "adding": "Adding…",
-      "submit": "Add stage"
+      "submit": "Add stage",
+      "colorHexLabel": "Colour hex"
     },
     "editModal": {
       "title": "Edit stage",
@@ -283,23 +306,41 @@
     },
     "flowStrip": {
       "label": "Workflow stage order"
+    },
+    "toasts": {
+      "added": "Stage added.",
+      "updated": "Stage updated.",
+      "deleted": "Stage deleted."
+    },
+    "errors": {
+      "addFailed": "Unable to add the stage.",
+      "updateFailed": "Unable to update the stage.",
+      "deleteFailed": "Unable to delete the stage.",
+      "reorderFailed": "Unable to reorder stages."
     }
   },
   "incidentPool": {
     "title": "Incident pool",
-    "description": "Unclaimed reports within your organisation's service area",
+    "description": "Unclaimed incidents reported within your organisation's registered service area",
     "loadError": "Failed to load the incident pool",
     "empty": "No unclaimed incidents in your service area right now.",
-    "claimed": "Incident claimed.",
+    "emptyFiltered": "No incidents match these filters.",
     "claim": "Claim incident",
     "claiming": "Claiming…",
-    "viewLabel": "View incident: {{title}}",
-    "table": {
-      "thumbnail": "Thumbnail",
-      "title": "Title",
-      "urgency": "Urgency",
-      "submitted": "Submitted",
-      "distance": "Distance"
+    "claimError": "Could not claim this incident",
+    "close": "Close",
+    "filters": {
+      "searchLabel": "Search the incident pool",
+      "searchPlaceholder": "Search by title or address",
+      "searchHint": "Filters the incidents already loaded in your service area.",
+      "withinKm": "Within {{km}} km",
+      "sortLabel": "Sort incidents",
+      "sortDistance": "Nearest first",
+      "sortNewest": "Newest first",
+      "sortSeverity": "Most severe first"
+    },
+    "map": {
+      "title": "Incidents in your service area"
     }
   },
   "events": {
@@ -339,7 +380,13 @@
       "locationHint": "Drag-to-place map pin isn't available in this build — enter coordinates directly.",
       "latitudePlaceholder": "Latitude",
       "longitudePlaceholder": "Longitude",
-      "addressPlaceholder": "Address (optional)"
+      "addressPlaceholder": "Address (optional)",
+      "endRequired": "An end time is required",
+      "createError": "Could not create event",
+      "newEventTitle": "New event",
+      "startsLabel": "Starts",
+      "endsLabel": "Ends",
+      "maxAttendeesLabel": "Max attendees (optional)"
     }
   },
   "settings": {
@@ -366,7 +413,8 @@
       "status": "Status",
       "empty": "No invite links yet.",
       "member": "Member",
-      "role": "Role"
+      "role": "Role",
+      "actions": "Actions"
     },
     "inviteStatus": {
       "active": "Active",
@@ -386,9 +434,16 @@
       "shareHint": "This link is shown only once — share it with the volunteers you want to invite:",
       "copy": "Copy",
       "copied": "Invite link copied to clipboard.",
-      "copyFailed": "Could not copy the link — copy it manually."
+      "copyFailed": "Could not copy the link — copy it manually.",
+      "generateError": "Could not generate an invite link."
     },
-    "inviteLinksHint": "The link is shown only once when generated. Revoke and generate a new one if it is lost."
+    "inviteLinksHint": "The link is shown only once when generated. Revoke and generate a new one if it is lost.",
+    "saveError": "Could not save changes",
+    "revokeError": "Could not revoke the invite link.",
+    "contactEmailPlaceholder": "contact@yourorg.example",
+    "latitudePlaceholder": "Latitude",
+    "longitudePlaceholder": "Longitude",
+    "radiusOption": "{{km}} km radius"
   },
   "volunteers": {
     "title": "Volunteers",
@@ -418,7 +473,10 @@
       "cancel": "Cancel",
       "confirmRemove": "Remove",
       "removing": "Removing…",
-      "taskHistoryCount": "{{completed}} completed, {{active}} active"
+      "taskHistoryCount": "{{completed}} completed, {{active}} active",
+      "removeError": "Unable to remove this volunteer.",
+      "priority": "Priority: {{priority}}",
+      "evidenceThumbnail": "Evidence thumbnail"
     },
     "searchLabel": "Search volunteers",
     "searchPlaceholder": "Search by name or email",
@@ -491,6 +549,15 @@
       "map": "Incident map",
       "noIncidents": "No incidents reported yet.",
       "noTasks": "No tasks created yet."
+    },
+    "csv": {
+      "metric": "Metric",
+      "value": "Value",
+      "claimedThisMonth": "Claimed this month",
+      "awaitingClaim": "Awaiting claim nearby",
+      "resolvedOrDismissed": "Resolved or dismissed incidents",
+      "category": "Category",
+      "count": "Count"
     }
   }
 }

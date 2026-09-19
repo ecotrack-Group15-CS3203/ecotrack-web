@@ -32,16 +32,16 @@ export default function ReportsPage() {
     if (!stats) return;
     const closureRate = stats.totalIncidents === 0 ? 0 : Math.round((stats.resolvedIncidents / stats.totalIncidents) * 100);
     const rows = [
-      ['Metric', 'Value'],
-      ['Total incidents', String(stats.totalIncidents)],
-      ['Claimed this month', String(stats.claimedThisMonth)],
-      ['Awaiting claim nearby', String(stats.awaitingClaimInServiceArea)],
-      ['Resolved or dismissed incidents', String(stats.resolvedIncidents)],
-      ['Active volunteers', String(stats.activeVolunteers)],
-      ['Completed cleanup tasks', String(stats.completedCleanupTasks)],
-      ['Closure rate', `${closureRate}%`],
+      [t('reports.csv.metric'), t('reports.csv.value')],
+      [t('reports.kpi.totalIncidents'), String(stats.totalIncidents)],
+      [t('reports.csv.claimedThisMonth'), String(stats.claimedThisMonth)],
+      [t('reports.csv.awaitingClaim'), String(stats.awaitingClaimInServiceArea)],
+      [t('reports.csv.resolvedOrDismissed'), String(stats.resolvedIncidents)],
+      [t('reports.kpi.activeVolunteers'), String(stats.activeVolunteers)],
+      [t('reports.kpi.completedCleanups'), String(stats.completedCleanupTasks)],
+      [t('reports.kpi.closureRate'), `${closureRate}%`],
       [],
-      ['Category', 'Count'],
+      [t('reports.csv.category'), t('reports.csv.count')],
       ...stats.incidentsByCategory.map((c) => [c.category, String(c.count)]),
     ];
     const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');

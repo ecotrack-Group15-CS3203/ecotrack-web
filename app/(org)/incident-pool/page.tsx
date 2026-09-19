@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import {
@@ -50,6 +51,7 @@ function toggleInSet<T>(set: ReadonlySet<T>, value: T): Set<T> {
 }
 
 export default function IncidentPoolPage() {
+  const { t } = useTranslation();
   const { activeOrgId } = useAuth();
   const api = useAuthedFetch();
   const [page, setPage] = useState(1);
@@ -85,7 +87,7 @@ export default function IncidentPoolPage() {
       setSelectedIncident(null);
       await mutate();
     } catch (err) {
-      setClaimError(err instanceof ApiError ? err.message : 'Could not claim this incident');
+      setClaimError(err instanceof ApiError ? err.message : t('incidentPool.claimError'));
     } finally {
       setClaiming(false);
     }
@@ -129,18 +131,15 @@ export default function IncidentPoolPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Incident Pool"
-        description="Unclaimed incidents reported within your organisation's registered service area"
-      />
+      <PageHeader title={t('incidentPool.title')} description={t('incidentPool.description')} />
 
-      {error && <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load the incident pool'} />}
+      {error && <ErrorBanner message={error instanceof ApiError ? error.message : t('incidentPool.loadError')} />}
       {!pool && !error && <Spinner />}
 
       {pool && pool.length === 0 && (
         <Card>
           <EmptyState>
-            <p>No unclaimed incidents in your service area right now.</p>
+            <p>{t('incidentPool.empty')}</p>
           </EmptyState>
         </Card>
       )}
@@ -154,13 +153,13 @@ export default function IncidentPoolPage() {
                 setQuery(value);
                 setPage(1);
               }}
-              label="Search the incident pool"
-              placeholder="Search by title or address"
-              hint="Filters the incidents already loaded in your service area."
+              label={t('incidentPool.filters.searchLabel')}
+              placeholder={t('incidentPool.filters.searchPlaceholder')}
+              hint={t('incidentPool.filters.searchHint')}
             />
             <div className="pool-distance">
               <label htmlFor="pool-distance-slider">
-                {maxDistanceKm === null ? `Within ${sliderMaxKm} km` : `Within ${maxDistanceKm} km`}
+                {t('incidentPool.filters.withinKm', { km: maxDistanceKm ?? sliderMaxKm })}
               </label>
               <input
                 id="pool-distance-slider"
@@ -177,14 +176,14 @@ export default function IncidentPoolPage() {
               />
             </div>
             <select
-              aria-label="Sort incidents"
+              aria-label={t('incidentPool.filters.sortLabel')}
               className="filter-control"
               value={sort}
               onChange={(event) => setSort(event.target.value as PoolSort)}
             >
-              <option value="distance">Nearest first</option>
-              <option value="newest">Newest first</option>
-              <option value="severity">Most severe first</option>
+              <option value="distance">{t('incidentPool.filters.sortDistance')}</option>
+              <option value="newest">{t('incidentPool.filters.sortNewest')}</option>
+              <option value="severity">{t('incidentPool.filters.sortSeverity')}</option>
             </select>
           </FilterPanel>
 
@@ -218,14 +217,14 @@ export default function IncidentPoolPage() {
           </FilterBar>
 
           <Card style={{ padding: 20, marginBottom: 20 }}>
-            <h2 style={{ fontSize: 15, marginBottom: 12 }}>Incidents in your service area</h2>
+            <h2 style={{ fontSize: 15, marginBottom: 12 }}>{t('incidentPool.map.title')}</h2>
             <IncidentMap incidents={mapIncidents} />
           </Card>
 
           {visible.length === 0 ? (
             <Card>
               <EmptyState>
-                <p>No incidents match these filters.</p>
+                <p>{t('incidentPool.emptyFiltered')}</p>
               </EmptyState>
             </Card>
           ) : (
@@ -257,7 +256,7 @@ export default function IncidentPoolPage() {
                           setSelectedIncident(incident);
                         }}
                       >
-                        Claim incident
+                        {t('incidentPool.claim')}
                       </Button>
                     </div>
                   </Card>
@@ -299,6 +298,7 @@ function IncidentDetailModal({
   claimError: string | null;
   onClaim: () => void;
 }) {
+  const { t } = useTranslation();
   if (!incident) return null;
 
   return (
@@ -309,9 +309,9 @@ function IncidentDetailModal({
       actions={
         <>
           {claimError && <ErrorBanner message={claimError} />}
-          <Button variant="secondary" onClick={onClose} disabled={claiming}>Close</Button>
+          <Button variant="secondary" onClick={onClose} disabled={claiming}>{t('incidentPool.close')}</Button>
           <Button onClick={onClaim} disabled={claiming}>
-            {claiming ? 'Claiming...' : 'Claim incident'}
+            {claiming ? t('incidentPool.claiming') : t('incidentPool.claim')}
           </Button>
         </>
       }
