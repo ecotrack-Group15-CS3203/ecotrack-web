@@ -287,7 +287,7 @@ export default function DashboardPage() {
         </KpiRow>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="two-col-grid">
         <Card style={{ padding: 20 }}>
           <h3 className="section-title" style={{ marginTop: 0 }}>{t('dashboard.needsAttention.title')}</h3>
           {!attentionReady ? (

@@ -89,7 +89,7 @@ export function AdminShell({
 
       <div className="web-shell-main">
         <div className="web-topbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <div className="web-topbar-left">
             <button
               type="button"
               className="web-icon-btn web-nav-toggle"
@@ -102,16 +102,13 @@ export function AdminShell({
             </button>
             <div className="web-topbar-title">{activeItem?.label ?? ''}</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="web-topbar-right">
             <ThemeToggle className="web-icon-btn" iconClassName="web-theme-icon" />
             <button type="button" className="web-icon-btn" aria-label={t('common.notifications')}>
               <IconBell aria-hidden="true" />
             </button>
             <Avatar name={profile?.fullName ?? '?'} />
-            <button
-              onClick={handleLogout}
-              style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginLeft: 6 }}
-            >
+            <button type="button" className="web-logout" onClick={handleLogout}>
               {t('common.logOut')}
             </button>
           </div>

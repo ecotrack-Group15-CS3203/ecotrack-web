@@ -19,6 +19,9 @@
    overscroll colour is duplicated here. Keep in sync with --bg below. */
 html:has(.eco), html:has(.eco) body { background: #EAF4F1; }
 html[data-theme="dark"]:has(.eco), html[data-theme="dark"]:has(.eco) body { background: #0B1416; }
+/* `clip`, not `hidden`: hidden would turn <body> into a scroll container and
+   break the sticky topbar. Clip just refuses to scroll sideways into blank space. */
+html:has(.eco) body { overflow-x: clip; }
 html:has(.eco) { color-scheme: light; }
 html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 
@@ -73,6 +76,10 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
   --radius-md: 14px;
   --radius-lg: 18px;
   --radius-panel: 18px;
+
+  /* Space between the sidebar and the content, and between the content and the
+     right edge of the window. Mobile overrides this to 16px. */
+  --shell-gutter: 24px;
 
   --shadow-card: 0 1px 2px rgba(16,40,36,.04), 0 8px 24px -12px rgba(16,40,36,.10);
   --shadow-pop: 0 20px 52px -18px rgba(16,40,36,.28);
@@ -265,7 +272,7 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 .eco .chip-urgency-critical { background: var(--urgency-critical-tint); color: var(--urgency-critical); }
 
 /* ===== KPI tiles ===== */
-.eco .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.eco .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr)); gap: 16px; margin-bottom: 28px; }
 .eco .kpi-card { padding: 20px 22px; }
 .eco .kpi-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .eco .kpi-icon { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; flex-shrink: 0; background: var(--surface-2); color: var(--text-2); }
@@ -340,7 +347,7 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 /* ===== MetaList ===== */
 .eco .meta-list { display: grid; gap: 12px 20px; margin: 0; }
 .eco .meta-list-item dt { font-size: var(--fs-meta); color: var(--text-3); margin-bottom: 2px; }
-.eco .meta-list-item dd { font-size: var(--fs-body-sm); color: var(--text); margin: 0; }
+.eco .meta-list-item dd { font-size: var(--fs-body-sm); color: var(--text); margin: 0; overflow-wrap: anywhere; }
 
 /* ===== DetailHeader ===== */
 .eco .detail-header { margin-bottom: 22px; }
@@ -358,22 +365,40 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 
 /* Shared by the three detail pages -- collapses on narrower screens, which it
    never did as a hand-rolled inline grid. */
-.eco .detail-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 22px; align-items: start; }
+.eco .detail-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+/* minmax(0, ...) and min-width: 0 for the same reason as .settings-grid below: a
+   plain fr track won't shrink under a wide table or a long unbroken string. */
+.eco .detail-grid > * { min-width: 0; }
 @media (max-width: 1000px) {
-  .eco .detail-grid { grid-template-columns: 1fr; }
+  .eco .detail-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Two equal columns that collapse to one. Replaces hand-rolled inline
+   `1fr 1fr` grids, which never collapsed and whose `1fr` tracks refuse to shrink
+   below their content (the source of sideways scrolling on narrow screens). */
+.eco .two-col-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.eco .two-col-grid > * { min-width: 0; }
+@media (max-width: 900px) {
+  .eco .two-col-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Form row: a flexible field beside a fixed-width one (name + colour). */
+.eco .field-row { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 12px; }
+@media (max-width: 520px) {
+  .eco .field-row { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* /settings -- a fixed 380px right rail rather than detail-grid's
    proportional 1fr, since the invite-links card doesn't need to grow with
    the viewport the way a detail sidebar does. */
-.eco .settings-grid { display: grid; grid-template-columns: 1fr 380px; gap: 22px; align-items: start; max-width: 1100px; }
+.eco .settings-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 22px; align-items: start; max-width: 1100px; }
 .eco .settings-grid > .settings-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 /* min-width: 0 overrides the grid item default of min-width: auto, which
    would otherwise let the invite table's intrinsic width push this column
    wider than its 380px track instead of letting .table-scroll handle it. */
 .eco .settings-grid > .settings-aside { position: sticky; top: 20px; min-width: 0; }
 @media (max-width: 1000px) {
-  .eco .settings-grid { grid-template-columns: 1fr; }
+  .eco .settings-grid { grid-template-columns: minmax(0, 1fr); }
   .eco .settings-grid > .settings-aside { position: static; }
 }
 
@@ -383,7 +408,8 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 .eco .pool-distance input[type="range"] { accent-color: var(--primary); width: 100%; }
 
 /* ===== Incident pool card grid ===== */
-.eco .pool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 20px; }
+/* min(300px, 100%) so a 300px track can't outgrow a phone-width container. */
+.eco .pool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 16px; margin-bottom: 20px; }
 .eco .pool-card { padding: 0; overflow: hidden; cursor: pointer; transition: box-shadow .15s ease, transform .15s ease; }
 .eco .pool-card:hover { box-shadow: var(--shadow-pop); transform: translateY(-2px); }
 .eco .pool-card-band { height: 4px; width: 100%; }
@@ -514,11 +540,11 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
   border: 1px solid var(--sidebar-border);
   box-shadow: var(--shadow-card);
   backdrop-filter: var(--blur-chrome); -webkit-backdrop-filter: var(--blur-chrome);
-  display: flex; flex-direction: column; padding: 18px 0; overflow-y: auto;
+  display: flex; flex-direction: column; padding: 18px 0; overflow-y: auto; overflow-x: hidden;
 }
-.eco .web-brand { padding: 0 18px 18px; font-size: 17px; font-weight: 700; color: var(--sidebar-text-strong); display: flex; align-items: center; gap: 8px; }
+.eco .web-brand { padding: 0 18px 18px; font-size: 17px; font-weight: 700; color: var(--sidebar-text-strong); display: flex; align-items: center; gap: 8px; overflow-wrap: anywhere; }
 .eco .web-nav { flex: 1; padding: 8px 10px; }
-.eco .web-nav-item { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 14.5px; font-weight: 500; color: var(--sidebar-text); margin-bottom: 2px; transition: background-color .12s, color .12s; }
+.eco .web-nav-item { position: relative; display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px 12px; border-radius: 10px; font-size: 14.5px; font-weight: 500; color: var(--sidebar-text); margin-bottom: 2px; transition: background-color .12s, color .12s; }
 .eco .web-nav-item .icon { width: 18px; height: 18px; }
 .eco .web-nav-item:hover { color: var(--sidebar-text-strong); background: var(--sidebar-hover-bg); }
 .eco .web-nav-item.active { background: var(--sidebar-active-bg); color: var(--sidebar-text-strong); }
@@ -532,7 +558,7 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
   background: var(--sidebar-badge-bg); color: var(--sidebar-badge-ink);
   font-size: 12px; font-weight: 700; line-height: 18px; text-align: center;
 }
-.eco .web-sidebar-foot { padding: 14px 18px 0; font-size: var(--fs-meta); color: var(--sidebar-foot); border-top: 1px solid var(--sidebar-border); margin: 0 10px; }
+.eco .web-sidebar-foot { padding: 14px 18px 0; font-size: var(--fs-meta); color: var(--sidebar-foot); border-top: 1px solid var(--sidebar-border); margin: 0 10px; overflow-wrap: anywhere; }
 
 .eco .web-topbar {
   position: sticky; top: 12px; z-index: 10; height: 60px; flex-shrink: 0;
@@ -543,9 +569,24 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
   box-shadow: var(--shadow-card);
   backdrop-filter: var(--blur-chrome); -webkit-backdrop-filter: var(--blur-chrome);
 }
-.eco .web-topbar-title { font-size: 16px; font-weight: 600; }
-.eco .web-shell-main { flex: 1 1 auto; width: calc(100% - 272px); margin-left: 260px; min-height: 100vh; display: flex; flex-direction: column; min-width: 0; }
-.eco .web-content { flex: 1; overflow-y: auto; padding: 0 0 28px; font-size: var(--fs-body); line-height: 1.55; }
+.eco .web-topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.eco .web-topbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.eco .web-topbar-title { font-size: 16px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eco .web-logout { font-size: 13px; font-weight: 600; color: var(--text-2); margin-left: 6px; white-space: nowrap; }
+.eco .web-logout:hover { color: var(--text); }
+/* Sidebar (12px inset + 236px) plus one gutter on the left, one gutter on the
+   right, so the page has the same breathing room on both sides. `overflow-x:
+   clip` (not hidden) keeps the sticky topbar working while guaranteeing that
+   nothing inside can push the page sideways into blank space. */
+.eco .web-shell-main {
+  flex: 1 1 auto; min-width: 0; min-height: 100vh;
+  margin-left: calc(248px + var(--shell-gutter)); padding-right: var(--shell-gutter);
+  display: flex; flex-direction: column; overflow-x: clip;
+}
+/* Deliberately not a scroll container: the document scrolls. `overflow-y: auto`
+   here used to make overflow-x auto too, which is what let a wide child open up
+   a sideways scroll area. */
+.eco .web-content { flex: 1; min-width: 0; padding: 0 0 28px; font-size: var(--fs-body); line-height: 1.55; }
 
 /* Topbar icon buttons: deliberately flatter than the public header's glass
    pills -- in a 60px bar next to a bell and an avatar, a glass pill would be
@@ -572,11 +613,19 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
     transition: transform .22s cubic-bezier(.2,.7,.2,1);
   }
   .eco .web-sidebar.open { transform: none; box-shadow: var(--shadow-pop); }
-  .eco .web-shell-main { width: 100%; margin-left: 0; }
+  .eco { --shell-gutter: 16px; }
+  .eco .web-shell-main { margin-left: 0; padding-right: 0; }
   .eco .web-nav-toggle { display: inline-grid; }
-  .eco .web-topbar { margin: 10px 12px 14px; padding: 0 14px; top: 10px; }
-  .eco .web-content { padding: 0 12px 24px; }
-  .eco .web-content--locked { overflow: hidden; }
+  .eco .web-topbar { margin: 10px var(--shell-gutter) 14px; padding: 0 14px; top: 10px; }
+  .eco .web-content { padding: 0 var(--shell-gutter) 24px; }
+  .eco .web-content--locked { overflow: clip; }
+}
+
+/* On the narrowest phones the topbar's right cluster (theme, bell, avatar,
+   "Log out") no longer fits beside the menu button and title. */
+@media (max-width: 400px) {
+  .eco .web-topbar-right { gap: 6px; }
+  .eco .web-logout { margin-left: 2px; }
 }
 
 /* ===== Overlays ===== */
@@ -661,9 +710,10 @@ html:has(.eco) ::-webkit-scrollbar-thumb { background: var(--border-strong); bor
 .eco .donut-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
 /* ===== Reports chart grid ===== */
-.eco .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.eco .chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
+.eco .chart-grid > * { min-width: 0; }
 @media (max-width: 900px) {
-  .eco .chart-grid { grid-template-columns: 1fr; }
+  .eco .chart-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ===== Dashboard: needs-attention panel, chart-card footer, map legend ===== */

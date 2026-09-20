@@ -213,7 +213,7 @@ export default function WorkflowPage() {
         </Button>
       </>
     }>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 210px', gap: 12 }}>
+      <div className="field-row">
         <div className="field">
           <label htmlFor="new-stage-name">{t('workflow.addModal.nameLabel')}</label>
           <input id="new-stage-name" aria-invalid={Boolean(newStageValidation.error)} aria-describedby={newStageValidation.error ? 'new-stage-error' : undefined} value={newStage.name} onChange={(event) => { setNewStage({ ...newStage, name: event.target.value }); newStageValidation.revalidate(event.target.value); }} onBlur={(event) => newStageValidation.onBlur(event.target.value)} placeholder="e.g. Awaiting approval" />
@@ -246,7 +246,7 @@ export default function WorkflowPage() {
           {t('workflow.editModal.slugLabel')}: {editing.slug}
           <div className="hint">{t('workflow.editModal.slugHint')}</div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 210px', gap: 12 }}>
+        <div className="field-row">
           <div className="field">
             <label htmlFor="edit-stage-name">{t('workflow.addModal.nameLabel')}</label>
             <input id="edit-stage-name" aria-invalid={Boolean(editStageValidation.error)} aria-describedby={editStageValidation.error ? 'edit-stage-error' : undefined} value={edit.name} onChange={(event) => { setEdit({ ...edit, name: event.target.value }); editStageValidation.revalidate(event.target.value); }} onBlur={(event) => editStageValidation.onBlur(event.target.value)} />
@@ -346,7 +346,7 @@ function RulesPanel({
           const minValue = minField ? (rules[minField] as string | null) ?? '' : '';
           const targetValue = (rules[targetField] as string | null) ?? '';
           return (
-            <div key={trigger} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+            <div key={trigger} className="two-col-grid" style={{ gap: 12, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
               <div style={{ gridColumn: '1 / -1' }}>
                 <strong style={{ fontSize: 15 }}>{t(`workflow.rules.${trigger}.label`)}</strong>
                 <p style={{ fontSize: 13, color: 'var(--text-3)', margin: '2px 0 0' }}>{t(`workflow.rules.${trigger}.hint`)}</p>
