@@ -1,39 +1,48 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet } from '@/lib/use-org-api';
-import { Card, ErrorBanner, KpiCard, KpiRow, PageHeader, Spinner } from '@/components/ui';
+import { Button, Card, ErrorBanner, HelpHint, KpiCard, KpiRow, PageHeader, Skeleton } from '@/components/ui';
+import { BarChart, DonutChart } from '@/components/charts';
 import { IncidentMap } from '@/components/incident-map';
-import type { DashboardMapIncident, DashboardStats } from '@/lib/types';
+import { toCategorySeries, toClosureSeries, toSeveritySeries, toTaskStatusSeries } from '@/lib/chart-data';
+import { IconIncidents, IconReports, IconTasks, IconVolunteers } from '@/components/icons';
+import type { DashboardMapIncident, DashboardStats, Incident, Paginated, Task } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 
 export default function ReportsPage() {
+  const { t } = useTranslation();
   const { activeOrgId } = useAuth();
   const statsPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/stats` : null;
   const mapPath = activeOrgId ? `/organisations/${activeOrgId}/dashboard/map` : null;
+  // limit=100: both feed client-side chart aggregation (severity, task
+  // status), same cap and rationale as the dashboard's own fetches.
+  const incidentsPath = activeOrgId ? `/organisations/${activeOrgId}/incidents?limit=100` : null;
+  const tasksPath = activeOrgId ? `/organisations/${activeOrgId}/tasks?limit=100` : null;
+
   const { data: stats, error: statsError } = useApiGet<DashboardStats>(statsPath);
   const { data: mapData, error: mapError } = useApiGet<DashboardMapIncident[]>(mapPath);
+  const { data: incidentsPage, error: incidentsError } = useApiGet<Paginated<Incident>>(incidentsPath);
+  const { data: tasksPage, error: tasksError } = useApiGet<Paginated<Task>>(tasksPath);
 
-  const error = statsError || mapError;
-  if (error) return <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load reports'} />;
-  if (!stats || !mapData) return <Spinner />;
-
-  const resolutionRate = stats.totalIncidents === 0 ? 0 : Math.round((stats.resolvedIncidents / stats.totalIncidents) * 100);
-  const maxCategory = Math.max(1, ...stats.incidentsByCategory.map((c) => c.count));
+  const error = statsError || mapError || incidentsError || tasksError;
 
   function exportCsv() {
+    if (!stats) return;
+    const closureRate = stats.totalIncidents === 0 ? 0 : Math.round((stats.resolvedIncidents / stats.totalIncidents) * 100);
     const rows = [
-      ['Metric', 'Value'],
-      ['Total incidents', String(stats!.totalIncidents)],
-      ['Claimed this month', String(stats!.claimedThisMonth)],
-      ['Awaiting claim nearby', String(stats!.awaitingClaimInServiceArea)],
-      ['Resolved incidents', String(stats!.resolvedIncidents)],
-      ['Active volunteers', String(stats!.activeVolunteers)],
-      ['Completed cleanup tasks', String(stats!.completedCleanupTasks)],
-      ['Resolution rate', `${resolutionRate}%`],
+      [t('reports.csv.metric'), t('reports.csv.value')],
+      [t('reports.kpi.totalIncidents'), String(stats.totalIncidents)],
+      [t('reports.csv.claimedThisMonth'), String(stats.claimedThisMonth)],
+      [t('reports.csv.awaitingClaim'), String(stats.awaitingClaimInServiceArea)],
+      [t('reports.csv.resolvedOrDismissed'), String(stats.resolvedIncidents)],
+      [t('reports.kpi.activeVolunteers'), String(stats.activeVolunteers)],
+      [t('reports.kpi.completedCleanups'), String(stats.completedCleanupTasks)],
+      [t('reports.kpi.closureRate'), `${closureRate}%`],
       [],
-      ['Category', 'Count'],
-      ...stats!.incidentsByCategory.map((c) => [c.category, String(c.count)]),
+      [t('reports.csv.category'), t('reports.csv.count')],
+      ...stats.incidentsByCategory.map((c) => [c.category, String(c.count)]),
     ];
     const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -45,44 +54,77 @@ export default function ReportsPage() {
     URL.revokeObjectURL(url);
   }
 
+  if (error) return <ErrorBanner message={error instanceof ApiError ? error.message : t('reports.loadError')} />;
+
+  const closureRate = stats && stats.totalIncidents > 0 ? Math.round((stats.resolvedIncidents / stats.totalIncidents) * 100) : 0;
+  const categorySeries = stats ? toCategorySeries(stats.incidentsByCategory) : [];
+  const severitySeries = incidentsPage ? toSeveritySeries(incidentsPage.items) : [];
+  const closureSeries = stats ? toClosureSeries(stats.totalIncidents, stats.resolvedIncidents) : [];
+  const taskStatusSeries = tasksPage ? toTaskStatusSeries(tasksPage.items) : [];
+
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <PageHeader title="Reports" description="Organisation impact and activity summary" />
-        <button className="btn btn-secondary btn-sm" onClick={exportCsv}>Export</button>
-      </div>
+      <PageHeader
+        title={t('reports.title')}
+        description={t('reports.description')}
+        action={<Button variant="secondary" onClick={exportCsv} disabled={!stats}>{t('reports.export')}</Button>}
+      />
 
       <KpiRow>
-        <KpiCard label="Total incidents" value={stats.totalIncidents} accent />
-        <KpiCard label="Completed cleanups" value={stats.completedCleanupTasks} />
-        <KpiCard label="Active volunteers" value={stats.activeVolunteers} />
-        <KpiCard label="Resolution rate" value={`${resolutionRate}%`} />
+        {stats ? (
+          <>
+            <KpiCard label={t('reports.kpi.totalIncidents')} value={stats.totalIncidents} icon={<IconIncidents />} accent />
+            <KpiCard label={t('reports.kpi.completedCleanups')} value={stats.completedCleanupTasks} icon={<IconTasks />} />
+            <KpiCard label={t('reports.kpi.activeVolunteers')} value={stats.activeVolunteers} icon={<IconVolunteers />} />
+            <KpiCard
+              label={<>{t('reports.kpi.closureRate')} <HelpHint text={t('reports.kpi.closureRateHint')} /></>}
+              value={`${closureRate}%`}
+              icon={<IconReports />}
+            />
+          </>
+        ) : (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Card className="kpi-card" key={i}>
+              <Skeleton height={26} width={48} style={{ marginBottom: 8 }} />
+              <Skeleton height={12} width={80} />
+            </Card>
+          ))
+        )}
       </KpiRow>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="chart-grid">
         <Card style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 14 }}>Incidents by category</h3>
-          {stats.incidentsByCategory.length === 0 ? (
-            <p style={{ fontSize: 13.5, color: 'var(--text-3)' }}>No incidents reported yet.</p>
+          <h3 style={{ fontSize: 15, marginBottom: 14 }}>{t('reports.charts.byCategory')}</h3>
+          {!stats ? <Skeleton height={120} /> : <BarChart data={categorySeries} emptyLabel={t('reports.charts.noIncidents')} />}
+        </Card>
+        <Card style={{ padding: 20 }}>
+          <h3 style={{ fontSize: 15, marginBottom: 14 }}>{t('reports.charts.bySeverity')}</h3>
+          {!incidentsPage ? <Skeleton height={120} /> : <BarChart data={severitySeries} emptyLabel={t('reports.charts.noIncidents')} />}
+        </Card>
+        <Card style={{ padding: 20 }}>
+          <h3 style={{ fontSize: 15, marginBottom: 14 }}>{t('reports.charts.closureMix')}</h3>
+          {!stats ? (
+            <Skeleton height={140} />
           ) : (
-            <>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 154, overflowX: 'auto', paddingTop: 18 }}>
-                {stats.incidentsByCategory.map((c) => (
-                  <div key={c.category} title={`${c.category}: ${c.count}`} style={{ width: 54, height: '100%', flex: '0 0 54px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                    <strong style={{ fontSize: 12, color: 'var(--text)' }}>{c.count}</strong>
-                    <div style={{ width: 32, height: `${Math.max(8, (c.count / maxCategory) * 100)}%`, background: 'var(--verified)', borderRadius: '4px 4px 0 0' }} />
-                    <span style={{ width: 54, minHeight: 28, fontSize: 10, lineHeight: '13px', color: 'var(--text-3)', textAlign: 'center' }}>{c.category.replace(/_/g, ' ')}</span>
-                  </div>
-                ))}
-              </div>
-            </>
+            <DonutChart data={closureSeries} centerValue={`${closureRate}%`} centerLabel={t('reports.kpi.closureRate')} />
           )}
         </Card>
         <Card style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 14, marginBottom: 14 }}>Incident map</h3>
-          <IncidentMap incidents={mapData} />
+          <h3 style={{ fontSize: 15, marginBottom: 14 }}>{t('reports.charts.taskStatus')}</h3>
+          {!tasksPage ? (
+            <Skeleton height={140} />
+          ) : taskStatusSeries.length === 0 ? (
+            <p className="chart-empty">{t('reports.charts.noTasks')}</p>
+          ) : (
+            <DonutChart data={taskStatusSeries} centerValue={tasksPage.items.length} centerLabel={t('reports.kpi.totalIncidents')} />
+          )}
         </Card>
       </div>
+
+      <Card style={{ padding: 20 }}>
+        <h3 style={{ fontSize: 15, marginBottom: 14 }}>{t('reports.charts.map')}</h3>
+        {!mapData ? <Skeleton height={260} /> : <IncidentMap incidents={mapData} />}
+      </Card>
     </div>
   );
 }

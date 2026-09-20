@@ -18,7 +18,25 @@
     "pagination": "Pagination",
     "showingRange": "Showing {{from}}–{{to}} of {{total}}",
     "previousPage": "Previous page",
-    "nextPage": "Next page"
+    "nextPage": "Next page",
+    "clearFilters": "Clear filters ({{count}})",
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "approved": "Verified",
+      "rejected": "Rejected",
+      "duplicate": "Duplicate",
+      "active": "Active",
+      "inactive": "Inactive",
+      "scheduled": "Scheduled",
+      "ongoing": "Ongoing",
+      "task": {
+        "pending": "Scheduled"
+      }
+    },
+    "notAvailable": "N/A"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -40,9 +58,11 @@
       "totalIncidents": "Total incidents",
       "claimedThisMonth": "Claimed this month",
       "awaitingClaim": "Awaiting claim nearby",
-      "resolved": "Resolved",
       "activeVolunteers": "Active volunteers",
-      "completedTasks": "Completed cleanup tasks"
+      "completedTasks": "Completed cleanup tasks",
+      "awaitingClaimSub": "within {{km}} km",
+      "closed": "Closed incidents",
+      "closedHint": "Incidents at any final workflow stage, including ones marked Dismissed rather than resolved."
     },
     "stagesChart": {
       "title": "Incidents by workflow stage",
@@ -58,7 +78,12 @@
     },
     "map": {
       "title": "Incident map",
-      "pinLabel": "{{status}} incident at {{lat}}, {{lng}}"
+      "pinLabel": "{{status}} incident at {{lat}}, {{lng}}",
+      "legend": {
+        "approved": "Verified",
+        "rejected": "Rejected",
+        "duplicate": "Duplicate"
+      }
     },
     "volunteerActivity": {
       "title": "Volunteer activity",
@@ -66,11 +91,17 @@
       "tasksCompleted": "Tasks completed",
       "tasksPending": "Tasks pending",
       "lastActive": "Last active",
-      "empty": "No volunteers yet."
+      "empty": "No volunteers yet.",
+      "viewAll": "View all volunteers"
     },
     "recentActivity": {
       "title": "Recent activity",
-      "empty": "No activity recorded yet."
+      "empty": "No activity recorded yet.",
+      "unknownActor": "Someone"
+    },
+    "needsAttention": {
+      "title": "Needs attention",
+      "empty": "Nothing needs your attention right now."
     }
   },
   "incidentsList": {
@@ -94,7 +125,10 @@
       "oldestFirst": "Oldest first",
       "sortLabel": "Sort incidents",
       "dateFromLabel": "Filter by submission date, from",
-      "dateToLabel": "Filter by submission date, to"
+      "dateToLabel": "Filter by submission date, to",
+      "searchLabel": "Search incidents",
+      "searchPlaceholder": "Search by title",
+      "searchHint": "Filters the loaded incidents."
     },
     "table": {
       "thumbnail": "Thumbnail",
@@ -105,6 +139,24 @@
       "status": "Status",
       "submitted": "Submitted",
       "rowLabel": "View incident: {{title}}"
+    },
+    "capWarning": "Showing the 100 most recent of {{total}}. Narrow the status filter to see the rest.",
+    "moveConflict": "This incident changed elsewhere — refreshed.",
+    "moveError": "Could not move this incident.",
+    "view": {
+      "label": "View",
+      "list": "List",
+      "board": "Board"
+    },
+    "board": {
+      "unplacedColumn": "Needs a stage",
+      "finalStage": "Final stage",
+      "emptyColumn": "No incidents in {{stage}}",
+      "emptyColumnFallback": "No incidents in this group",
+      "moving": "Moving…",
+      "advanceTo": "→ {{stage}}",
+      "moveTo": "Move to…",
+      "moveToLabel": "Move {{title}} to a different stage"
     }
   },
   "incidentDetail": {
@@ -242,7 +294,8 @@
       "colorLabel": "Color",
       "colorHint": "Shown as this stage's badge colour throughout the incident list and detail views — pick something distinct from your other stages.",
       "adding": "Adding…",
-      "submit": "Add stage"
+      "submit": "Add stage",
+      "colorHexLabel": "Colour hex"
     },
     "editModal": {
       "title": "Edit stage",
@@ -250,26 +303,64 @@
       "slugHint": "The slug is set when the stage is created and can't be changed.",
       "savingChanges": "Saving…",
       "submit": "Save changes"
+    },
+    "flowStrip": {
+      "label": "Workflow stage order"
+    },
+    "toasts": {
+      "added": "Stage added.",
+      "updated": "Stage updated.",
+      "deleted": "Stage deleted."
+    },
+    "errors": {
+      "addFailed": "Unable to add the stage.",
+      "updateFailed": "Unable to update the stage.",
+      "deleteFailed": "Unable to delete the stage.",
+      "reorderFailed": "Unable to reorder stages."
     }
   },
   "incidentPool": {
     "title": "Incident pool",
-    "description": "Unclaimed reports within your organisation's service area",
+    "description": "Unclaimed incidents reported within your organisation's registered service area",
     "loadError": "Failed to load the incident pool",
     "empty": "No unclaimed incidents in your service area right now.",
-    "claimed": "Incident claimed.",
+    "emptyFiltered": "No incidents match these filters.",
     "claim": "Claim incident",
     "claiming": "Claiming…",
-    "viewLabel": "View incident: {{title}}",
-    "table": {
-      "thumbnail": "Thumbnail",
-      "title": "Title",
-      "urgency": "Urgency",
-      "submitted": "Submitted",
-      "distance": "Distance"
+    "claimError": "Could not claim this incident",
+    "close": "Close",
+    "filters": {
+      "searchLabel": "Search the incident pool",
+      "searchPlaceholder": "Search by title or address",
+      "searchHint": "Filters the incidents already loaded in your service area.",
+      "withinKm": "Within {{km}} km",
+      "sortLabel": "Sort incidents",
+      "sortDistance": "Nearest first",
+      "sortNewest": "Newest first",
+      "sortSeverity": "Most severe first"
+    },
+    "map": {
+      "title": "Incidents in your service area"
     }
   },
   "events": {
+    "title": "Events",
+    "description": "Community cleanup events linked to verified incidents",
+    "loadError": "Failed to load events",
+    "empty": "No events scheduled yet.",
+    "emptyFiltered": "No events match these filters.",
+    "filters": {
+      "all": "All",
+      "upcomingOnly": "Upcoming only",
+      "searchLabel": "Search events",
+      "searchPlaceholder": "Search by title",
+      "searchHint": "Filters the events already loaded on this page."
+    },
+    "card": {
+      "spotsFilled": "{{count}} of {{max}} spots filled",
+      "unlimitedCapacitySingular": "{{count}} RSVP, unlimited capacity",
+      "unlimitedCapacityPlural": "{{count}} RSVPs, unlimited capacity"
+    },
     "createEvent": "+ Create event",
     "createModal": {
       "title": "Create event",
@@ -289,11 +380,18 @@
       "locationHint": "Drag-to-place map pin isn't available in this build — enter coordinates directly.",
       "latitudePlaceholder": "Latitude",
       "longitudePlaceholder": "Longitude",
-      "addressPlaceholder": "Address (optional)"
+      "addressPlaceholder": "Address (optional)",
+      "endRequired": "An end time is required",
+      "createError": "Could not create event",
+      "newEventTitle": "New event",
+      "startsLabel": "Starts",
+      "endsLabel": "Ends",
+      "maxAttendeesLabel": "Max attendees (optional)"
     }
   },
   "settings": {
     "title": "Organisation settings",
+    "orgProfile": "Organisation profile",
     "loadError": "Failed to load organisation",
     "orgName": "Organisation name",
     "description": "Description",
@@ -315,7 +413,8 @@
       "status": "Status",
       "empty": "No invite links yet.",
       "member": "Member",
-      "role": "Role"
+      "role": "Role",
+      "actions": "Actions"
     },
     "inviteStatus": {
       "active": "Active",
@@ -335,8 +434,16 @@
       "shareHint": "This link is shown only once — share it with the volunteers you want to invite:",
       "copy": "Copy",
       "copied": "Invite link copied to clipboard.",
-      "copyFailed": "Could not copy the link — copy it manually."
-    }
+      "copyFailed": "Could not copy the link — copy it manually.",
+      "generateError": "Could not generate an invite link."
+    },
+    "inviteLinksHint": "The link is shown only once when generated. Revoke and generate a new one if it is lost.",
+    "saveError": "Could not save changes",
+    "revokeError": "Could not revoke the invite link.",
+    "contactEmailPlaceholder": "contact@yourorg.example",
+    "latitudePlaceholder": "Latitude",
+    "longitudePlaceholder": "Longitude",
+    "radiusOption": "{{km}} km radius"
   },
   "volunteers": {
     "title": "Volunteers",
@@ -346,7 +453,6 @@
     "table": {
       "name": "Name",
       "email": "Email",
-      "joinedAt": "Joined At",
       "tasksCompleted": "Tasks Completed",
       "activeTasks": "Active Tasks",
       "status": "Status",
@@ -354,11 +460,11 @@
     },
     "profile": {
       "title": "Volunteer Profile",
-      "joined": "Joined {{date}}",
+      "memberSince": "Member since {{date}}",
+      "memberSinceHint": "Account creation date, not necessarily when this person started volunteering.",
       "personalDetails": "Personal Details",
       "email": "Email:",
       "role": "Role:",
-      "taskHistory": "Task History",
       "noTaskHistory": "No task history found.",
       "completed": "Completed",
       "due": "Due",
@@ -366,7 +472,21 @@
       "removeConfirm": "Remove {{name}} from this organisation? Their in-progress tasks return to pending and future event RSVPs are cancelled.",
       "cancel": "Cancel",
       "confirmRemove": "Remove",
-      "removing": "Removing…"
+      "removing": "Removing…",
+      "taskHistoryCount": "{{completed}} completed, {{active}} active",
+      "removeError": "Unable to remove this volunteer.",
+      "priority": "Priority: {{priority}}",
+      "evidenceThumbnail": "Evidence thumbnail"
+    },
+    "searchLabel": "Search volunteers",
+    "searchPlaceholder": "Search by name or email",
+    "searchHint": "Filters the volunteers already loaded on this page.",
+    "filters": {
+      "all": "All",
+      "sortLabel": "Sort by",
+      "sortNone": "Not sorted",
+      "sortMostCompleted": "Most tasks completed",
+      "sortFewestCompleted": "Fewest tasks completed"
     }
   },
   "orgRegistration": {
@@ -408,5 +528,36 @@
     "confirming": "Confirming…",
     "locationError": "Location access is required to confirm you’re within the service area. Please allow location access and try again.",
     "genericError": "Could not accept this invitation."
+  },
+  "reports": {
+    "title": "Reports",
+    "description": "Organisation impact and activity summary",
+    "export": "Export",
+    "loadError": "Failed to load reports",
+    "kpi": {
+      "totalIncidents": "Total incidents",
+      "completedCleanups": "Completed cleanups",
+      "activeVolunteers": "Active volunteers",
+      "closureRate": "Closure rate",
+      "closureRateHint": "Resolved or dismissed incidents, as a share of all incidents this organisation has claimed."
+    },
+    "charts": {
+      "byCategory": "Incidents by category",
+      "bySeverity": "Incidents by severity",
+      "closureMix": "Closure mix",
+      "taskStatus": "Task status",
+      "map": "Incident map",
+      "noIncidents": "No incidents reported yet.",
+      "noTasks": "No tasks created yet."
+    },
+    "csv": {
+      "metric": "Metric",
+      "value": "Value",
+      "claimedThisMonth": "Claimed this month",
+      "awaitingClaim": "Awaiting claim nearby",
+      "resolvedOrDismissed": "Resolved or dismissed incidents",
+      "category": "Category",
+      "count": "Count"
+    }
   }
 }

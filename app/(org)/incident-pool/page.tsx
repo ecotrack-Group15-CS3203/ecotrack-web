@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import {
@@ -9,20 +10,48 @@ import {
   Chip,
   EmptyState,
   ErrorBanner,
+  FilterBar,
+  FilterPanel,
+  FilterPill,
   Modal,
   PageHeader,
+  Pagination,
+  SearchInput,
   Spinner,
-  TableThumb,
   UrgencyBadge,
 } from '@/components/ui';
 import { IncidentMap, LocationMap } from '@/components/incident-map';
-import type { PoolIncident } from '@/lib/types';
+import type { IncidentCategory, IncidentSeverity, Organisation, PoolIncident } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { thumbGradient } from '@/lib/thumb-gradients';
+import { filterPool, paginate, sortPool, type PoolFilters, type PoolSort } from '@/lib/pool-filters';
+import { relativeAge } from '@/lib/format';
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 12;
+
+const CATEGORIES: IncidentCategory[] = [
+  'illegal_dumping',
+  'water_pollution',
+  'air_pollution',
+  'deforestation',
+  'wildlife_hazard',
+  'other',
+];
+const SEVERITIES: IncidentSeverity[] = ['low', 'medium', 'high', 'critical'];
+
+function categoryLabel(category: IncidentCategory) {
+  return category.replace(/_/g, ' ');
+}
+
+function toggleInSet<T>(set: ReadonlySet<T>, value: T): Set<T> {
+  const next = new Set(set);
+  if (next.has(value)) next.delete(value);
+  else next.add(value);
+  return next;
+}
 
 export default function IncidentPoolPage() {
+  const { t } = useTranslation();
   const { activeOrgId } = useAuth();
   const api = useAuthedFetch();
   const [page, setPage] = useState(1);
@@ -30,8 +59,24 @@ export default function IncidentPoolPage() {
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
 
+  const [query, setQuery] = useState('');
+  const [categories, setCategories] = useState<ReadonlySet<IncidentCategory>>(new Set());
+  const [severities, setSeverities] = useState<ReadonlySet<IncidentSeverity>>(new Set());
+  const [maxDistanceKm, setMaxDistanceKm] = useState<number | null>(null);
+  const [sort, setSort] = useState<PoolSort>('distance');
+
   const poolPath = activeOrgId ? '/incidents/pool' : null;
   const { data: pool, error, mutate } = useApiGet<PoolIncident[]>(poolPath);
+  const orgPath = activeOrgId ? `/organisations/${activeOrgId}` : null;
+  const { data: organisation } = useApiGet<Organisation>(orgPath);
+
+  // The pool endpoint already scopes to the org's service area, so this slider
+  // narrows within that -- it can't reach further than the org already sees.
+  const sliderMaxKm = useMemo(() => {
+    if (organisation?.serviceAreaRadiusKm) return organisation.serviceAreaRadiusKm;
+    const farthest = Math.max(0, ...(pool ?? []).map((incident) => incident.distanceMeters / 1000));
+    return Math.ceil(farthest) || 1;
+  }, [organisation, pool]);
 
   async function claimIncident() {
     if (!selectedIncident) return;
@@ -42,20 +87,30 @@ export default function IncidentPoolPage() {
       setSelectedIncident(null);
       await mutate();
     } catch (err) {
-      setClaimError(err instanceof ApiError ? err.message : 'Could not claim this incident');
+      setClaimError(err instanceof ApiError ? err.message : t('incidentPool.claimError'));
     } finally {
       setClaiming(false);
     }
   }
 
-  // Already distance-sorted server-side; keep the client sort stable across re-fetches.
-  const sorted = useMemo(() => (pool ?? []).slice().sort((a, b) => a.distanceMeters - b.distanceMeters), [pool]);
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const pageItems = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const filters: PoolFilters = useMemo(
+    () => ({
+      query,
+      categories,
+      severities,
+      maxDistanceMeters: maxDistanceKm !== null ? maxDistanceKm * 1000 : null,
+    }),
+    [query, categories, severities, maxDistanceKm],
+  );
+
+  const visible = useMemo(() => sortPool(filterPool(pool ?? [], filters), sort), [pool, filters, sort]);
+  const activeFilterCount =
+    (query.trim() ? 1 : 0) + categories.size + severities.size + (maxDistanceKm !== null ? 1 : 0);
+  const { items: pageItems, page: currentPage, pageCount } = paginate(visible, page, PAGE_SIZE);
 
   const mapIncidents = useMemo(
     () =>
-      (pool ?? []).map((incident) => ({
+      visible.map((incident) => ({
         id: incident.id,
         title: incident.title,
         lat: incident.lat,
@@ -63,77 +118,159 @@ export default function IncidentPoolPage() {
         address: incident.address,
         verificationStatus: null,
       })),
-    [pool],
+    [visible],
   );
+
+  function resetFilters() {
+    setQuery('');
+    setCategories(new Set());
+    setSeverities(new Set());
+    setMaxDistanceKm(null);
+    setPage(1);
+  }
 
   return (
     <div>
-      <PageHeader
-        title="Incident Pool"
-        description="Unclaimed incidents reported within your organisation's registered service area"
-      />
+      <PageHeader title={t('incidentPool.title')} description={t('incidentPool.description')} />
 
-      {error && <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load the incident pool'} />}
+      {error && <ErrorBanner message={error instanceof ApiError ? error.message : t('incidentPool.loadError')} />}
       {!pool && !error && <Spinner />}
 
       {pool && pool.length === 0 && (
         <Card>
           <EmptyState>
-            <p>No unclaimed incidents in your service area right now.</p>
+            <p>{t('incidentPool.empty')}</p>
           </EmptyState>
         </Card>
       )}
 
       {pool && pool.length > 0 && (
         <>
+          <FilterPanel activeCount={activeFilterCount} onReset={resetFilters}>
+            <SearchInput
+              value={query}
+              onChange={(value) => {
+                setQuery(value);
+                setPage(1);
+              }}
+              label={t('incidentPool.filters.searchLabel')}
+              placeholder={t('incidentPool.filters.searchPlaceholder')}
+              hint={t('incidentPool.filters.searchHint')}
+            />
+            <div className="pool-distance">
+              <label htmlFor="pool-distance-slider">
+                {t('incidentPool.filters.withinKm', { km: maxDistanceKm ?? sliderMaxKm })}
+              </label>
+              <input
+                id="pool-distance-slider"
+                type="range"
+                min={0}
+                max={sliderMaxKm}
+                step={1}
+                value={maxDistanceKm ?? sliderMaxKm}
+                onChange={(event) => {
+                  const value = Number(event.target.value);
+                  setMaxDistanceKm(value >= sliderMaxKm ? null : value);
+                  setPage(1);
+                }}
+              />
+            </div>
+            <select
+              aria-label={t('incidentPool.filters.sortLabel')}
+              className="filter-control"
+              value={sort}
+              onChange={(event) => setSort(event.target.value as PoolSort)}
+            >
+              <option value="distance">{t('incidentPool.filters.sortDistance')}</option>
+              <option value="newest">{t('incidentPool.filters.sortNewest')}</option>
+              <option value="severity">{t('incidentPool.filters.sortSeverity')}</option>
+            </select>
+          </FilterPanel>
+
+          <FilterBar>
+            {CATEGORIES.map((category) => (
+              <FilterPill
+                key={category}
+                active={categories.has(category)}
+                onClick={() => {
+                  setCategories((current) => toggleInSet(current, category));
+                  setPage(1);
+                }}
+              >
+                {categoryLabel(category)}
+              </FilterPill>
+            ))}
+          </FilterBar>
+          <FilterBar>
+            {SEVERITIES.map((severity) => (
+              <FilterPill
+                key={severity}
+                active={severities.has(severity)}
+                onClick={() => {
+                  setSeverities((current) => toggleInSet(current, severity));
+                  setPage(1);
+                }}
+              >
+                {severity}
+              </FilterPill>
+            ))}
+          </FilterBar>
+
           <Card style={{ padding: 20, marginBottom: 20 }}>
-            <h2 style={{ fontSize: 15, marginBottom: 12 }}>Incidents in your service area</h2>
+            <h2 style={{ fontSize: 15, marginBottom: 12 }}>{t('incidentPool.map.title')}</h2>
             <IncidentMap incidents={mapIncidents} />
           </Card>
-          <Card>
-            <table>
-            <thead>
-              <tr>
-                <th></th>
-                <th>ID</th>
-                <th>Title</th>
-                <th>Urgency</th>
-                <th>Submitted</th>
-                <th>Distance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pageItems.map((incident, i) => (
-                <tr key={incident.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedIncident(incident)}>
-                  <td>
-                    <TableThumb gradient={thumbGradient(i)} />
-                  </td>
-                  <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{incident.id}</td>
-                  <td>{incident.title}</td>
-                  <td>
-                    <UrgencyBadge severity={incident.severity} />
-                  </td>
-                  <td>{new Date(incident.createdAt).toLocaleString()}</td>
-                  <td>{(incident.distanceMeters / 1000).toFixed(1)} km</td>
-                </tr>
-              ))}
-            </tbody>
-            </table>
 
-          {totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '14px 0' }}>
-              {Array.from({ length: totalPages }).map((_, i) => (
-                <button
-                  key={i}
-                  className={`filter-pill ${page === i + 1 ? 'active' : ''}`}
-                  onClick={() => setPage(i + 1)}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
+          {visible.length === 0 ? (
+            <Card>
+              <EmptyState>
+                <p>{t('incidentPool.emptyFiltered')}</p>
+              </EmptyState>
+            </Card>
+          ) : (
+            <>
+              <div className="pool-grid">
+                {pageItems.map((incident, i) => (
+                  <Card
+                    key={incident.id}
+                    className="pool-card"
+                    onClick={() => setSelectedIncident(incident)}
+                  >
+                    <div className="pool-card-band" style={{ background: thumbGradient(i) }} aria-hidden="true" />
+                    <div className="pool-card-body">
+                      <h3 className="pool-card-title">{incident.title}</h3>
+                      <p className="pool-card-desc">{incident.description}</p>
+                      <div className="pool-card-chips">
+                        <Chip tone="neutral">{categoryLabel(incident.category)}</Chip>
+                        <UrgencyBadge severity={incident.severity} />
+                      </div>
+                      <div className="pool-card-footer">
+                        <span>{(incident.distanceMeters / 1000).toFixed(1)} km</span>
+                        <span>{relativeAge(incident.createdAt)}</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="btn-block"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedIncident(incident);
+                        }}
+                      >
+                        {t('incidentPool.claim')}
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+              <Pagination
+                page={currentPage}
+                pageCount={pageCount}
+                totalItems={visible.length}
+                pageSize={PAGE_SIZE}
+                onPageChange={setPage}
+              />
+            </>
           )}
-          </Card>
         </>
       )}
 
@@ -161,6 +298,7 @@ function IncidentDetailModal({
   claimError: string | null;
   onClaim: () => void;
 }) {
+  const { t } = useTranslation();
   if (!incident) return null;
 
   return (
@@ -171,15 +309,15 @@ function IncidentDetailModal({
       actions={
         <>
           {claimError && <ErrorBanner message={claimError} />}
-          <Button variant="secondary" onClick={onClose} disabled={claiming}>Close</Button>
+          <Button variant="secondary" onClick={onClose} disabled={claiming}>{t('incidentPool.close')}</Button>
           <Button onClick={onClaim} disabled={claiming}>
-            {claiming ? 'Claiming...' : 'Claim incident'}
+            {claiming ? t('incidentPool.claiming') : t('incidentPool.claim')}
           </Button>
         </>
       }
     >
       <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-        <Chip tone="neutral">{incident.category.replace(/_/g, ' ')}</Chip>
+        <Chip tone="neutral">{categoryLabel(incident.category)}</Chip>
         <UrgencyBadge severity={incident.severity} />
       </div>
 

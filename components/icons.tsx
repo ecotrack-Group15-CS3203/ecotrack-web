@@ -42,6 +42,8 @@ export const IconOrganisations = (p: IconProps) => (
 );
 export const IconLeaf = (p: IconProps) => <Icon {...p} d="M12 2C8 6 4 9 4 14a8 8 0 0 0 16 0c0-5-4-8-8-12z" />;
 export const IconClose = (p: IconProps) => <Icon {...p} d="M18 6 6 18M6 6l12 12" />;
+export const IconSearch = (p: IconProps) => <Icon {...p} d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.35-4.35" />;
+export const IconArrowLeft = (p: IconProps) => <Icon {...p} d="M19 12H5M12 19l-7-7 7-7" />;
 export const IconBell = (p: IconProps) => (
   <Icon {...p} d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" />
 );
@@ -49,6 +51,9 @@ export const IconDrag = (p: IconProps) => (
   <Icon {...p} d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />
 );
 export const IconTrash = (p: IconProps) => <Icon {...p} d="M4 6h16M8 6V4h8v2M6 6l1 14h10l1-14" />;
+export const IconLock = (p: IconProps) => (
+  <Icon {...p} d="M6 11V7a6 6 0 0 1 12 0v4M5 11h14v10H5zM12 15v3" />
+);
 export const IconPlus = (p: IconProps) => <Icon {...p} d="M12 5v14M5 12h14" />;
 export const IconChevronDown = (p: IconProps) => <Icon {...p} d="M6 9l6 6 6-6" />;
 export const IconArrowRight = (p: IconProps) => <Icon {...p} d="M5 12h14M13 6l6 6-6 6" />;
@@ -60,6 +65,10 @@ export const IconSun = (p: IconProps) => (
 );
 export const IconMoon = (p: IconProps) => <Icon {...p} d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />;
 export const IconMenu = (p: IconProps) => <Icon {...p} d="M4 7h16M4 12h16M4 17h16" />;
+export const IconList = (p: IconProps) => <Icon {...p} d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />;
+export const IconColumns = (p: IconProps) => (
+  <Icon {...p} d="M4 4h6v16H4zM14 4h6v16h-6z" />
+);
 export const IconLogout = (p: IconProps) => (
   <Icon {...p} d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
 );

@@ -16,6 +16,7 @@ import {
   Modal,
   PageHeader,
   Spinner,
+  StatusChip,
 } from '@/components/ui';
 import type { DataTableColumn } from '@/components/ui';
 import type {
@@ -145,9 +146,7 @@ function TasksPageInner() {
     {
       key: 'status',
       header: t('tasksList.table.status'),
-      render: (task) => (
-        <Chip tone={task.status}>{task.status === 'pending' ? 'scheduled' : task.status}</Chip>
-      ),
+      render: (task) => <StatusChip status={task.status} domain="task" />,
     },
   ];
 

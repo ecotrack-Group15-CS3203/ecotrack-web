@@ -4,7 +4,7 @@ import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
-import { Avatar, Button, Card, Chip, ErrorBanner, SectionTitle, Spinner } from '@/components/ui';
+import { Avatar, Button, Card, DetailHeader, ErrorBanner, SectionTitle, Spinner, StatusChip } from '@/components/ui';
 import type { Event, EventStatus } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { LocationMap } from '@/components/incident-map';
@@ -51,17 +51,16 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   const actions = NEXT_STATUS[event.status] ?? [];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 22, alignItems: 'start' }}>
+    <div>
+      <DetailHeader
+        backHref="/events"
+        backLabel="Back to events"
+        title={event.title}
+        chips={<StatusChip status={event.status} />}
+        meta={event.description}
+      />
+      <div className="detail-grid">
       <div>
-        <Button variant="text" onClick={() => router.push('/events')} style={{ marginBottom: 10 }}>
-          ← Back to events
-        </Button>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-          <Chip tone={event.status}>{event.status}</Chip>
-        </div>
-        <h1 style={{ fontSize: 19 }}>{event.title}</h1>
-        <p style={{ fontSize: 13.5, color: 'var(--text-2)', margin: '10px 0 16px' }}>{event.description}</p>
-
         <SectionTitle>When &amp; where</SectionTitle>
         <p style={{ fontSize: 13.5, color: 'var(--text-2)', marginBottom: 4 }}>
           Starts: {new Date(event.scheduledAt).toLocaleString()}
@@ -133,6 +132,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
           </Button>
         ))}
       </Card>
+      </div>
     </div>
   );
 }

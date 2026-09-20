@@ -5,7 +5,7 @@ import { ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import type { JoinRequest, JoinRequestStatus, Paginated } from '@/lib/types';
-import { Button, Chip, DataTable, ErrorBanner, FilterBar, FilterPill, PageHeader, Spinner, Toast } from '@/components/ui';
+import { Button, DataTable, ErrorBanner, FilterBar, FilterPanel, FilterPill, PageHeader, Spinner, StatusChip, Toast } from '@/components/ui';
 import type { DataTableColumn } from '@/components/ui';
 
 type StatusFilter = 'all' | JoinRequestStatus;
@@ -68,7 +68,7 @@ export default function JoinRequestsPage() {
         </span>
       ),
     },
-    { key: 'status', header: 'Status', render: (request) => <Chip tone={request.status}>{request.status}</Chip> },
+    { key: 'status', header: 'Status', render: (request) => <StatusChip status={request.status} /> },
     {
       key: 'actions',
       header: <span className="sr-only">Actions</span>,
@@ -95,13 +95,15 @@ export default function JoinRequestsPage() {
     <div>
       <PageHeader title="Join Requests" description="Review people asking to join your organisation." />
 
-      <FilterBar>
-        {(['pending', 'approved', 'rejected', 'all'] as StatusFilter[]).map((status) => (
-          <FilterPill key={status} active={statusFilter === status} onClick={() => setStatusFilter(status)}>
-            {status === 'all' ? 'All' : status[0].toUpperCase() + status.slice(1)}
-          </FilterPill>
-        ))}
-      </FilterBar>
+      <FilterPanel>
+        <FilterBar>
+          {(['pending', 'approved', 'rejected', 'all'] as StatusFilter[]).map((status) => (
+            <FilterPill key={status} active={statusFilter === status} onClick={() => setStatusFilter(status)}>
+              {status === 'all' ? 'All' : status[0].toUpperCase() + status.slice(1)}
+            </FilterPill>
+          ))}
+        </FilterBar>
+      </FilterPanel>
 
       {actionError && <div style={{ marginBottom: 16 }}><ErrorBanner message={actionError} /></div>}
       {error && (

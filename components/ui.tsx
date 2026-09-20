@@ -1,8 +1,9 @@
 'use client';
 
 import { ReactNode, useEffect, useId } from 'react';
+import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import { IconClose } from './icons';
+import { IconArrowLeft, IconClose, IconSearch } from './icons';
 
 export function Card({
   children,
@@ -126,7 +127,7 @@ export function KpiCard({
   tone,
   accent,
 }: {
-  label: string;
+  label: ReactNode;
   value: string | number;
   sub?: string;
   icon?: ReactNode;
@@ -387,87 +388,89 @@ export function DataTable<T>({
 }) {
   return (
     <Card>
-      <table>
-        {caption && <caption className="sr-only">{caption}</caption>}
-        <thead>
-          <tr>
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                style={{ width: column.width, textAlign: column.align }}
-                aria-sort={
-                  column.sort
-                    ? column.sort.active === 'asc'
-                      ? 'ascending'
-                      : column.sort.active === 'desc'
-                        ? 'descending'
-                        : 'none'
-                    : undefined
-                }
-              >
-                {column.sort ? (
-                  <button type="button" className="th-sort" onClick={column.sort.onToggle}>
-                    {column.header}
-                    <span aria-hidden="true">
-                      {column.sort.active === 'desc' ? '▼' : column.sort.active === 'asc' ? '▲' : '↕'}
-                    </span>
-                  </button>
-                ) : (
-                  column.header
-                )}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {loading && rows.length === 0
-            ? [0, 1, 2].map((placeholder) => (
-                <tr key={`skeleton-${placeholder}`}>
+      <div className="table-scroll">
+        <table>
+          {caption && <caption className="sr-only">{caption}</caption>}
+          <thead>
+            <tr>
+              {columns.map((column) => (
+                <th
+                  key={column.key}
+                  style={{ width: column.width, textAlign: column.align }}
+                  aria-sort={
+                    column.sort
+                      ? column.sort.active === 'asc'
+                        ? 'ascending'
+                        : column.sort.active === 'desc'
+                          ? 'descending'
+                          : 'none'
+                      : undefined
+                  }
+                >
+                  {column.sort ? (
+                    <button type="button" className="th-sort" onClick={column.sort.onToggle}>
+                      {column.header}
+                      <span aria-hidden="true">
+                        {column.sort.active === 'desc' ? '▼' : column.sort.active === 'asc' ? '▲' : '↕'}
+                      </span>
+                    </button>
+                  ) : (
+                    column.header
+                  )}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading && rows.length === 0
+              ? [0, 1, 2].map((placeholder) => (
+                  <tr key={`skeleton-${placeholder}`}>
+                    {columns.map((column) => (
+                      <td key={column.key}>
+                        <Skeleton height={14} />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              : null}
+            {!loading && rows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="data-table-empty">
+                  {empty}
+                </td>
+              </tr>
+            ) : null}
+            {rows.map((row, index) => {
+              const activate = onRowActivate ? () => onRowActivate(row) : undefined;
+              return (
+                <tr
+                  key={getRowKey(row)}
+                  className={activate ? 'row-activatable' : undefined}
+                  tabIndex={activate ? 0 : undefined}
+                  aria-label={activate && rowLabel ? rowLabel(row) : undefined}
+                  onClick={activate}
+                  onKeyDown={
+                    activate
+                      ? (event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            activate();
+                          }
+                        }
+                      : undefined
+                  }
+                >
                   {columns.map((column) => (
-                    <td key={column.key}>
-                      <Skeleton height={14} />
+                    <td key={column.key} style={{ textAlign: column.align }}>
+                      {column.render(row, index)}
                     </td>
                   ))}
                 </tr>
-              ))
-            : null}
-          {!loading && rows.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="data-table-empty">
-                {empty}
-              </td>
-            </tr>
-          ) : null}
-          {rows.map((row, index) => {
-            const activate = onRowActivate ? () => onRowActivate(row) : undefined;
-            return (
-              <tr
-                key={getRowKey(row)}
-                className={activate ? 'row-activatable' : undefined}
-                tabIndex={activate ? 0 : undefined}
-                aria-label={activate && rowLabel ? rowLabel(row) : undefined}
-                onClick={activate}
-                onKeyDown={
-                  activate
-                    ? (event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          activate();
-                        }
-                      }
-                    : undefined
-                }
-              >
-                {columns.map((column) => (
-                  <td key={column.key} style={{ textAlign: column.align }}>
-                    {column.render(row, index)}
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </Card>
   );
 }
@@ -537,4 +540,201 @@ export function Pagination({
       </div>
     </nav>
   );
+}
+
+/** A Card wrapper for a page's filter controls, with a "Clear filters" escape
+ * hatch once any is active. Filters themselves (FilterBar/FilterPill, selects,
+ * SearchInput) are passed as children. */
+export function FilterPanel({
+  title,
+  children,
+  activeCount,
+  onReset,
+}: {
+  title?: string;
+  children: ReactNode;
+  activeCount?: number;
+  onReset?: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Card className="filter-panel">
+      {title && <div className="filter-panel-title">{title}</div>}
+      <div className="filter-panel-body">{children}</div>
+      {!!activeCount && onReset && (
+        <button type="button" className="btn-text filter-panel-reset" onClick={onReset}>
+          {t('common.clearFilters', { count: activeCount })}
+        </button>
+      )}
+    </Card>
+  );
+}
+
+/** A client-side filter over an already-fetched list -- none of these API
+ * endpoints support a text-search parameter, so `hint` should say so rather
+ * than implying this reaches beyond the loaded page/array. */
+export function SearchInput({
+  value,
+  onChange,
+  placeholder,
+  label,
+  hint,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  label: string;
+  hint?: string;
+}) {
+  const id = useId();
+  return (
+    <div className="search-input">
+      <label htmlFor={id} className="sr-only">
+        {label}
+      </label>
+      <IconSearch aria-hidden="true" className="search-input-icon" />
+      <input
+        id={id}
+        type="search"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder ?? label}
+        aria-describedby={hint ? `${id}-hint` : undefined}
+      />
+      {hint && (
+        <span id={`${id}-hint`} className="sr-only">
+          {hint}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export interface ProgressSegment {
+  value: number;
+  color: string;
+  label: string;
+}
+
+/** A stacked, multi-segment proportion bar -- the dashboard's cleanup-progress
+ * split and single-segment RSVP fill both use this. `max` defaults to the sum
+ * of segment values (a 100%-stacked bar); pass it explicitly for a partial
+ * fill against some larger capacity (e.g. RSVPs against maxAttendees). */
+export function ProgressBar({
+  segments,
+  max,
+  height = 10,
+  showLegend = true,
+}: {
+  segments: ProgressSegment[];
+  max?: number;
+  height?: number;
+  showLegend?: boolean;
+}) {
+  const total = max ?? segments.reduce((sum, segment) => sum + segment.value, 0);
+  const safeTotal = total > 0 ? total : 1;
+  return (
+    <div className="progress-bar-wrap">
+      <div className="progress-bar-track" style={{ height }}>
+        {segments.map((segment) => (
+          <div
+            key={segment.label}
+            className="progress-bar-fill"
+            style={{ width: `${Math.min(100, (segment.value / safeTotal) * 100)}%`, background: segment.color }}
+            title={segment.label}
+          />
+        ))}
+      </div>
+      {showLegend && (
+        <div className="progress-bar-legend">
+          {segments.map((segment) => (
+            <span key={segment.label} className="progress-bar-legend-item">
+              <span className="progress-bar-dot" style={{ background: segment.color }} aria-hidden="true" />
+              {segment.label}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A label/value definition list -- replaces the ad-hoc `grid 80px 1fr`
+ * blocks and uppercase micro-headings scattered across the volunteer drawer
+ * and the detail pages. */
+export function MetaList({
+  items,
+  columns = 1,
+}: {
+  items: { label: string; value: ReactNode }[];
+  columns?: 1 | 2;
+}) {
+  return (
+    <dl className="meta-list" style={{ gridTemplateColumns: columns === 2 ? '1fr 1fr' : '1fr' }}>
+      {items.map((item) => (
+        <div key={item.label} className="meta-list-item">
+          <dt>{item.label}</dt>
+          <dd>{item.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/** Replaces the hand-rolled back-link + <h1> pair repeated across the three
+ * detail pages. Uses next/link rather than a router.push handler, so
+ * middle-click and prefetch work like any other link. */
+export function DetailHeader({
+  backHref,
+  backLabel,
+  title,
+  chips,
+  meta,
+  actions,
+}: {
+  backHref: string;
+  backLabel: string;
+  title: string;
+  chips?: ReactNode;
+  meta?: ReactNode;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="detail-header">
+      <Link href={backHref} className="detail-header-back">
+        <IconArrowLeft aria-hidden="true" /> {backLabel}
+      </Link>
+      <div className="detail-header-row">
+        <div>
+          <h1>{title}</h1>
+          {chips && <div className="detail-header-chips">{chips}</div>}
+          {meta && <div className="detail-header-meta">{meta}</div>}
+        </div>
+        {actions && <div className="detail-header-actions">{actions}</div>}
+      </div>
+    </div>
+  );
+}
+
+/** Human-readable label for a status enum value, backed by common.status.* so
+ * the same word is used everywhere that status appears rather than each page
+ * inlining its own ternary. Falls back to the raw value (underscores ->
+ * spaces) for anything not in the map, so an unmapped status never renders a
+ * raw i18n key.
+ *
+ * `domain` disambiguates a raw value that means different things on
+ * different entities -- today just `pending`, which is "Scheduled" on a task
+ * but "Pending" everywhere else (a join request, an incident's verification).
+ * Looked up as common.status.<domain>.<status> first, falling back to the
+ * shared common.status.<status> map. */
+export function StatusChip({ status, domain }: { status: string; domain?: string }) {
+  const { t } = useTranslation();
+  const scopedKey = domain ? `common.status.${domain}.${status}` : null;
+  if (scopedKey) {
+    const scoped = t(scopedKey);
+    if (scoped !== scopedKey) return <Chip tone={status}>{scoped}</Chip>;
+  }
+  const key = `common.status.${status}`;
+  const label = t(key);
+  return <Chip tone={status}>{label === key ? status.replace(/_/g, ' ') : label}</Chip>;
 }

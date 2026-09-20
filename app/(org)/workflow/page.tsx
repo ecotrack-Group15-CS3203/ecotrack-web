@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import type { WorkflowStage, WorkflowStageRules } from '@/lib/types';
 import { Button, Card, ErrorBanner, FieldError, HelpHint, Modal, PageHeader, Spinner, Toast } from '@/components/ui';
-import { IconDrag, IconTrash } from '@/components/icons';
+import { IconDrag, IconLock, IconTrash } from '@/components/icons';
 import { useTranslation } from 'react-i18next';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
 import { isColorHex, isReported, sortStages } from '@/lib/workflow-helpers';
@@ -67,8 +67,8 @@ export default function WorkflowPage() {
       await api.post(`/organisations/${activeOrgId}/workflow-stages`, { ...newStage });
       setNewStage({ name: '', description: '', color: DEFAULT_COLOR });
       setAddOpen(false);
-      setToast('Stage added.'); await mutateStages();
-    } catch (error) { showError(error, 'Unable to add the stage.'); } finally { setBusy(false); }
+      setToast(t('workflow.toasts.added')); await mutateStages();
+    } catch (error) { showError(error, t('workflow.errors.addFailed')); } finally { setBusy(false); }
   }
 
   function openEdit(stage: WorkflowStage) {
@@ -86,8 +86,8 @@ export default function WorkflowPage() {
         color: edit.color,
         isFinal: edit.isFinal,
       });
-      setEditing(null); setToast('Stage updated.'); await mutateStages();
-    } catch (error) { showError(error, 'Unable to update the stage.'); } finally { setBusy(false); }
+      setEditing(null); setToast(t('workflow.toasts.updated')); await mutateStages();
+    } catch (error) { showError(error, t('workflow.errors.updateFailed')); } finally { setBusy(false); }
   }
 
   async function toggleFinal(stage: WorkflowStage) {
@@ -95,7 +95,7 @@ export default function WorkflowPage() {
     try {
       await api.patch(`/organisations/${activeOrgId}/workflow-stages/${stage.id}`, { isFinal: !stage.isFinal });
       await mutateStages();
-    } catch (error) { showError(error, 'Unable to update the stage.'); } finally { setBusy(false); }
+    } catch (error) { showError(error, t('workflow.errors.updateFailed')); } finally { setBusy(false); }
   }
 
   async function confirmDelete() {
@@ -104,8 +104,8 @@ export default function WorkflowPage() {
     try {
       await api.del(`/organisations/${activeOrgId}/workflow-stages/${deleteTarget.id}`);
       setDeleteTarget(null);
-      setToast('Stage deleted.'); await mutateStages();
-    } catch (error) { showError(error, 'Unable to delete the stage.'); setDeleteTarget(null); } finally { setBusy(false); }
+      setToast(t('workflow.toasts.deleted')); await mutateStages();
+    } catch (error) { showError(error, t('workflow.errors.deleteFailed')); setDeleteTarget(null); } finally { setBusy(false); }
   }
 
   async function reorder(targetId: string) {
@@ -120,7 +120,7 @@ export default function WorkflowPage() {
     try {
       await api.patch(`/organisations/${activeOrgId}/workflow-stages/reorder`, { orderedStageIds: next.map((stage) => stage.id) });
       await mutateStages();
-    } catch (error) { showError(error, 'Unable to reorder stages.'); } finally { setBusy(false); setDragId(null); }
+    } catch (error) { showError(error, t('workflow.errors.reorderFailed')); } finally { setBusy(false); setDragId(null); }
   }
 
   async function moveStage(stageId: string, direction: -1 | 1) {
@@ -149,20 +149,28 @@ export default function WorkflowPage() {
   if (stagesError) return <ErrorBanner message={stagesError instanceof ApiError ? stagesError.message : t('workflow.loadError')} />;
   if (!stages) return <Spinner />;
 
-  return <div style={{ maxWidth: 860 }}>
+  return <div style={{ maxWidth: 1000 }}>
     <PageHeader title={t('workflow.title')} description={t('workflow.description')} action={<Button onClick={() => setAddOpen(true)}>{t('workflow.addStage')}</Button>} />
     {actionError && <div style={{ marginBottom: 16 }}><ErrorBanner message={actionError} /></div>}
+
+    <StageFlowStrip stages={orderedStages} t={t} />
 
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {orderedStages.map((stage) => {
         const locked = isReported(stage);
         return <Card key={stage.id} style={{ padding: 16, borderLeft: `5px solid ${stage.color ?? DEFAULT_COLOR}`, opacity: busy ? 0.75 : 1 }}>
           <div draggable={!locked && !busy} onDragStart={() => setDragId(stage.id)} onDragOver={(event) => { if (!locked) event.preventDefault(); }} onDrop={() => reorder(stage.id)} onDragEnd={() => setDragId(null)} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {locked ? <span title={t('workflow.lockedHint')} style={{ color: 'var(--text-3)', fontSize: 16 }}>🔒</span> : <IconDrag className="drag-handle" style={{ width: 18, height: 18, cursor: 'grab' }} />}
+            {locked ? (
+              <span title={t('workflow.lockedHint')} aria-label={t('workflow.lockedHint')}>
+                <IconLock style={{ width: 18, height: 18, color: 'var(--text-3)' }} />
+              </span>
+            ) : (
+              <IconDrag className="drag-handle" style={{ width: 18, height: 18, cursor: 'grab' }} />
+            )}
             <span aria-hidden className="stage-swatch" style={{ width: 22, height: 22, borderRadius: 5, background: stage.color ?? DEFAULT_COLOR }} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}><strong>{stage.name}</strong>{locked && <span className="chip chip-neutral">{t('workflow.locked')}</span>}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 3 }}>{stage.slug}</div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}><strong style={{ fontSize: 16 }}>{stage.name}</strong>{locked && <span className="chip chip-neutral">{t('workflow.locked')}</span>}</div>
+              <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 3 }}>{stage.slug}</div>
               {stage.description && <div style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 5 }}>{stage.description}</div>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -218,7 +226,7 @@ export default function WorkflowPage() {
           </label>
           <div style={{ display: 'flex', gap: 6 }}>
             <input id="new-stage-color" type="color" value={isColorHex(newStage.color) ? newStage.color : DEFAULT_COLOR} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} style={{ width: 42, height: 42, padding: 3 }} />
-            <input value={newStage.color} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} aria-label="Colour hex" />
+            <input value={newStage.color} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} aria-label={t('workflow.addModal.colorHexLabel')} />
           </div>
         </div>
       </div>
@@ -251,7 +259,7 @@ export default function WorkflowPage() {
             </label>
             <div style={{ display: 'flex', gap: 6 }}>
               <input id="edit-stage-color" type="color" value={isColorHex(edit.color) ? edit.color : DEFAULT_COLOR} onChange={(event) => setEdit({ ...edit, color: event.target.value })} style={{ width: 42, height: 42, padding: 3 }} />
-              <input value={edit.color} onChange={(event) => setEdit({ ...edit, color: event.target.value })} aria-label="Colour hex" />
+              <input value={edit.color} onChange={(event) => setEdit({ ...edit, color: event.target.value })} aria-label={t('workflow.addModal.colorHexLabel')} />
             </div>
           </div>
         </div>
@@ -273,6 +281,35 @@ export default function WorkflowPage() {
 
     {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
   </div>;
+}
+
+/** Read-only preview of the path an incident actually walks -- the editable
+ * list below it is reorderable and detailed, but doesn't show the shape of
+ * the pipeline at a glance the way a flow diagram does. */
+function StageFlowStrip({ stages, t }: { stages: WorkflowStage[]; t: (key: string) => string }) {
+  if (stages.length === 0) return null;
+  return (
+    <div className="stage-flow-strip" role="list" aria-label={t('workflow.flowStrip.label')}>
+      {stages.map((stage, index) => {
+        const locked = isReported(stage);
+        return (
+          <div className="stage-flow-item" role="listitem" key={stage.id}>
+            <span
+              className={`stage-flow-chip ${locked ? 'stage-flow-chip--locked' : ''}`}
+              style={locked ? undefined : { borderColor: stage.color ?? DEFAULT_COLOR, color: stage.color ?? DEFAULT_COLOR }}
+            >
+              {locked && <IconLock style={{ width: 13, height: 13 }} />}
+              {stage.name}
+              {stage.isFinal && <span aria-hidden="true">✓</span>}
+            </span>
+            {index < stages.length - 1 && (
+              <span className="stage-flow-arrow" aria-hidden="true">→</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function RulesPanel({
@@ -301,7 +338,7 @@ function RulesPanel({
 
   return (
     <Card style={{ marginTop: 24, padding: 18 }}>
-      <h2 style={{ fontSize: 16, marginBottom: 14 }}>{t('workflow.rulesTitle')}</h2>
+      <h2 style={{ fontSize: 18, marginBottom: 14 }}>{t('workflow.rulesTitle')}</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         {RULE_TRIGGERS.map((trigger) => {
           const minField = MIN_STAGE_FIELD[trigger];
@@ -311,8 +348,8 @@ function RulesPanel({
           return (
             <div key={trigger} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
               <div style={{ gridColumn: '1 / -1' }}>
-                <strong style={{ fontSize: 13.5 }}>{t(`workflow.rules.${trigger}.label`)}</strong>
-                <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '2px 0 0' }}>{t(`workflow.rules.${trigger}.hint`)}</p>
+                <strong style={{ fontSize: 15 }}>{t(`workflow.rules.${trigger}.label`)}</strong>
+                <p style={{ fontSize: 13, color: 'var(--text-3)', margin: '2px 0 0' }}>{t(`workflow.rules.${trigger}.hint`)}</p>
               </div>
               {HAS_MINIMUM[trigger] && (
                 <div className="field" style={{ marginBottom: 0 }}>

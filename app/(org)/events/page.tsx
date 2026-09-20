@@ -1,31 +1,55 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
-import { Button, Card, Chip, EmptyState, ErrorBanner, FieldError, Modal, PageHeader, Spinner } from '@/components/ui';
-import type { EventSummary, IncidentSummary, Paginated } from '@/lib/types';
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorBanner,
+  FieldError,
+  FilterBar,
+  FilterPanel,
+  FilterPill,
+  Modal,
+  PageHeader,
+  ProgressBar,
+  SearchInput,
+  Skeleton,
+  StatusChip,
+} from '@/components/ui';
+import { thumbGradient } from '@/lib/thumb-gradients';
+import { formatDateTime } from '@/lib/format';
+import { filterAndSortEvents } from '@/lib/event-filters';
+import type { EventStatus, EventSummary, IncidentSummary, Paginated } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
 import { LocationMap } from '@/components/incident-map';
 
+const STATUS_FILTERS: EventStatus[] = ['scheduled', 'ongoing', 'completed', 'cancelled'];
+
 export default function EventsPage() {
   return (
-    <Suspense fallback={<Spinner />}>
+    <Suspense fallback={<Skeleton height={96} />}>
       <EventsPageInner />
     </Suspense>
   );
 }
 
 function EventsPageInner() {
+  const { t } = useTranslation();
   const { activeOrgId } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedIncidentId = searchParams.get('incidentId');
   const api = useAuthedFetch();
   const [showCreate, setShowCreate] = useState(() => Boolean(preselectedIncidentId));
+  const [statusFilter, setStatusFilter] = useState<'all' | EventStatus>('all');
+  const [upcomingOnly, setUpcomingOnly] = useState(false);
+  const [search, setSearch] = useState('');
 
   // limit=100 on both: this page lists every event with no pagination
   // controls, and the incident picker in "Create event" needs every eligible
@@ -39,47 +63,110 @@ function EventsPageInner() {
   const { data: approvedIncidentsPage } = useApiGet<Paginated<IncidentSummary>>(approvedIncidentsPath);
   const approvedIncidents = approvedIncidentsPage?.items;
 
+  const filteredEvents = useMemo(
+    () => (events ? filterAndSortEvents(events, { status: statusFilter, upcomingOnly, query: search }) : []),
+    [events, statusFilter, upcomingOnly, search],
+  );
+
+  const activeFilterCount = (statusFilter !== 'all' ? 1 : 0) + (upcomingOnly ? 1 : 0) + (search.trim() ? 1 : 0);
+
+  function resetFilters() {
+    setStatusFilter('all');
+    setUpcomingOnly(false);
+    setSearch('');
+  }
+
   return (
     <div>
       <PageHeader
-        title="Events"
-        description="Community cleanup events linked to verified incidents"
-        action={<Button onClick={() => setShowCreate(true)}>+ Create event</Button>}
+        title={t('events.title')}
+        description={t('events.description')}
+        action={<Button onClick={() => setShowCreate(true)}>{t('events.createEvent')}</Button>}
       />
 
-      {error && <ErrorBanner message={error instanceof ApiError ? error.message : 'Failed to load events'} />}
-      {!events && !error && <Spinner />}
+      {error && <ErrorBanner message={error instanceof ApiError ? error.message : t('events.loadError')} />}
 
-      {events && events.length === 0 && (
+      <FilterPanel activeCount={activeFilterCount} onReset={resetFilters}>
+        <FilterBar>
+          <FilterPill active={statusFilter === 'all'} onClick={() => setStatusFilter('all')}>
+            {t('events.filters.all')}
+          </FilterPill>
+          {STATUS_FILTERS.map((status) => (
+            <FilterPill key={status} active={statusFilter === status} onClick={() => setStatusFilter(status)}>
+              {t(`common.status.${status}`)}
+            </FilterPill>
+          ))}
+          <FilterPill active={upcomingOnly} onClick={() => setUpcomingOnly((prev) => !prev)}>
+            {t('events.filters.upcomingOnly')}
+          </FilterPill>
+        </FilterBar>
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          label={t('events.filters.searchLabel')}
+          placeholder={t('events.filters.searchPlaceholder')}
+          hint={t('events.filters.searchHint')}
+        />
+      </FilterPanel>
+
+      {!events && !error && (
+        <div className="pool-grid">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card className="pool-card" key={i}>
+              <Skeleton height={140} />
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {events && filteredEvents.length === 0 && (
         <Card>
           <EmptyState>
-            <p>No events scheduled yet.</p>
+            <p>{events.length === 0 ? t('events.empty') : t('events.emptyFiltered')}</p>
           </EmptyState>
         </Card>
       )}
 
-      {events && events.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
-          {events.map((event) => (
+      {filteredEvents.length > 0 && (
+        <div className="pool-grid">
+          {filteredEvents.map((event, i) => (
             <Card
               key={event.id}
-              style={{ padding: 18, cursor: 'pointer' }}
+              className="pool-card"
               onClick={() => router.push(`/events/${event.id}`)}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                <b style={{ fontSize: 14.5 }}>{event.title}</b>
-                <Chip tone={event.status}>{event.status}</Chip>
+              <div className="pool-card-band" style={{ background: thumbGradient(i) }} aria-hidden="true" />
+              <div className="pool-card-body">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <span className="pool-card-title">{event.title}</span>
+                  <StatusChip status={event.status} />
+                </div>
+                <p className="pool-card-desc" style={{ WebkitLineClamp: 1 }}>{formatDateTime(event.scheduledAt)}</p>
+                {event.maxAttendees ? (
+                  <ProgressBar
+                    segments={[
+                      {
+                        value: event.rsvpCount,
+                        color: 'var(--primary)',
+                        label: t('events.card.spotsFilled', { count: event.rsvpCount, max: event.maxAttendees }),
+                      },
+                    ]}
+                    max={event.maxAttendees}
+                    showLegend={false}
+                    height={8}
+                  />
+                ) : null}
+                <div className="pool-card-footer">
+                  <span>
+                    {event.maxAttendees
+                      ? t('events.card.spotsFilled', { count: event.rsvpCount, max: event.maxAttendees })
+                      : t(
+                          event.rsvpCount === 1 ? 'events.card.unlimitedCapacitySingular' : 'events.card.unlimitedCapacityPlural',
+                          { count: event.rsvpCount },
+                        )}
+                  </span>
+                </div>
               </div>
-              <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 10 }}>
-                {new Date(event.scheduledAt).toLocaleString()}
-              </p>
-              <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 10 }}>
-                {event.location.lat.toFixed(5)}, {event.location.lng.toFixed(5)}
-              </p>
-              <p style={{ fontSize: 12.5, color: 'var(--text-3)' }}>
-                {event.rsvpCount} RSVP{event.rsvpCount === 1 ? '' : 's'}
-                {event.maxAttendees ? ` / ${event.maxAttendees} max` : ''}
-              </p>
             </Card>
           ))}
         </div>
@@ -135,7 +222,7 @@ function CreateEventModal({
   const titleValidation = useFieldValidation(required(t('events.createModal.titleRequired')));
   const descriptionValidation = useFieldValidation(required(t('events.createModal.descriptionRequired')));
   const startValidation = useFieldValidation(required(t('events.createModal.startRequired')));
-  const endValidation = useFieldValidation(required('An end time is required'));
+  const endValidation = useFieldValidation(required(t('events.createModal.endRequired')));
 
   function toggleIncident(id: string) {
     setIncidentIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -163,7 +250,7 @@ function CreateEventModal({
       setMaxAttendees('');
       onCreated(event.id);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not create event');
+      setError(err instanceof ApiError ? err.message : t('events.createModal.createError'));
     } finally {
       setSubmitting(false);
     }
@@ -228,43 +315,43 @@ function CreateEventModal({
         <FieldError id="event-description-error" message={descriptionValidation.error} />
       </div>
       <div className="field">
-        <label>Location</label>
-        <LocationMap id="new-event" title={title || 'New event'} latitude={latitude} longitude={longitude} />
+        <label>{t('events.createModal.locationLabel')}</label>
+        <LocationMap id="new-event" title={title || t('events.createModal.newEventTitle')} latitude={latitude} longitude={longitude} />
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             type="number"
             step="0.0001"
             value={latitude}
             onChange={(e) => setLatitude(Number(e.target.value))}
-            placeholder="Latitude"
+            placeholder={t('events.createModal.latitudePlaceholder')}
           />
           <input
             type="number"
             step="0.0001"
             value={longitude}
             onChange={(e) => setLongitude(Number(e.target.value))}
-            placeholder="Longitude"
+            placeholder={t('events.createModal.longitudePlaceholder')}
           />
         </div>
       </div>
       <div className="field">
-        <label htmlFor="create-event-start">Starts</label>
+        <label htmlFor="create-event-start">{t('events.createModal.startsLabel')}</label>
         <input id="create-event-start" aria-invalid={Boolean(startValidation.error)} aria-describedby={startValidation.error ? 'event-start-error' : undefined} type="datetime-local" value={scheduledAt} onChange={(e) => { setScheduledAt(e.target.value); startValidation.revalidate(e.target.value); }} onBlur={(e) => startValidation.onBlur(e.target.value)} />
         <FieldError id="event-start-error" message={startValidation.error} />
       </div>
       <div className="field">
-        <label htmlFor="create-event-end">Ends</label>
+        <label htmlFor="create-event-end">{t('events.createModal.endsLabel')}</label>
         <input id="create-event-end" aria-invalid={Boolean(endValidation.error)} aria-describedby={endValidation.error ? 'event-end-error' : undefined} type="datetime-local" value={endsAt} onChange={(e) => { setEndsAt(e.target.value); endValidation.revalidate(e.target.value); }} onBlur={(e) => endValidation.onBlur(e.target.value)} />
         <FieldError id="event-end-error" message={endValidation.error} />
       </div>
       <div className="field">
-        <label>Max attendees (optional)</label>
+        <label>{t('events.createModal.maxAttendeesLabel')}</label>
         <input
           type="number"
           min={1}
           value={maxAttendees}
           onChange={(e) => setMaxAttendees(e.target.value)}
-          placeholder="Unlimited"
+          placeholder={t('common.unlimited')}
         />
       </div>
     </Modal>
