@@ -670,7 +670,7 @@ export function MetaList({
   columns?: 1 | 2;
 }) {
   return (
-    <dl className="meta-list" style={{ gridTemplateColumns: columns === 2 ? '1fr 1fr' : '1fr' }}>
+    <dl className="meta-list" style={{ gridTemplateColumns: columns === 2 ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 1fr)' }}>
       {items.map((item) => (
         <div key={item.label} className="meta-list-item">
           <dt>{item.label}</dt>
