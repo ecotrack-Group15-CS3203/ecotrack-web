@@ -15,6 +15,13 @@ const CLIENT_SECRET = process.env.ASGARDEO_CLIENT_SECRET ?? '';
 const REDIRECT_URI = process.env.ASGARDEO_REDIRECT_URI ?? '';
 const POST_LOGOUT_REDIRECT_URI = process.env.ASGARDEO_POST_LOGOUT_REDIRECT_URI ?? '';
 
+/** Absolute URL on the app's public origin. Behind Nginx the standalone server's
+ * request.url carries its bind address (0.0.0.0:3000), so redirects are anchored
+ * to the configured post-logout URI, which is the app's own origin. */
+export function publicUrl(path: string, requestUrl: string): URL {
+  return new URL(path, POST_LOGOUT_REDIRECT_URI || requestUrl);
+}
+
 export const ACCESS_TOKEN_COOKIE = 'ecotrack_at';
 export const REFRESH_TOKEN_COOKIE = 'ecotrack_rt';
 export const ID_TOKEN_COOKIE = 'ecotrack_it';

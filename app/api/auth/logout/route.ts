@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { buildLogoutUrl, clearSessionCookies, ID_TOKEN_COOKIE } from '@/lib/asgardeo-session';
+import { buildLogoutUrl, clearSessionCookies, ID_TOKEN_COOKIE, publicUrl } from '@/lib/asgardeo-session';
 
 // Clears the local session cookies AND sends the browser through Asgardeo's
 // RP-initiated logout with id_token_hint. Skipping the second half is the bug
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
   const response = idToken
     ? NextResponse.redirect(buildLogoutUrl(idToken))
-    : NextResponse.redirect(new URL('/login', request.url));
+    : NextResponse.redirect(publicUrl('/login', request.url));
 
   clearSessionCookies(response.cookies);
   return response;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ID_TOKEN_COOKIE, verifyIdToken } from "@/lib/asgardeo-session";
+import { ID_TOKEN_COOKIE, publicUrl, verifyIdToken } from "@/lib/asgardeo-session";
 
 // This is a UX nicety, not the security boundary: /api/proxy checks the
 // session cookie server-side on every call, and NestJS validates the bearer
@@ -30,13 +30,13 @@ export const config = {
 export async function proxy(request: NextRequest) {
   const idToken = request.cookies.get(ID_TOKEN_COOKIE)?.value;
   if (!idToken) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(publicUrl("/login", request.url));
   }
 
   try {
     await verifyIdToken(idToken);
     return NextResponse.next();
   } catch {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(publicUrl("/login", request.url));
   }
 }
