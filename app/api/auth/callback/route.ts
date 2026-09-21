@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import {
   exchangeCode,
+  publicUrl,
   isSafeReturnPath,
   RETURN_TO_COOKIE,
   setSessionCookies,
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
   const storedState = request.cookies.get(STATE_COOKIE)?.value;
 
   if (!code || !state || !storedState || state !== storedState) {
-    const response = NextResponse.redirect(new URL('/login?error=state_mismatch', request.url));
+    const response = NextResponse.redirect(publicUrl('/login?error=state_mismatch', request.url));
     response.cookies.delete(STATE_COOKIE);
     return response;
   }
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
   try {
     tokens = await exchangeCode(code);
   } catch {
-    const response = NextResponse.redirect(new URL('/login?error=exchange_failed', request.url));
+    const response = NextResponse.redirect(publicUrl('/login?error=exchange_failed', request.url));
     response.cookies.delete(STATE_COOKIE);
     return response;
   }
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
   const returnTo = request.cookies.get(RETURN_TO_COOKIE)?.value;
   const destination = returnTo && isSafeReturnPath(returnTo) ? returnTo : '/dashboard';
 
-  const response = NextResponse.redirect(new URL(destination, request.url));
+  const response = NextResponse.redirect(publicUrl(destination, request.url));
   response.cookies.delete(STATE_COOKIE);
   response.cookies.delete(RETURN_TO_COOKIE);
   setSessionCookies(response.cookies, tokens);
