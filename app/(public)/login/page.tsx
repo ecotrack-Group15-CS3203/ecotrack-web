@@ -28,7 +28,7 @@ function LoginContent() {
   return (
     <div className="kg-auth">
       <Card className="kg-auth-card">
-        <BrandMark />
+        <BrandMark size={64} className="kg-auth-mark" />
         <h1>Welcome back</h1>
         <p>Sign in to EcoTrack to manage your organisation.</p>
 

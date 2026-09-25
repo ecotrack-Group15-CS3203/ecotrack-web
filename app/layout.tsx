@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Montserrat } from "next/font/google";
 import { AuthProvider } from "@/lib/auth-context";
 import { I18nProvider } from "@/components/i18n-provider";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
@@ -11,8 +11,15 @@ const inter = Inter({
   weight: ["400", "500", "600", "700"],
 });
 
+// Brand face: the ECOTRACK wordmark and tagline only (components/brand).
+const montserrat = Montserrat({
+  variable: "--font-brand",
+  subsets: ["latin"],
+  weight: ["500", "600"],
+});
+
 export const metadata: Metadata = {
-  title: "EcoTrack Admin",
+  title: { default: "EcoTrack", template: "%s · EcoTrack" },
   description: "EcoTrack organisation administration dashboard",
 };
 
@@ -24,7 +31,7 @@ export default function RootLayout({
   return (
     // suppressHydrationWarning: THEME_INIT_SCRIPT sets data-theme and the `js` class
     // on <html> before React hydrates, so the server's attributes can't match.
-    <html lang="en" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${montserrat.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>

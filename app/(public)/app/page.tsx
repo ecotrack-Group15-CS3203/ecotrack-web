@@ -3,16 +3,16 @@ import Link from 'next/link';
 import {
   IconEvents,
   IconIncidents,
-  IconLeaf,
   IconPin,
   IconPlus,
   IconTasks,
   IconVolunteers,
 } from '@/components/icons';
+import { BrandLogo } from '@/components/brand/logo';
 import { Reveal } from '@/components/public/reveal';
 
 export const metadata: Metadata = {
-  title: 'Get the EcoTrack app',
+  title: 'Get the app',
   description: 'Report hazards, take on cleanup tasks, and RSVP to volunteer events from the EcoTrack mobile app.',
 };
 
@@ -63,12 +63,7 @@ export default function GetAppPage() {
             <div className="kg-phone-screen">
               <span className="kg-phone-notch" />
               <div className="kg-phone-top">
-                <span className="kg-brand-mark">
-                  <IconLeaf />
-                </span>
-                <strong className="kg-card-title" style={{ margin: 0, fontSize: 16 }}>
-                  EcoTrack
-                </strong>
+                <BrandLogo variant="lockup" size={26} />
               </div>
               <div className="kg-phone-body">
                 <span className="kg-mono">Near you</span>

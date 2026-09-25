@@ -149,7 +149,7 @@ export default function WorkflowPage() {
   if (stagesError) return <ErrorBanner message={stagesError instanceof ApiError ? stagesError.message : t('workflow.loadError')} />;
   if (!stages) return <Spinner />;
 
-  return <div style={{ maxWidth: 1000 }}>
+  return <div>
     <PageHeader title={t('workflow.title')} description={t('workflow.description')} action={<Button onClick={() => setAddOpen(true)}>{t('workflow.addStage')}</Button>} />
     {actionError && <div style={{ marginBottom: 16 }}><ErrorBanner message={actionError} /></div>}
 

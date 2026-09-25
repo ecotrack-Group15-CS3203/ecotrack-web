@@ -1,15 +1,12 @@
 import Link from 'next/link';
 import { AccountMenu } from '../account-menu';
-import { IconLeaf } from '../icons';
+import { BrandLogo } from '../brand/logo';
 import { HeaderCta } from './header-cta';
 import { ThemeToggle } from '../theme-toggle';
 
-export function BrandMark() {
-  return (
-    <span className="kg-brand-mark" aria-hidden="true">
-      <IconLeaf />
-    </span>
-  );
+/** The hexagon mark alone, for spots that already show the name in text. */
+export function BrandMark({ size = 32, className }: { size?: number; className?: string }) {
+  return <BrandLogo variant="mark" size={size} className={className} />;
 }
 
 /** Shared by every public page; section links use `/#…` so they work from any of them. */
@@ -17,9 +14,8 @@ export function PublicHeader() {
   return (
     <div className="kg-header-wrap">
       <header className="kg-header">
-        <Link href="/" className="kg-brand">
-          <BrandMark />
-          EcoTrack
+        <Link href="/" className="kg-brand" aria-label="EcoTrack home">
+          <BrandLogo variant="lockup" size={36} tagline />
         </Link>
         <nav className="kg-nav" aria-label="Primary">
           <Link href="/#how-it-works">How it works</Link>

@@ -8,21 +8,22 @@
    with inline var(--…) references, and this is what makes those follow the theme. */
 
 .kg {
-  --kg-bg: #F1F6FA;
-  --kg-bg-2: #E6EEF5;
-  --kg-aurora-1: rgba(34, 211, 238, 0.24);
-  --kg-aurora-2: rgba(74, 222, 128, 0.16);
-  --kg-aurora-3: rgba(129, 140, 248, 0.2);
+  --kg-bg: #F3F8F3;
+  --kg-bg-2: #E8F2E9;
+  --kg-aurora-1: rgba(76, 175, 80, 0.22);
+  --kg-aurora-2: rgba(139, 195, 74, 0.16);
+  --kg-aurora-3: rgba(14, 59, 46, 0.12);
   --kg-glass: rgba(255, 255, 255, 0.55);
   --kg-glass-strong: rgba(255, 255, 255, 0.8);
   --kg-glass-border: rgba(15, 23, 42, 0.08);
   --kg-glass-border-strong: rgba(15, 23, 42, 0.15);
   --kg-menu-bg: rgba(255, 255, 255, 0.94);
-  --kg-grad: linear-gradient(95deg, #0891B2 0%, #16A34A 55%, #4D7C0F 100%);
-  --kg-grad-button: linear-gradient(95deg, #22D3EE 0%, #4ADE80 100%);
-  --kg-on-grad: #04121A;
-  --kg-glow: 0 10px 28px -10px rgba(8, 145, 178, 0.45);
-  --kg-glow-strong: 0 16px 40px -10px rgba(8, 145, 178, 0.55);
+  /* Brand gradient: dark green -> secondary -> primary green (brand sheet). */
+  --kg-grad: linear-gradient(95deg, #0E3B2E 0%, #2E7D32 55%, #4CAF50 100%);
+  --kg-grad-button: linear-gradient(95deg, #4CAF50 0%, #81C784 100%);
+  --kg-on-grad: #0E3B2E;
+  --kg-glow: 0 10px 28px -10px rgba(46, 125, 50, 0.45);
+  --kg-glow-strong: 0 16px 40px -10px rgba(46, 125, 50, 0.55);
   --kg-shadow: 0 24px 60px -30px rgba(15, 23, 42, 0.3);
   --kg-cyan: #0E7490;
   --kg-lime: #4D7C0F;
@@ -30,8 +31,8 @@
   --kg-amber: #B45309;
   --kg-violet: #4F46E5;
   --kg-violet-tint: rgba(99, 102, 241, 0.12);
-  --kg-mono-text: #0E7490;
-  --kg-focus: #0891B2;
+  --kg-mono-text: #2E7D32;
+  --kg-focus: #2E7D32;
 
   --bg: var(--kg-bg);
   --card: var(--kg-glass-strong);
@@ -41,9 +42,9 @@
   --text-2: #475467;
   --text-3: #5F6B7D;
   --text-disabled: #98A2B3;
-  --primary: #0E7490;
-  --primary-hover: #155E75;
-  --primary-tint: rgba(8, 145, 178, 0.1);
+  --primary: #2E7D32;
+  --primary-hover: #1B5E20;
+  --primary-tint: rgba(76, 175, 80, 0.12);
   --rejected: #B42318;
   --rejected-tint: rgba(240, 68, 56, 0.1);
   --pending: #93370D;
@@ -62,19 +63,19 @@
 }
 
 :root[data-theme="dark"] .kg {
-  --kg-bg: #070B14;
-  --kg-bg-2: #0C1322;
-  --kg-aurora-1: rgba(34, 211, 238, 0.17);
-  --kg-aurora-2: rgba(20, 184, 166, 0.13);
-  --kg-aurora-3: rgba(99, 102, 241, 0.18);
+  --kg-bg: #06110C;
+  --kg-bg-2: #0B1A13;
+  --kg-aurora-1: rgba(76, 175, 80, 0.16);
+  --kg-aurora-2: rgba(129, 199, 132, 0.11);
+  --kg-aurora-3: rgba(46, 125, 50, 0.22);
   --kg-glass: rgba(255, 255, 255, 0.035);
   --kg-glass-strong: rgba(255, 255, 255, 0.065);
   --kg-glass-border: rgba(255, 255, 255, 0.08);
   --kg-glass-border-strong: rgba(255, 255, 255, 0.15);
-  --kg-menu-bg: rgba(14, 20, 33, 0.94);
-  --kg-grad: linear-gradient(95deg, #22D3EE 0%, #4ADE80 55%, #A3E635 100%);
-  --kg-glow: 0 10px 32px -8px rgba(34, 211, 238, 0.45);
-  --kg-glow-strong: 0 16px 44px -8px rgba(34, 211, 238, 0.6);
+  --kg-menu-bg: rgba(10, 24, 17, 0.94);
+  --kg-grad: linear-gradient(95deg, #2E7D32 0%, #4CAF50 55%, #A5D6A7 100%);
+  --kg-glow: 0 10px 32px -8px rgba(76, 175, 80, 0.4);
+  --kg-glow-strong: 0 16px 44px -8px rgba(76, 175, 80, 0.55);
   --kg-shadow: 0 30px 70px -32px rgba(0, 0, 0, 0.75);
   --kg-cyan: #67E8F9;
   --kg-lime: #BEF264;
@@ -82,16 +83,16 @@
   --kg-amber: #FCD34D;
   --kg-violet: #A5B4FC;
   --kg-violet-tint: rgba(129, 140, 248, 0.16);
-  --kg-mono-text: #67E8F9;
-  --kg-focus: #67E8F9;
+  --kg-mono-text: #81C784;
+  --kg-focus: #81C784;
 
   --text: #E8EEF5;
   --text-2: #A5B0BF;
   --text-3: #8591A3;
   --text-disabled: #566173;
-  --primary: #22D3EE;
-  --primary-hover: #67E8F9;
-  --primary-tint: rgba(34, 211, 238, 0.12);
+  --primary: #4CAF50;
+  --primary-hover: #81C784;
+  --primary-tint: rgba(76, 175, 80, 0.14);
   --rejected: #FDA29B;
   --rejected-tint: rgba(240, 68, 56, 0.14);
   --pending: #FEC84B;
@@ -102,9 +103,9 @@
 
 /* Overscroll and the strip behind the sticky header should match the page. */
 html:has(.kg),
-html:has(.kg) body { background: #F1F6FA; }
+html:has(.kg) body { background: #F3F8F3; }
 html[data-theme="dark"]:has(.kg),
-html[data-theme="dark"]:has(.kg) body { background: #070B14; }
+html[data-theme="dark"]:has(.kg) body { background: #06110C; }
 html:has(.kg) { scroll-behavior: smooth; }
 
 .kg [id] { scroll-margin-top: 112px; }
@@ -158,20 +159,14 @@ html:has(.kg) { scroll-behavior: smooth; }
   backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%);
   box-shadow: var(--kg-shadow);
 }
-.kg-brand {
-  display: inline-flex; align-items: center; gap: 10px;
-  font-family: var(--font-display), var(--font-inter), sans-serif;
-  font-size: 18px; font-weight: 700; letter-spacing: -0.01em; color: var(--text);
+/* The lockup itself is components/brand (logo.tsx + brand.css). */
+.kg-brand { display: inline-flex; align-items: center; min-width: 0; border-radius: 10px; }
+@media (max-width: 640px) {
+  .kg-header .kg-brand .brand { --brand-mark: 30px !important; }
+  .kg-brand .brand-tagline { display: none; }
 }
-.kg-brand-mark {
-  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-  display: grid; place-items: center;
-  background: var(--kg-grad-button); box-shadow: var(--kg-glow);
-}
-.kg .kg-brand-mark .icon { width: 17px; height: 17px; stroke: var(--kg-on-grad); stroke-width: 2.2; }
-.kg-brand--small { font-size: 15px; }
-.kg-brand--small .kg-brand-mark { width: 26px; height: 26px; box-shadow: none; }
-.kg .kg-brand--small .kg-brand-mark .icon { width: 14px; height: 14px; }
+/* Theme toggle + account + CTA leave no room for the wordmark on small phones. */
+@media (max-width: 420px) { .kg-header .kg-brand .brand-text { display: none; } }
 
 .kg-nav { display: flex; gap: 30px; margin: 0 auto; }
 .kg-nav a { font-size: 14px; font-weight: 500; color: var(--text-2); transition: color 0.15s ease; }
@@ -377,7 +372,7 @@ html.js .kg-count[data-pending="true"] { visibility: hidden; animation: kg-show 
   font-family: var(--font-display), var(--font-inter), sans-serif; font-size: 14px; font-weight: 600;
   color: var(--text); background: var(--kg-glass); border: 1px solid var(--kg-glass-border-strong);
 }
-.kg-fake-btn--primary { color: var(--kg-on-grad); background: linear-gradient(95deg, #4ADE80, #34D399); border-color: transparent; }
+.kg-fake-btn--primary { color: var(--kg-on-grad); background: var(--kg-grad-button); border-color: transparent; }
 .kg-imgs { display: flex; gap: 8px; margin: 14px 0 12px; }
 .kg-img {
   width: 50px; height: 50px; border-radius: 12px; display: grid; place-items: center;
@@ -413,7 +408,7 @@ html.js .kg-count[data-pending="true"] { visibility: hidden; animation: kg-show 
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.2s ease;
 }
 .kg-card:hover { transform: translateY(-3px); border-color: var(--kg-glass-border-strong); box-shadow: var(--kg-shadow); }
-.kg-card--accent { background: linear-gradient(160deg, rgba(34, 211, 238, 0.11), var(--kg-glass) 62%); border-color: rgba(34, 211, 238, 0.26); }
+.kg-card--accent { background: linear-gradient(160deg, rgba(76, 175, 80, 0.12), var(--kg-glass) 62%); border-color: rgba(76, 175, 80, 0.28); }
 .kg-card--lg { padding: 36px; }
 .kg-card h3 { font-size: 20px; font-weight: 600; margin: 22px 0 10px; }
 .kg-card p { font-size: 14.5px; line-height: 1.6; color: var(--text-2); }
@@ -438,7 +433,7 @@ html.js .kg-count[data-pending="true"] { visibility: hidden; animation: kg-show 
   position: relative; overflow: hidden; border-radius: 32px; padding: 64px;
   display: flex; align-items: center; justify-content: space-between; gap: 40px; flex-wrap: wrap;
   border: 1px solid var(--kg-glass-border-strong);
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.14), var(--kg-glass) 48%, rgba(129, 140, 248, 0.16));
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.14), var(--kg-glass) 48%, rgba(14, 59, 46, 0.12));
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
 }
 .kg-cta::before {
@@ -451,8 +446,8 @@ html.js .kg-count[data-pending="true"] { visibility: hidden; animation: kg-show 
 
 .kg-callout {
   display: flex; gap: 18px; align-items: flex-start; padding: 28px 32px; border-radius: 24px;
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.1), var(--kg-glass) 60%);
-  border: 1px solid rgba(34, 211, 238, 0.24);
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), var(--kg-glass) 60%);
+  border: 1px solid rgba(76, 175, 80, 0.26);
 }
 .kg-callout h3 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
 .kg-callout p { font-size: 14.5px; line-height: 1.6; color: var(--text-2); }
@@ -481,7 +476,7 @@ html.js .kg-count[data-pending="true"] { visibility: hidden; animation: kg-show 
 .kg-phone-top { display: flex; align-items: center; gap: 8px; padding: 46px 18px 6px; }
 .kg-phone-body { flex: 1; padding: 0 12px; }
 .kg-phone-body .kg-row { flex-direction: column; align-items: flex-start; gap: 6px; }
-.kg-phone-thumb { width: 100%; height: 80px; border-radius: 10px; background: linear-gradient(135deg, rgba(34, 211, 238, 0.45), rgba(74, 222, 128, 0.4)); }
+.kg-phone-thumb { width: 100%; height: 80px; border-radius: 10px; background: linear-gradient(135deg, rgba(46, 125, 50, 0.45), rgba(139, 195, 74, 0.4)); }
 .kg-phone-fab {
   position: absolute; right: 16px; bottom: 76px; width: 48px; height: 48px; border-radius: 50%;
   display: grid; place-items: center; color: var(--kg-on-grad); background: var(--kg-grad-button); box-shadow: var(--kg-glow-strong);
@@ -489,14 +484,13 @@ html.js .kg-count[data-pending="true"] { visibility: hidden; animation: kg-show 
 .kg .kg-phone-fab .icon { width: 22px; height: 22px; stroke-width: 2.4; }
 .kg-phone-tabs { display: flex; justify-content: space-around; padding: 14px 10px 18px; border-top: 1px solid var(--kg-glass-border); background: var(--kg-glass); }
 .kg .kg-phone-tabs .icon { width: 19px; height: 19px; color: var(--text-3); }
-.kg .kg-phone-tabs .icon:first-child { color: var(--kg-cyan); }
+.kg .kg-phone-tabs .icon:first-child { color: var(--primary); }
 @media (max-width: 1000px) { .kg-phone { display: none; } }
 
 /* ----- Sign-in ----- */
 .kg-auth { display: grid; place-items: center; padding: 64px 24px 96px; }
 .kg-auth-card { width: 100%; max-width: 420px; padding: 40px 36px; text-align: center; }
-.kg-auth-card .kg-brand-mark { width: 52px; height: 52px; margin: 0 auto 18px; }
-.kg .kg-auth-card .kg-brand-mark .icon { width: 26px; height: 26px; }
+.kg-auth-card .kg-auth-mark { display: flex; justify-content: center; margin: 0 auto 18px; }
 .kg-auth-card h1 { font-size: 28px; font-weight: 700; }
 .kg-auth-card p { margin: 8px 0 28px; font-size: 14.5px; color: var(--text-2); }
 .kg-auth-card .btn { width: 100%; }

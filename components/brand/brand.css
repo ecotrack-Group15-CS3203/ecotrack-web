@@ -1,0 +1,31 @@
+/* EcoTrack brand lockup (components/brand/logo.tsx). Unscoped on purpose: the
+   same lockup appears on the public pages (.kg) and the dashboard (.eco).
+   Colours come from the brand sheet: earth-brown wordmark on light surfaces,
+   white on dark; the tagline is the brand green. */
+.brand {
+  --brand-mark: 32px;
+  display: inline-flex; align-items: center; gap: calc(var(--brand-mark) * 0.32);
+  min-width: 0; line-height: 1;
+}
+.brand-mark { display: block; flex-shrink: 0; width: var(--brand-mark); height: var(--brand-mark); }
+.brand-mark-img { display: block; width: 100%; height: 100%; }
+.brand-mark-img--dark { display: none; }
+:root[data-theme="dark"] .brand-mark-img--light { display: none; }
+:root[data-theme="dark"] .brand-mark-img--dark { display: block; }
+
+.brand-text { display: flex; flex-direction: column; min-width: 0; }
+.brand-wordmark {
+  font-family: var(--font-brand), var(--font-inter), sans-serif;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+  font-size: calc(var(--brand-mark) * 0.6); white-space: nowrap;
+  color: #3E2F22;
+}
+.brand-tagline {
+  margin-top: 0.4em;
+  font-family: var(--font-brand), var(--font-inter), sans-serif;
+  font-weight: 500; letter-spacing: 0.12em; white-space: nowrap;
+  font-size: max(9.5px, calc(var(--brand-mark) * 0.28));
+  color: #2E7D32;
+}
+:root[data-theme="dark"] .brand-wordmark { color: #FFFFFF; }
+:root[data-theme="dark"] .brand-tagline { color: #81C784; }
