@@ -369,7 +369,7 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 
 /* Shared by the three detail pages -- collapses on narrower screens, which it
    never did as a hand-rolled inline grid. */
-.eco .detail-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; align-items: start; max-width: 1100px; }
+.eco .detail-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; align-items: start; }
 /* minmax(0, ...) and min-width: 0 for the same reason as .settings-grid below: a
    plain fr track won't shrink under a wide table or a long unbroken string. */
 .eco .detail-grid > * { min-width: 0; }
