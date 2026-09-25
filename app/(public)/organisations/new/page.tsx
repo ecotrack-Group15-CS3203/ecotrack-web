@@ -163,7 +163,7 @@ export default function RegisterOrganisationPage() {
             longitude={longitude}
             radiusKm={radiusKm}
             mapStyle={isDark ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11'}
-            accentColor={isDark ? '#22D3EE' : '#0891B2'}
+            accentColor={isDark ? '#4CAF50' : '#2E7D32'}
           />
           <div style={{ display: 'flex', gap: 8, margin: '8px 0' }}>
             <input
