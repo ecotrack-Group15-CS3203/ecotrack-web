@@ -10,7 +10,9 @@ import { AdminShell } from '@/components/admin-shell';
 import { Spinner } from '@/components/ui';
 import {
   IconDashboard,
+  IconIncidentPool,
   IconIncidents,
+  IconJoinRequests,
   IconTasks,
   IconVolunteers,
   IconWorkflow,
@@ -21,12 +23,12 @@ import {
 
 const NAV_ITEMS = [
   { href: '/dashboard', key: 'dashboard', icon: IconDashboard, group: 'overview' },
-  { href: '/incident-pool', key: 'incidentPool', icon: IconIncidents, group: 'incidents' },
+  { href: '/incident-pool', key: 'incidentPool', icon: IconIncidentPool, group: 'incidents' },
   { href: '/incidents', key: 'incidents', icon: IconIncidents, group: 'incidents' },
   { href: '/tasks', key: 'tasks', icon: IconTasks, group: 'incidents' },
   { href: '/events', key: 'events', icon: IconEvents, group: 'community' },
   { href: '/volunteers', key: 'volunteers', icon: IconVolunteers, group: 'community' },
-  { href: '/join-requests', key: 'joinRequests', icon: IconVolunteers, group: 'community' },
+  { href: '/join-requests', key: 'joinRequests', icon: IconJoinRequests, group: 'community' },
   { href: '/workflow', key: 'workflow', icon: IconWorkflow, group: 'operations' },
   { href: '/reports', key: 'reports', icon: IconReports, group: 'operations' },
   { href: '/settings', key: 'settings', icon: IconSettings, group: 'settings' },
