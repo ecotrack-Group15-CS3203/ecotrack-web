@@ -30,6 +30,9 @@ ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
+# The standalone output deliberately leaves public/ out; without this the brand
+# logos under /brand/* 404 in production.
+COPY --from=build --chown=node:node /app/public ./public
 USER node
 EXPOSE 3000
 CMD ["node", "server.js"]
