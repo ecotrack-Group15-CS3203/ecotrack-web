@@ -20,16 +20,16 @@ import {
 } from '@/components/icons';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', key: 'dashboard', icon: IconDashboard },
-  { href: '/incident-pool', key: 'incidentPool', icon: IconIncidents },
-  { href: '/incidents', key: 'incidents', icon: IconIncidents },
-  { href: '/tasks', key: 'tasks', icon: IconTasks },
-  { href: '/events', key: 'events', icon: IconEvents },
-  { href: '/volunteers', key: 'volunteers', icon: IconVolunteers },
-  { href: '/join-requests', key: 'joinRequests', icon: IconVolunteers },
-  { href: '/workflow', key: 'workflow', icon: IconWorkflow },
-  { href: '/reports', key: 'reports', icon: IconReports },
-  { href: '/settings', key: 'settings', icon: IconSettings },
+  { href: '/dashboard', key: 'dashboard', icon: IconDashboard, group: 'overview' },
+  { href: '/incident-pool', key: 'incidentPool', icon: IconIncidents, group: 'incidents' },
+  { href: '/incidents', key: 'incidents', icon: IconIncidents, group: 'incidents' },
+  { href: '/tasks', key: 'tasks', icon: IconTasks, group: 'incidents' },
+  { href: '/events', key: 'events', icon: IconEvents, group: 'community' },
+  { href: '/volunteers', key: 'volunteers', icon: IconVolunteers, group: 'community' },
+  { href: '/join-requests', key: 'joinRequests', icon: IconVolunteers, group: 'community' },
+  { href: '/workflow', key: 'workflow', icon: IconWorkflow, group: 'operations' },
+  { href: '/reports', key: 'reports', icon: IconReports, group: 'operations' },
+  { href: '/settings', key: 'settings', icon: IconSettings, group: 'settings' },
 ] as const;
 
 export function OrgGuard({ children }: { children: React.ReactNode }) {
@@ -66,12 +66,13 @@ export function OrgGuard({ children }: { children: React.ReactNode }) {
   const navItems = NAV_ITEMS.map((item) => ({
     href: item.href,
     icon: item.icon,
+    group: item.group,
     label: t(`nav.${item.key}`),
     badgeCount: item.href === '/join-requests' ? pendingJoinRequests : undefined,
   }));
 
   return (
-    <AdminShell navItems={navItems} sidebarFoot={profile.organisation.name}>
+    <AdminShell navItems={navItems} orgName={profile.organisation.name}>
       {children}
     </AdminShell>
   );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isThemeMode, resolveTheme } from './theme';
+import { isSidebarCollapsed, isThemeMode, resolveTheme } from './theme';
 
 describe('resolveTheme', () => {
   it('uses a stored choice over the device setting', () => {
@@ -24,5 +24,14 @@ describe('isThemeMode', () => {
     expect(isThemeMode('dark')).toBe(true);
     expect(isThemeMode('system')).toBe(false);
     expect(isThemeMode(null)).toBe(false);
+  });
+});
+
+describe('isSidebarCollapsed', () => {
+  it('is collapsed only for the stored "collapsed" value', () => {
+    expect(isSidebarCollapsed('collapsed')).toBe(true);
+    expect(isSidebarCollapsed('expanded')).toBe(false);
+    expect(isSidebarCollapsed(null)).toBe(false);
+    expect(isSidebarCollapsed(undefined)).toBe(false);
   });
 });

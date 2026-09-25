@@ -10,15 +10,17 @@
    in globals.css. :root remains the fallback for routes in neither scope, so
    don't delete tokens from it.
 
-   The look: an airy mint wash with the sidebar and topbar floating on it as
-   rounded panels, solid white cards for anything holding data, and the
-   cyan->green gradient as a rare accent rather than a primary colour.
+   The look: a console shell -- a full-width header and a collapsible left rail
+   on one solid chrome surface, with the page itself inset as a softly tinted
+   panel (rounded top-left corner). Solid white cards hold data; the brand
+   green gradient is a rare accent rather than a primary colour. Brand values
+   come from the EcoTrack brand sheet (Logo and styles/Design.png).
    =========================================================================== */
 
 /* <html> and <body> sit outside `.eco` and can't read its tokens, so the
-   overscroll colour is duplicated here. Keep in sync with --bg below. */
-html:has(.eco), html:has(.eco) body { background: #EAF4F1; }
-html[data-theme="dark"]:has(.eco), html[data-theme="dark"]:has(.eco) body { background: #0B1416; }
+   overscroll colour is duplicated here. Keep in sync with --chrome-bg below. */
+html:has(.eco), html:has(.eco) body { background: #FFFFFF; }
+html[data-theme="dark"]:has(.eco), html[data-theme="dark"]:has(.eco) body { background: #0F1A15; }
 /* `clip`, not `hidden`: hidden would turn <body> into a scroll container and
    break the sticky topbar. Clip just refuses to scroll sideways into blank space. */
 html:has(.eco) body { overflow-x: clip; }
@@ -31,13 +33,13 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
   --fs-body: 15px; --fs-body-sm: 14px; --fs-meta: 13px;
 
   /* ---- Brand ---- */
-  /* Teal-700 rather than the brighter teal of the reference: white 14px text on
-     #14B8A6 is ~2.4:1, a straight WCAG failure. #0F766E keeps the hue at 5.4:1,
-     and the same value doubles as ink on white. */
-  --primary: #0F766E;
-  --primary-hover: #115E59;
-  --primary-ink: #0F766E;
-  --primary-tint: #D8F0EC;
+  /* Brand secondary green rather than the brighter primary green: white 14px
+     text on #4CAF50 is ~2.8:1, a WCAG failure. #2E7D32 carries it at 5.1:1,
+     and the same value doubles as ink on white. #4CAF50 stays an accent. */
+  --primary: #2E7D32;
+  --primary-hover: #1B5E20;
+  --primary-ink: #2E7D32;
+  --primary-tint: #E8F5E9;
   --on-primary: #FFFFFF;
   --danger-fill: #A32D2D;
   --danger-fill-hover: #791F1F;
@@ -47,7 +49,7 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
   --pending: #8A5A00;           --pending-tint: #FBF0DB;
   --verified: #175FA6;          --verified-tint: #E4F0FB;
   --progress: #4F46B5;          --progress-tint: #EBEAFC;
-  --resolved: #0F766E;          --resolved-tint: #D8F0EC;
+  --resolved: #2E7D32;          --resolved-tint: #E8F5E9;
   --rejected: #A32D2D;          --rejected-tint: #FBE9E9;
   --sev-low: #3B6D11;           --sev-low-tint: #E8F3DC;
   --sev-med: #854F0B;           --sev-med-tint: #FBF0DB;
@@ -58,59 +60,63 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
   --urgency-critical: #B4231F;  --urgency-critical-tint: #FADFDE;
 
   /* ---- Surfaces ---- */
-  --bg: #EAF4F1;
+  --bg: #F3F7F3;
   --card: #FFFFFF;
-  --surface-2: #EFF5F3;
-  --surface-3: #F6FAF9;
+  --surface-2: #EEF4EE;
+  --surface-3: #F7FAF7;
   --input-bg: #FFFFFF;
-  --border: #DCE8E5;
-  --border-strong: #C0D2CE;
-  --btn-disabled-bg: #D3DEDB;
+  --border: #DDE7DE;
+  --border-strong: #C2D3C4;
+  --btn-disabled-bg: #D5DED6;
 
-  --text: #16211F;
-  --text-2: #53625E;
-  --text-3: #6A7975;
-  --text-disabled: #A8B5B2;
+  --text: #1E2A22;
+  --text-2: #56635A;
+  --text-3: #67746B;
+  --text-disabled: #A9B5AC;
 
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 18px;
   --radius-panel: 18px;
 
-  /* Space between the sidebar and the content, and between the content and the
-     right edge of the window. Mobile overrides this to 16px. */
-  --shell-gutter: 24px;
+  /* Horizontal padding inside the content panel. Mobile overrides this to 16px. */
+  --shell-gutter: 28px;
 
-  --shadow-card: 0 1px 2px rgba(16,40,36,.04), 0 8px 24px -12px rgba(16,40,36,.10);
-  --shadow-pop: 0 20px 52px -18px rgba(16,40,36,.28);
+  /* ---- Shell geometry (components/admin-shell.tsx) ---- */
+  --header-h: 60px;
+  --rail-w: 252px;
+  --rail-w-collapsed: 68px;
+  --rail-ease: cubic-bezier(.2,.8,.2,1);
 
-  /* ---- Accent, borrowed verbatim from public.css (--kg-grad / --kg-focus).
-     This shared identity is what makes the two surfaces read as one product. */
-  --grad-accent: linear-gradient(95deg, #0891B2 0%, #16A34A 55%, #4D7C0F 100%);
-  --focus: #0891B2;
-  --focus-glow: 0 0 0 3px rgba(8,145,178,.28);
+  --shadow-card: 0 1px 2px rgba(14,59,46,.04), 0 8px 24px -12px rgba(14,59,46,.10);
+  --shadow-pop: 0 20px 52px -18px rgba(14,59,46,.28);
+
+  /* ---- Accent, shared with public.css (--kg-grad / --kg-focus). This shared
+     identity is what makes the two surfaces read as one product. */
+  --grad-accent: linear-gradient(95deg, #0E3B2E 0%, #2E7D32 55%, #4CAF50 100%);
+  --focus: #2E7D32;
+  --focus-glow: 0 0 0 3px rgba(46,125,50,.26);
 
   /* ---- Chrome panels (sidebar, topbar) and overlays ---- */
+  /* Solid surface behind the header and rail; the content panel sits on it. */
+  --chrome-bg: #FFFFFF;
   --panel: rgba(255,255,255,.88);
-  --panel-border: rgba(15,42,38,.08);
+  --panel-border: rgba(14,59,46,.09);
   --glass-chrome: var(--panel);
   --glass-chrome-strong: rgba(255,255,255,.94);
-  --glass-border: rgba(15,42,38,.10);
+  --glass-border: rgba(14,59,46,.10);
   --blur-chrome: blur(16px) saturate(140%);
   --blur-overlay: blur(20px) saturate(150%);
-  --scrim: rgba(12,32,28,.42);
+  --scrim: rgba(10,30,22,.42);
 
-  --sidebar-bg: var(--panel);
-  --sidebar-text: #53625E;
-  --sidebar-text-strong: #16211F;
-  --sidebar-hover-bg: rgba(15,42,38,.05);
+  --sidebar-text: #56635A;
+  --sidebar-text-strong: #1E2A22;
+  --sidebar-hover-bg: rgba(14,59,46,.05);
   --sidebar-active-bg: var(--primary-tint);
+  --sidebar-active-bar: #4CAF50;
   --sidebar-border: var(--panel-border);
-  --sidebar-foot: #6A7975;
   --sidebar-badge-bg: #B45900;
   --sidebar-badge-ink: #FFFFFF;
-  /* Opaque equivalent, for where blur is switched off. */
-  --sidebar-solid: #F4FAF8;
 
   --map-grid: #D7E7E2;
   --map-bg: #EDF5F3;
@@ -119,15 +125,15 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
   --swatch-ring: rgba(0,0,0,.15);
   --skeleton-1: #E7F0EE;
   --skeleton-2: #F2F8F6;
-  --toast-bg: #16211F;
-  --toast-ink: #EAF4F1;
+  --toast-bg: #1E2A22;
+  --toast-ink: #F3F7F3;
   /* Applied to photography and generated thumbnails; full brightness on light. */
   --thumb-dim: none;
 
   --bg-wash:
-    radial-gradient(1200px 700px at 8% -12%, rgba(45,212,191,.18), transparent 62%),
-    radial-gradient(900px 560px at 98% 4%, rgba(129,140,248,.10), transparent 60%),
-    radial-gradient(800px 600px at 60% 100%, rgba(52,211,153,.10), transparent 62%),
+    radial-gradient(1200px 700px at 8% -12%, rgba(76,175,80,.12), transparent 62%),
+    radial-gradient(900px 560px at 98% 4%, rgba(14,59,46,.05), transparent 60%),
+    radial-gradient(800px 600px at 60% 100%, rgba(139,195,74,.08), transparent 62%),
     var(--bg);
 
   color-scheme: light;
@@ -135,8 +141,7 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: var(--bg-wash);
-  background-attachment: fixed;
+  background: var(--chrome-bg);
   color: var(--text);
 }
 
@@ -144,10 +149,10 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
   /* Foreground is a ~300-level tint of each hue; the tint behind it is a
      12-20% alpha wash of the ~500-level. Alpha rather than flat hex so the
      same chip composites correctly over --card, --bg and a hovered row. */
-  --primary: #12857A;
-  --primary-hover: #17A091;
-  --primary-ink: #2DD4BF;
-  --primary-tint: rgba(45,212,191,.14);
+  --primary: #2E7D32;
+  --primary-hover: #388E3C;
+  --primary-ink: #81C784;
+  --primary-tint: rgba(76,175,80,.15);
   --on-primary: #FFFFFF;
   --danger-fill: #B3352F;
   --danger-fill-hover: #C9453F;
@@ -156,7 +161,7 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
   --pending: #FBBF4A;          --pending-tint: rgba(245,158,11,.15);
   --verified: #7DB8F0;         --verified-tint: rgba(37,99,235,.18);
   --progress: #A5A2F0;         --progress-tint: rgba(99,102,241,.18);
-  --resolved: #2DD4BF;         --resolved-tint: rgba(45,212,191,.16);
+  --resolved: #81C784;         --resolved-tint: rgba(76,175,80,.16);
   --rejected: #F5928C;         --rejected-tint: rgba(239,68,68,.16);
   --sev-low: #A3D96B;          --sev-low-tint: rgba(132,204,22,.16);
   --sev-med: #F0B75C;          --sev-med-tint: rgba(217,119,6,.16);
@@ -166,61 +171,60 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
   --urgency-high: #F5B063;     --urgency-high-tint: rgba(234,88,12,.18);
   --urgency-critical: #F78A80; --urgency-critical-tint: rgba(220,38,38,.20);
 
-  --bg: #0B1416;
-  --card: #131F21;
-  --surface-2: #18262A;
-  --surface-3: #162326;
-  --input-bg: #0E181A;         /* below --card, so inputs read as wells */
-  --border: #26363A;
-  --border-strong: #35494E;
-  --btn-disabled-bg: #26363A;
+  --bg: #0A130F;
+  --card: #121E18;
+  --surface-2: #17261E;
+  --surface-3: #15231C;
+  --input-bg: #0D1813;         /* below --card, so inputs read as wells */
+  --border: #24362C;
+  --border-strong: #33493D;
+  --btn-disabled-bg: #24362C;
 
-  --text: #E6EFEE;
-  --text-2: #A3B2B0;
-  --text-3: #8A9997;
-  --text-disabled: #5B6A68;
+  --text: #E6EFE9;
+  --text-2: #A3B2A8;
+  --text-3: #8A998F;
+  --text-disabled: #5B6A60;
 
   /* Separation in dark comes from --border, not shadow. If a card looks like
      it's floating in soup, raise the border rather than the shadow. */
   --shadow-card: 0 1px 2px rgba(0,0,0,.45), 0 2px 10px rgba(0,0,0,.35);
   --shadow-pop: 0 24px 60px -20px rgba(0,0,0,.80);
 
-  --grad-accent: linear-gradient(95deg, #22D3EE 0%, #4ADE80 55%, #A3E635 100%);
-  --focus: #67E8F9;
-  --focus-glow: 0 0 0 3px rgba(103,232,249,.32);
+  --grad-accent: linear-gradient(95deg, #2E7D32 0%, #4CAF50 55%, #A5D6A7 100%);
+  --focus: #81C784;
+  --focus-glow: 0 0 0 3px rgba(129,199,132,.32);
 
-  --panel: rgba(17,28,30,.82);
+  --chrome-bg: #0F1A15;
+  --panel: rgba(16,28,22,.82);
   --panel-border: rgba(255,255,255,.08);
   --glass-chrome: var(--panel);
-  --glass-chrome-strong: rgba(19,31,33,.94);
+  --glass-chrome-strong: rgba(18,30,24,.94);
   --glass-border: rgba(255,255,255,.09);
   --scrim: rgba(0,0,0,.62);
 
-  --sidebar-bg: var(--panel);
-  --sidebar-text: #A3B2B0;
-  --sidebar-text-strong: #E6EFEE;
+  --sidebar-text: #A3B2A8;
+  --sidebar-text-strong: #E6EFE9;
   --sidebar-hover-bg: rgba(255,255,255,.045);
-  --sidebar-active-bg: rgba(255,255,255,.07);
+  --sidebar-active-bg: rgba(76,175,80,.14);
+  --sidebar-active-bar: #4CAF50;
   --sidebar-border: var(--panel-border);
-  --sidebar-foot: #7E8D8B;
   --sidebar-badge-bg: #E9B44C;
-  --sidebar-badge-ink: #16211F;
-  --sidebar-solid: #101A1C;
+  --sidebar-badge-ink: #1E2A22;
 
   --map-grid: #1E2E30;
   --map-bg: #111C1E;
-  --marker-ring: #0B1416;
+  --marker-ring: #0A130F;
   --toggle-knob: #E6EFEE;
   --swatch-ring: rgba(255,255,255,.18);
   --skeleton-1: #18262A;
   --skeleton-2: #223336;
-  --toast-bg: #1D2E30;
-  --toast-ink: #E6EFEE;
+  --toast-bg: #1C2E24;
+  --toast-ink: #E6EFE9;
   --thumb-dim: brightness(.82) saturate(.92);
 
   --bg-wash:
-    radial-gradient(1200px 700px at 8% -12%, rgba(45,212,191,.10), transparent 62%),
-    radial-gradient(900px 560px at 98% 4%, rgba(99,102,241,.08), transparent 60%),
+    radial-gradient(1200px 700px at 8% -12%, rgba(76,175,80,.09), transparent 62%),
+    radial-gradient(900px 560px at 98% 4%, rgba(46,125,50,.07), transparent 60%),
     var(--bg);
 
   color-scheme: dark;
@@ -231,7 +235,7 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 /* The display face is reserved for the wordmark, page titles and KPI numerals.
    Applying it to h2-h4, nav, table headers or buttons is what would make an
    admin tool read as a landing page. */
-.eco h1, .eco .kpi-num, .eco .web-brand {
+.eco h1, .eco .kpi-num {
   font-family: var(--font-display), var(--font-inter), system-ui, sans-serif;
   letter-spacing: -0.02em;
 }
@@ -365,7 +369,7 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 
 /* Shared by the three detail pages -- collapses on narrower screens, which it
    never did as a hand-rolled inline grid. */
-.eco .detail-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.eco .detail-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; align-items: start; max-width: 1100px; }
 /* minmax(0, ...) and min-width: 0 for the same reason as .settings-grid below: a
    plain fr track won't shrink under a wide table or a long unbroken string. */
 .eco .detail-grid > * { min-width: 0; }
@@ -391,12 +395,12 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 /* /settings -- a fixed 380px right rail rather than detail-grid's
    proportional 1fr, since the invite-links card doesn't need to grow with
    the viewport the way a detail sidebar does. */
-.eco .settings-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 22px; align-items: start; max-width: 1100px; }
+.eco .settings-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 22px; align-items: start; }
 .eco .settings-grid > .settings-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 /* min-width: 0 overrides the grid item default of min-width: auto, which
    would otherwise let the invite table's intrinsic width push this column
    wider than its 380px track instead of letting .table-scroll handle it. */
-.eco .settings-grid > .settings-aside { position: sticky; top: 20px; min-width: 0; }
+.eco .settings-grid > .settings-aside { position: sticky; top: calc(var(--header-h) + 20px); min-width: 0; }
 @media (max-width: 1000px) {
   .eco .settings-grid { grid-template-columns: minmax(0, 1fr); }
   .eco .settings-grid > .settings-aside { position: static; }
@@ -529,103 +533,183 @@ html[data-theme="dark"]:has(.eco) { color-scheme: dark; }
 .eco .stage-flow-chip--locked { border-color: var(--border-strong); color: var(--text-3); }
 .eco .stage-flow-arrow { color: var(--text-3); font-size: 14px; flex-shrink: 0; }
 
-/* ===== Shell =====
-   Sidebar and topbar float as rounded panels so the page wash shows around
-   them; the content area stays transparent so cards sit directly on the wash. */
-.eco .web-shell { display: flex; min-height: 100vh; flex: 1; }
-.eco .web-sidebar {
-  position: fixed; inset: 12px auto 12px 12px; z-index: 20; width: 236px;
-  border-radius: var(--radius-panel);
-  background: var(--sidebar-bg); color: var(--sidebar-text);
-  border: 1px solid var(--sidebar-border);
-  box-shadow: var(--shadow-card);
-  backdrop-filter: var(--blur-chrome); -webkit-backdrop-filter: var(--blur-chrome);
-  display: flex; flex-direction: column; padding: 18px 0; overflow-y: auto; overflow-x: hidden;
+/* ===== Shell (components/admin-shell.tsx) =====
+   A full-width header over a left rail, both on the solid --chrome-bg, with the
+   page inset as a tinted panel. On desktop the rail collapses to icons: the
+   grid column animates between --rail-w and --rail-w-collapsed, so the content
+   widens with it. <html data-sidebar="collapsed"> (set pre-paint by
+   THEME_INIT_SCRIPT) drives it, so a reload never animates. At 900px and below
+   the rail is an off-canvas drawer instead and data-sidebar is ignored. */
+.eco .web-shell {
+  flex: 1; min-height: 100vh;
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  grid-template-rows: var(--header-h) minmax(0, 1fr);
+  grid-template-areas: "header header" "rail main";
+  background: var(--chrome-bg);
+  transition: grid-template-columns .25s var(--rail-ease);
 }
-.eco .web-brand { padding: 0 18px 18px; font-size: 17px; font-weight: 700; color: var(--sidebar-text-strong); display: flex; align-items: center; gap: 8px; overflow-wrap: anywhere; }
-.eco .web-nav { flex: 1; padding: 8px 10px; }
-.eco .web-nav-item { position: relative; display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px 12px; border-radius: 10px; font-size: 14.5px; font-weight: 500; color: var(--sidebar-text); margin-bottom: 2px; transition: background-color .12s, color .12s; }
-.eco .web-nav-item .icon { width: 18px; height: 18px; }
+
+/* ----- Header ----- */
+.eco .web-header {
+  grid-area: header; position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  height: var(--header-h); padding: 0 16px 0 14px;
+  background: var(--chrome-bg);
+}
+.eco .web-header-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.eco .web-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.eco .web-header-brand { display: inline-flex; border-radius: 8px; flex-shrink: 0; }
+.eco .web-header .brand-tagline { display: none; }
+@media (min-width: 1200px) { .eco .web-header .brand-tagline { display: block; } }
+.eco .web-header-org {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  padding-left: 14px; border-left: 1px solid var(--border); line-height: 1.2;
+}
+.eco .web-header-org-label { font-size: 11.5px; color: var(--text-3); }
+.eco .web-header-org-name {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ----- Account menu ----- */
+.eco .web-user { position: relative; }
+.eco .web-user-trigger {
+  display: flex; align-items: center; gap: 8px; padding: 3px 10px 3px 3px; margin-left: 4px;
+  border-radius: 999px; border: 1px solid transparent; background: transparent;
+  color: var(--text); font-size: 14px; font-weight: 500;
+  transition: background-color .15s, border-color .15s;
+}
+.eco .web-user-trigger:hover, .eco .web-user-trigger[aria-expanded="true"] { background: var(--surface-2); border-color: var(--border); }
+.eco .web-user-name { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eco .web-user-chevron { width: 16px; height: 16px; color: var(--text-3); }
+.eco .web-user-menu {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; min-width: 240px; padding: 6px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: var(--shadow-pop); animation: eco-modal-in .15s ease-out;
+}
+.eco .web-user-head { padding: 10px 12px; margin-bottom: 6px; border-bottom: 1px solid var(--border); }
+.eco .web-user-head-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.eco .web-user-head-email { font-size: var(--fs-meta); color: var(--text-3); overflow-wrap: anywhere; }
+.eco .web-user-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px;
+  border: 0; border-radius: 8px; background: transparent; color: var(--text);
+  font-size: 14px; text-align: left; transition: background-color .12s;
+}
+.eco .web-user-item:hover { background: var(--surface-2); }
+.eco .web-user-item .icon { width: 16px; height: 16px; }
+
+/* ----- Rail ----- */
+.eco .web-sidebar {
+  grid-area: rail; position: sticky; top: var(--header-h); z-index: 20;
+  height: calc(100vh - var(--header-h));
+  display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden;
+  padding: 10px 10px 16px;
+  color: var(--sidebar-text);
+}
+/* Only the mobile drawer shows its own brand; on desktop the header carries it. */
+.eco .web-sidebar-head { display: none; }
+.eco .web-nav { display: flex; flex-direction: column; gap: 8px; }
+.eco .web-nav-group { display: flex; flex-direction: column; gap: 2px; }
+.eco .web-nav-group + .web-nav-group { padding-top: 8px; border-top: 1px solid var(--sidebar-border); }
+/* Horizontal padding is fixed so the icon sits in the same spot collapsed and
+   expanded: (68px rail - 2x10px padding - 18px icon) / 2 = 15px. Only the gap
+   and the label animate, so nothing jumps. */
+.eco .web-nav-item {
+  position: relative; display: flex; align-items: center; gap: 12px; min-width: 0;
+  height: 40px; padding: 0 15px; border-radius: 10px;
+  font-size: 14.5px; font-weight: 500; color: var(--sidebar-text); white-space: nowrap;
+  transition: background-color .12s, color .12s, gap .25s var(--rail-ease);
+}
+.eco .web-nav-item .icon { width: 18px; height: 18px; flex-shrink: 0; }
 .eco .web-nav-item:hover { color: var(--sidebar-text-strong); background: var(--sidebar-hover-bg); }
 .eco .web-nav-item.active { background: var(--sidebar-active-bg); color: var(--sidebar-text-strong); }
-/* The second and last place the public gradient appears. */
+/* Flush with the rail's left edge (it has 10px padding), like a console tab marker. */
 .eco .web-nav-item.active::before {
-  content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px;
-  border-radius: 0 3px 3px 0; background: var(--grad-accent);
+  content: ''; position: absolute; left: -10px; top: 8px; bottom: 8px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--sidebar-active-bar);
+}
+.eco .web-nav-label {
+  min-width: 0; max-width: 200px; overflow: hidden; text-overflow: ellipsis;
+  transition: opacity .18s ease, max-width .25s var(--rail-ease);
 }
 .eco .web-nav-badge {
   margin-left: auto; min-width: 20px; padding: 1px 7px; border-radius: 999px;
   background: var(--sidebar-badge-bg); color: var(--sidebar-badge-ink);
   font-size: 12px; font-weight: 700; line-height: 18px; text-align: center;
 }
-.eco .web-sidebar-foot { padding: 14px 18px 0; font-size: var(--fs-meta); color: var(--sidebar-foot); border-top: 1px solid var(--sidebar-border); margin: 0 10px; overflow-wrap: anywhere; }
 
-.eco .web-topbar {
-  position: sticky; top: 12px; z-index: 10; height: 60px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 20px; margin: 12px 0 16px;
-  border-radius: 16px;
-  background: var(--glass-chrome); border: 1px solid var(--panel-border);
-  box-shadow: var(--shadow-card);
-  backdrop-filter: var(--blur-chrome); -webkit-backdrop-filter: var(--blur-chrome);
+@media (min-width: 901px) {
+  :root[data-sidebar="collapsed"] .eco .web-shell { grid-template-columns: var(--rail-w-collapsed) minmax(0, 1fr); }
+  :root[data-sidebar="collapsed"] .eco .web-nav-item { gap: 0; }
+  /* Faded and zero-width rather than display:none: the label stays the link's
+     accessible name, and max-width lets it animate without wrapping. */
+  :root[data-sidebar="collapsed"] .eco .web-nav-label { opacity: 0; max-width: 0; }
+  :root[data-sidebar="collapsed"] .eco .web-nav-badge {
+    position: absolute; top: 7px; left: 29px; min-width: 0; width: 9px; height: 9px; padding: 0;
+    font-size: 0; line-height: 0; box-shadow: 0 0 0 2px var(--chrome-bg);
+  }
 }
-.eco .web-topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.eco .web-topbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.eco .web-topbar-title { font-size: 16px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.eco .web-logout { font-size: 13px; font-weight: 600; color: var(--text-2); margin-left: 6px; white-space: nowrap; }
-.eco .web-logout:hover { color: var(--text); }
-/* Sidebar (12px inset + 236px) plus one gutter on the left, one gutter on the
-   right, so the page has the same breathing room on both sides. `overflow-x:
-   clip` (not hidden) keeps the sticky topbar working while guaranteeing that
-   nothing inside can push the page sideways into blank space. */
-.eco .web-shell-main {
-  flex: 1 1 auto; min-width: 0; min-height: 100vh;
-  margin-left: calc(248px + var(--shell-gutter)); padding-right: var(--shell-gutter);
-  display: flex; flex-direction: column; overflow-x: clip;
+
+/* ----- Content panel ----- */
+/* `overflow-x: clip` (not hidden) keeps sticky children working while
+   guaranteeing nothing inside can push the page sideways into blank space. */
+.eco .web-main {
+  grid-area: main; min-width: 0; display: flex; flex-direction: column; overflow-x: clip;
+  background: var(--bg-wash); background-attachment: fixed;
+  border-top: 1px solid var(--panel-border); border-left: 1px solid var(--panel-border);
+  border-top-left-radius: 22px;
 }
 /* Deliberately not a scroll container: the document scrolls. `overflow-y: auto`
    here used to make overflow-x auto too, which is what let a wide child open up
    a sideways scroll area. */
-.eco .web-content { flex: 1; min-width: 0; padding: 0 0 28px; font-size: var(--fs-body); line-height: 1.55; }
+.eco .web-content { flex: 1; min-width: 0; padding: 24px var(--shell-gutter) 28px; font-size: var(--fs-body); line-height: 1.55; }
 
-/* Topbar icon buttons: deliberately flatter than the public header's glass
-   pills -- in a 60px bar next to a bell and an avatar, a glass pill would be
-   the loudest thing on the page. */
+/* Header icon buttons: flat, so the bell and theme switch stay quieter than the
+   brand and the page content. */
 .eco .web-icon-btn {
-  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0;
   color: var(--text-2); background: transparent; border: 1px solid transparent;
   transition: background-color .15s, border-color .15s, color .15s;
 }
 .eco .web-icon-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--border); }
 .eco .web-theme-icon { width: 17px; height: 17px; }
 
-.eco .web-nav-toggle { display: none; }
-.eco .web-nav-scrim { position: fixed; inset: 0; z-index: 19; background: var(--scrim); }
+.eco .web-nav-scrim { position: fixed; inset: 0; z-index: 35; background: var(--scrim); }
 @media (min-width: 901px) { .eco .web-nav-scrim { display: none; } }
 
-/* Below 900px a 236px rail plus padding leaves under 500px for tables with
-   5-7 columns, so the sidebar goes fully off-canvas rather than shrinking.
-   The inset frame collapses here too, so content keeps full width. */
+/* Below 900px even a 68px rail costs a phone too much width, so the rail goes
+   fully off-canvas and the menu button opens it as a drawer. */
 @media (max-width: 900px) {
+  .eco { --shell-gutter: 16px; }
+  .eco .web-shell { grid-template-columns: minmax(0, 1fr); grid-template-areas: "header" "main"; }
   .eco .web-sidebar {
-    inset: 0 auto 0 0; width: 268px; border-radius: 0 var(--radius-panel) var(--radius-panel) 0;
+    position: fixed; inset: 0 auto 0 0; z-index: 40; width: 280px; height: auto;
+    padding-top: 14px;
+    background: var(--chrome-bg); border-radius: 0 var(--radius-panel) var(--radius-panel) 0;
     transform: translateX(-100%);
     transition: transform .22s cubic-bezier(.2,.7,.2,1);
   }
   .eco .web-sidebar.open { transform: none; box-shadow: var(--shadow-pop); }
-  .eco { --shell-gutter: 16px; }
-  .eco .web-shell-main { margin-left: 0; padding-right: 0; }
-  .eco .web-nav-toggle { display: inline-grid; }
-  .eco .web-topbar { margin: 10px var(--shell-gutter) 14px; padding: 0 14px; top: 10px; }
-  .eco .web-content { padding: 0 var(--shell-gutter) 24px; }
+  .eco .web-sidebar-head { display: flex; padding: 4px 8px 16px; }
+  .eco .web-main { border-left: 0; border-top-left-radius: 0; }
+  .eco .web-content { padding-top: 18px; }
   .eco .web-content--locked { overflow: clip; }
 }
-
-/* On the narrowest phones the topbar's right cluster (theme, bell, avatar,
-   "Log out") no longer fits beside the menu button and title. */
+@media (max-width: 760px) {
+  .eco .web-user-name, .eco .web-user-chevron { display: none; }
+  .eco .web-user-trigger { padding: 3px; margin-left: 0; }
+}
+@media (max-width: 640px) {
+  .eco .web-header-org { display: none; }
+}
+/* On the narrowest phones the header's right cluster no longer fits beside
+   the menu button and the lockup; the wordmark alone gives way to the mark. */
 @media (max-width: 400px) {
-  .eco .web-topbar-right { gap: 6px; }
-  .eco .web-logout { margin-left: 2px; }
+  .eco .web-header { padding: 0 10px; }
+  .eco .web-header-left { gap: 8px; }
+  .eco .web-header-right { gap: 4px; }
+  .eco .web-header-brand .brand-text { display: none; }
 }
 
 /* ===== Overlays ===== */
@@ -664,8 +748,8 @@ html:has(.eco) ::-webkit-scrollbar-thumb { background: var(--border-strong); bor
    work is in flight, WCAG 2.2.2 exempts loading indicators, and freezing it
    makes the app look hung. */
 @media (prefers-reduced-motion: reduce) {
-  .eco .web-sidebar { transition: none; }
-  .eco .modal, .eco .drawer-panel { animation: none; }
+  .eco .web-sidebar, .eco .web-shell, .eco .web-nav-label { transition: none; }
+  .eco .modal, .eco .drawer-panel, .eco .web-user-menu { animation: none; }
   .eco .web-nav-item, .eco .btn, .eco tbody tr td, .eco .filter-pill,
   .eco .web-icon-btn, .eco .close-x, .eco .toggle::after,
   .eco .board-card, .eco .segmented-knob, .eco .bar-fill, .eco .attention-row,
@@ -675,20 +759,18 @@ html:has(.eco) ::-webkit-scrollbar-thumb { background: var(--border-strong); bor
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .eco .web-sidebar, .eco .web-topbar, .eco .modal, .eco .drawer-panel, .eco .overlay {
+  .eco .modal, .eco .drawer-panel, .eco .overlay {
     backdrop-filter: none; -webkit-backdrop-filter: none;
   }
-  .eco .web-topbar, .eco .modal, .eco .drawer-panel { background: var(--glass-chrome-strong); }
-  .eco .web-sidebar { background: var(--sidebar-solid); }
+  .eco .modal, .eco .drawer-panel { background: var(--glass-chrome-strong); }
 }
 
 /* Blur is expensive on phones and buys least there. */
 @media (max-width: 760px) {
-  .eco .web-sidebar, .eco .web-topbar, .eco .modal, .eco .drawer-panel, .eco .overlay {
+  .eco .modal, .eco .drawer-panel, .eco .overlay {
     backdrop-filter: none; -webkit-backdrop-filter: none;
   }
-  .eco .web-topbar, .eco .modal, .eco .drawer-panel { background: var(--glass-chrome-strong); }
-  .eco .web-sidebar { background: var(--sidebar-solid); }
+  .eco .modal, .eco .drawer-panel { background: var(--glass-chrome-strong); }
   .eco .kpi-row { grid-template-columns: 1fr; }
 }
 
