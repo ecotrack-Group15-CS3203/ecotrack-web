@@ -8,11 +8,11 @@ import { Reveal } from '@/components/public/reveal';
 import { toStatItems, type PublicStats } from '@/lib/public-stats';
 
 export const metadata: Metadata = {
-  title: { absolute: 'EcoTrack — Community-powered environmental cleanup' },
+  title: { absolute: 'EcoTrack | Community-Powered Environmental Cleanup' },
   description:
     'Citizens report environmental hazards, organisations claim and coordinate the cleanup. Register your organisation or get the EcoTrack mobile app.',
   openGraph: {
-    title: 'EcoTrack — Community-powered environmental cleanup',
+    title: 'EcoTrack | Community-Powered Environmental Cleanup',
     description:
       'Citizens report environmental hazards, organisations claim and coordinate the cleanup.',
     type: 'website',
