@@ -321,8 +321,9 @@ html.js .kg-count[data-pending="true"] { visibility: hidden; animation: kg-show 
   .kg-stat, .kg-stat:first-child { padding: 0; border-left: 0; }
 }
 
-.kg-note { display: flex; align-items: center; gap: 10px; margin-top: 18px; font-size: 14px; color: var(--text-2); }
-.kg-note::before { content: ''; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--kg-amber); }
+.kg-note { display: flex; align-items: flex-start; gap: 10px; margin-top: 18px; font-size: 14px; line-height: 1.55; color: var(--text-2); }
+/* The margin centres the dot on the first line, so it stays put when the note wraps. */
+.kg-note::before { content: ''; width: 7px; height: 7px; margin-top: calc((1.55em - 7px) / 2); border-radius: 50%; flex-shrink: 0; background: var(--kg-amber); }
 
 /* The decorative card stack */
 .kg-stack { position: relative; height: 590px; --mx: 0; --my: 0; }
