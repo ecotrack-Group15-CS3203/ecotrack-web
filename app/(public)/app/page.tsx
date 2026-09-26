@@ -45,15 +45,20 @@ export default function GetAppPage() {
             </p>
             <div className="kg-actions">
               {MOBILE_APP_URL && (
-                <a href={MOBILE_APP_URL} className="btn btn-primary kg-btn-lg">
-                  Download EcoTrack
+                <a href={MOBILE_APP_URL} className="btn btn-primary kg-btn-lg" download>
+                  Download APK
                 </a>
               )}
               <Link href="/organisations/new" className="btn btn-secondary kg-btn-lg">
                 Register your organisation instead
               </Link>
             </div>
-            {!MOBILE_APP_URL && (
+            {MOBILE_APP_URL ? (
+              <p className="kg-note">
+                Android 7.0 or newer (64-bit). When prompted, allow &ldquo;Install unknown apps&rdquo;
+                for your browser. An iOS version isn&rsquo;t available yet.
+              </p>
+            ) : (
               <p className="kg-note">The app is in beta. Ask your organisation admin for a download link.</p>
             )}
           </div>
@@ -143,8 +148,8 @@ export default function GetAppPage() {
                   <p>Get the app to start reporting, or register your organisation to start claiming reports.</p>
                 </div>
                 <div className="kg-actions kg-actions--flush">
-                  <a href={MOBILE_APP_URL} className="btn btn-primary kg-btn-lg">
-                    Download EcoTrack
+                  <a href={MOBILE_APP_URL} className="btn btn-primary kg-btn-lg" download>
+                    Download APK
                   </a>
                   <Link href="/organisations/new" className="btn btn-secondary kg-btn-lg">
                     Register your organisation
