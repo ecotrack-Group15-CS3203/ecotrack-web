@@ -38,6 +38,8 @@ declare global {
       /** Interaction counting for SRS 3.2.1/3.2.2: clicks, selects and typed fields. */
       resetInteractions(): Chainable<void>;
       interactions(): Chainable<number>;
+      /** Records one user interaction; call it before each counted action. */
+      act(): Chainable<void>;
     }
   }
 }
@@ -113,18 +115,11 @@ Cypress.Commands.add('resetInteractions', () => {
   interactionCount = 0;
 });
 Cypress.Commands.add('interactions', () => cy.wrap(interactionCount));
-Cypress.Commands.overwrite('click', (originalFn, ...args) => {
+// Counted explicitly, one per user action (a click, choosing an option, filling a
+// field). Overriding click/type would double-count: type and select click the
+// element themselves.
+Cypress.Commands.add('act', () => {
   interactionCount += 1;
-  return originalFn(...args);
-});
-Cypress.Commands.overwrite('select', (originalFn, ...args) => {
-  interactionCount += 1;
-  return originalFn(...args);
-});
-// Typing a whole value into one field is one interaction, however many keys.
-Cypress.Commands.overwrite('type', (originalFn, ...args) => {
-  interactionCount += 1;
-  return originalFn(...args);
 });
 
 // Known, non-fatal: React hydration mismatch (#418), recovered by client rendering

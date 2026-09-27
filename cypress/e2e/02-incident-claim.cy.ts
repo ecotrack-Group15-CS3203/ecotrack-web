@@ -24,11 +24,14 @@ describe('Incident pool claim', () => {
     cy.contains('.pool-card', title, { timeout: 15000 }).should('be.visible');
 
     cy.resetInteractions();
+    cy.act();
     cy.contains('.pool-card', title).contains('button', 'Claim incident').click();
+    cy.act();
     cy.get('[role=dialog]').contains('button', 'Claim incident').click();
     cy.contains('.pool-card', title).should('not.exist');
     cy.interactions().then((n) => {
       cy.log(`claim took ${n} interactions`);
+      cy.task('recordMetric', { metric: 'claim_interactions', srs: '3.2.1', value: n, limit: 3 });
       expect(n).to.be.at.most(3);
     });
 

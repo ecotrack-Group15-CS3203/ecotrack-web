@@ -42,10 +42,15 @@ describe('Create and assign a cleanup task', () => {
     cy.contains('button', '+ Create task', { timeout: 15000 }).should('be.visible');
 
     cy.resetInteractions();
+    cy.act();
     cy.contains('button', '+ Create task').click();
+    cy.act();
     cy.get('#create-task-title').type(taskTitle);
+    cy.act();
     cy.get('#create-task-volunteer').select(volunteer.name);
+    cy.act();
     cy.get('#create-task-due').type('2026-12-31T10:00');
+    cy.act();
     cy.get('[role=dialog]').contains('button', 'Create task').click();
 
     cy.location('pathname', { timeout: 15000 }).should('match', /^\/tasks\/[0-9a-f-]{36}$/);
@@ -53,6 +58,7 @@ describe('Create and assign a cleanup task', () => {
     cy.contains(volunteer.name).should('be.visible');
     cy.interactions().then((n) => {
       cy.log(`task creation took ${n} interactions`);
+      cy.task('recordMetric', { metric: 'task_interactions', srs: '3.2.2', value: n, limit: 5 });
       expect(n).to.be.at.most(5);
     });
 

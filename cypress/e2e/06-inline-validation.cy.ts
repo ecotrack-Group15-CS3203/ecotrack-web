@@ -31,6 +31,7 @@ function expectInlineError(input: string, errorId: string, expected: string) {
     const w = win as Window & { __t0?: number; __t1?: number };
     const ms = (w.__t1 ?? Infinity) - (w.__t0 ?? 0);
     cy.log(`${errorId}: ${ms.toFixed(1)} ms`);
+    cy.task('recordMetric', { metric: 'blur_to_error_ms', srs: '3.2.5', field: errorId, value: Number(ms.toFixed(1)), limit: 200 });
     expect(ms).to.be.lessThan(200);
   });
   cy.get('[role=alertdialog]').should('not.exist');

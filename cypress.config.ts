@@ -1,3 +1,4 @@
+import { appendFileSync, mkdirSync } from 'node:fs';
 import { defineConfig } from 'cypress';
 
 /**
@@ -19,6 +20,20 @@ export default defineConfig({
     viewportHeight: 768,
     defaultCommandTimeout: 10000,
     video: true,
+    setupNodeEvents(on, config) {
+      // Measured values (interaction counts, validation latency) for the test report.
+      on('task', {
+        recordMetric(metric: Record<string, unknown>) {
+          mkdirSync('cypress/results', { recursive: true });
+          appendFileSync(
+            'cypress/results/metrics.jsonl',
+            JSON.stringify({ ...metric, at: new Date().toISOString() }) + '\n',
+          );
+          return null;
+        },
+      });
+      return config;
+    },
     expose: {
       apiUrl: 'http://localhost:4100/v1',
       issuerUrl: 'http://localhost:9998',

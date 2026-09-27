@@ -33,6 +33,8 @@ describe('Workflow stage editor', () => {
     cy.get('[role=dialog]').contains('button', 'Save changes').click();
     cy.contains('Stage updated.').should('be.visible');
 
+    // Wait for the list to show the renamed stage before reading the order.
+    cy.get('[role=group][aria-label="E2E Reviewed controls"]').should('exist');
     rowNames().then((before) => {
       const from = before.indexOf('E2E Reviewed');
       expect(from).to.be.greaterThan(0);
