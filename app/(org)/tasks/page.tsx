@@ -321,7 +321,7 @@ function CreateTaskModal({
   );
 
   const titleValidation = useFieldValidation(
-    required(t('tasksList.createModal.descriptionRequired'))
+    required(t('tasksList.createModal.titleRequired'))
   );
 
   const assignedToValidation = useFieldValidation(
@@ -439,6 +439,10 @@ function CreateTaskModal({
             </option>
           ))}
         </select>
+        <FieldError
+          id="create-task-incident-error"
+          message={incidentValidation.error}
+        />
 
         {approvedIncidents.length === 0 && (
           <p className="hint">

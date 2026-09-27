@@ -9,6 +9,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # The Cypress E2E suite runs against a local stack (see cypress/README.md), not in
+  # CI, so skip downloading its ~500 MB binary during pnpm install.
+  CYPRESS_INSTALL_BINARY: 0
+
 jobs:
   lint-typecheck-build:
     runs-on: ubuntu-latest
