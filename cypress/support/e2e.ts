@@ -26,6 +26,8 @@ declare global {
         method: string,
         path: string,
         body?: unknown,
+        // API responses are untyped JSON here; each spec asserts the fields it reads.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ): Chainable<Cypress.Response<any>>;
       /** Registers an organisation as `user`, who becomes its org admin. */
       createOrg(user: TestUser, name: string): Chainable<string>;
