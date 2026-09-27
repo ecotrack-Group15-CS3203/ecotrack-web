@@ -20,7 +20,9 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
   const router = useRouter();
   const api = useAuthedFetch();
 
-  const detailPath = activeOrgId ? `/organisations/${activeOrgId}/incidents/${id}` : null;
+  // The API serves one incident at /incidents/:id; row-level security returns the
+  // full record to the owning organisation. There is no org-scoped detail route.
+  const detailPath = activeOrgId ? `/incidents/${id}` : null;
   const { data: incident, error, mutate } = useApiGet<Incident>(detailPath);
   // limit=100: feeds the "duplicate of" picker below, which needs the full set.
   const allPath = activeOrgId ? `/organisations/${activeOrgId}/incidents?limit=100` : null;
