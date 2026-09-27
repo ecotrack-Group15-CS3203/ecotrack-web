@@ -42,12 +42,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, [loadProfile]);
 
+  // Both targets are route handlers that redirect to Asgardeo, not pages: the OAuth
+  // hand-off needs a full browser navigation, which router.push() would not do.
   const login = useCallback(() => {
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = '/api/auth/login';
   }, []);
 
   const logout = useCallback(() => {
     setProfile(null);
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = '/api/auth/logout';
   }, []);
 
