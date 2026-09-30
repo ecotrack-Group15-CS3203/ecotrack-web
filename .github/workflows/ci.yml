@@ -52,3 +52,47 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
+
+  # Runs on the self-hosted runner installed on the production EC2 instance (see
+  # docs/04-runbooks/ci-cd.md), not a GitHub-hosted one — this job's shell commands
+  # execute directly on that box. No SSH involved: the runner polls GitHub over an
+  # outbound connection, so EC2's inbound security group is unchanged.
+  deploy:
+    needs: [lint-typecheck-build, unit-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: self-hosted
+    concurrency:
+      group: ecotrack-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+
+      # NEXT_PUBLIC_* values are compiled into the browser bundle at build time, so
+      # they're build args, not runtime env. Neither is secret (both ship inside the
+      # bundle anyway) — set as repository *variables*, not secrets, in
+      # Settings -> Secrets and variables -> Actions -> Variables:
+      #   NEXT_PUBLIC_MAPBOX_TOKEN, NEXT_PUBLIC_MOBILE_APP_URL
+      - name: Build image
+        run: |
+          docker build -t ecotrack-web:${{ github.sha }} \
+            --build-arg NEXT_PUBLIC_MAPBOX_TOKEN="${{ vars.NEXT_PUBLIC_MAPBOX_TOKEN }}" \
+            --build-arg NEXT_PUBLIC_MOBILE_APP_URL="${{ vars.NEXT_PUBLIC_MOBILE_APP_URL }}" \
+            .
+
+      # Stop-and-start, not blue-green: a few seconds of downtime per deploy,
+      # traded for far fewer moving parts on a single small instance.
+      - name: Restart the web container
+        run: |
+          docker rm -f ecotrack-web || true
+          docker run -d --name ecotrack-web --restart unless-stopped --network ecotrack \
+            -p 127.0.0.1:3000:3000 --env-file /etc/ecotrack/web.env \
+            ecotrack-web:${{ github.sha }}
+
+      - name: Health check
+        run: curl --fail --retry 8 --retry-delay 3 --retry-connrefused http://127.0.0.1:3000/
+
+      # Old images pile up on the instance's disk otherwise. 72h keeps the
+      # previous build or two around for a manual rollback.
+      - name: Prune old images
+        if: always()
+        run: docker image prune -f --filter "until=72h"
