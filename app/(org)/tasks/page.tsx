@@ -26,6 +26,7 @@ import type {
   Task,
   TaskPriority,
   TaskStatus,
+  WorkflowStage,
 } from '@/lib/types';
 import { ApiError } from '@/lib/api';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
@@ -80,6 +81,24 @@ function TasksPageInner() {
   const { data: approvedIncidentsPage } =
     useApiGet<Paginated<IncidentSummary>>(approvedIncidentsPath);
   const approvedIncidents = approvedIncidentsPage?.items;
+
+  const stagesPath = activeOrgId
+    ? `/organisations/${activeOrgId}/workflow-stages`
+    : null;
+
+  const { data: stages } = useApiGet<WorkflowStage[]>(stagesPath);
+
+  // An incident in a final stage is closed out, so it can no longer take new
+  // tasks. Held back until stages load, so a final one never flashes into the picker.
+  const taskableIncidents = useMemo(() => {
+    if (!approvedIncidents || !stages) return [];
+    const finalStageIds = new Set(
+      stages.filter((stage) => stage.isFinal).map((stage) => stage.id)
+    );
+    return approvedIncidents.filter(
+      (i) => !i.currentStageId || !finalStageIds.has(i.currentStageId)
+    );
+  }, [approvedIncidents, stages]);
 
   const volunteersPath = activeOrgId
     ? `/organisations/${activeOrgId}/members?role=volunteer&limit=100`
@@ -270,7 +289,7 @@ function TasksPageInner() {
         open={showCreate}
         onClose={() => setShowCreate(false)}
         organisationId={activeOrgId ?? ''}
-        approvedIncidents={approvedIncidents ?? []}
+        approvedIncidents={taskableIncidents}
         volunteers={volunteers ?? []}
         initialIncidentId={preselectedIncidentId}
         onCreated={async (taskId) => {
@@ -337,7 +356,7 @@ function CreateTaskModal({
   );
 
   async function handleSubmit() {
-    if (!incidentId || !title.trim() || !assignedTo || !dueDate) return;
+    if (!selectedIncident || !title.trim() || !assignedTo || !dueDate) return;
 
     setSubmitting(true);
     setError(null);
@@ -346,7 +365,7 @@ function CreateTaskModal({
       const task = await api.post<{ id: string }>(
         `/organisations/${organisationId}/tasks`,
         {
-          incidentId,
+          incidentId: selectedIncident.id,
           title,
           description: description || undefined,
           assignedTo,
@@ -387,7 +406,7 @@ function CreateTaskModal({
           <Button
             disabled={
               submitting ||
-              !incidentId ||
+              !selectedIncident ||
               !title.trim() ||
               !assignedTo ||
               !dueDate

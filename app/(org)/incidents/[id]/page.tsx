@@ -154,7 +154,7 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
         <Card style={{ padding: 20 }}>
           <h3 style={{ fontSize: 17, marginBottom: 14 }}>Actions</h3>
 
-          <Button className="btn-block" style={{ marginBottom: 8 }} onClick={() => router.push(`/tasks?incidentId=${incident.id}`)}>
+          <Button className="btn-block" style={{ marginBottom: 8 }} disabled={Boolean(currentStage?.isFinal)} onClick={() => router.push(`/tasks?incidentId=${incident.id}`)}>
             + Create task
           </Button>
           <Button
