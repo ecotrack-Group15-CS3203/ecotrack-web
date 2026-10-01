@@ -76,7 +76,7 @@
     },
     "progress": {
       "title": "Cleanup progress",
-      "resolved": "Resolved {{pct}}%",
+      "resolved": "Closed {{pct}}%",
       "inProgress": "In progress {{pct}}%",
       "stalled": "Claimed only {{pct}}%"
     },
