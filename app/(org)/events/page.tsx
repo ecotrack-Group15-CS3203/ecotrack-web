@@ -57,11 +57,14 @@ function EventsPageInner() {
   const eventsPath = activeOrgId ? `/organisations/${activeOrgId}/events?limit=100` : null;
   const { data: eventsPage, error, mutate } = useApiGet<Paginated<EventSummary>>(eventsPath);
   const events = eventsPage?.items;
-  const approvedIncidentsPath = activeOrgId
-    ? `/organisations/${activeOrgId}/incidents?status=approved&limit=100`
+  // Only incidents the Workflow Stage Rules allow an event from (on the required
+  // stage, not final).
+  const eligibleIncidentsPath = activeOrgId
+    ? `/organisations/${activeOrgId}/incidents?status=approved&eligibleFor=eventCreation&limit=100`
     : null;
-  const { data: approvedIncidentsPage } = useApiGet<Paginated<IncidentSummary>>(approvedIncidentsPath);
-  const approvedIncidents = approvedIncidentsPage?.items;
+  const { data: eligibleIncidentsPage, mutate: mutateEligibleIncidents } =
+    useApiGet<Paginated<IncidentSummary>>(eligibleIncidentsPath);
+  const eligibleIncidents = eligibleIncidentsPage?.items;
 
   const filteredEvents = useMemo(
     () => (events ? filterAndSortEvents(events, { status: statusFilter, upcomingOnly, query: search }) : []),
@@ -176,11 +179,11 @@ function EventsPageInner() {
         open={showCreate}
         onClose={() => setShowCreate(false)}
         organisationId={activeOrgId ?? ''}
-        approvedIncidents={approvedIncidents ?? []}
+        eligibleIncidents={eligibleIncidents ?? []}
         initialIncidentId={preselectedIncidentId}
         onCreated={async (eventId) => {
           setShowCreate(false);
-          await mutate();
+          await Promise.all([mutate(), mutateEligibleIncidents()]);
           router.push(`/events/${eventId}`);
         }}
         api={api}
@@ -193,7 +196,7 @@ function CreateEventModal({
   open,
   onClose,
   organisationId,
-  approvedIncidents,
+  eligibleIncidents,
   initialIncidentId,
   onCreated,
   api,
@@ -201,14 +204,17 @@ function CreateEventModal({
   open: boolean;
   onClose: () => void;
   organisationId: string;
-  approvedIncidents: IncidentSummary[];
+  eligibleIncidents: IncidentSummary[];
   initialIncidentId?: string | null;
   onCreated: (eventId: string) => void;
   api: ReturnType<typeof useAuthedFetch>;
 }) {
   const { t } = useTranslation();
-  const initialIncident = approvedIncidents.find((i) => i.id === initialIncidentId);
-  const [incidentIds, setIncidentIds] = useState<string[]>(initialIncidentId ? [initialIncidentId] : []);
+  const initialIncident = eligibleIncidents.find((i) => i.id === initialIncidentId);
+  const [rawIncidentIds, setIncidentIds] = useState<string[]>(initialIncidentId ? [initialIncidentId] : []);
+  // A preselected incident (?incidentId= from the incident page) that isn't
+  // eligible for an event right now is dropped rather than submitted into a 422.
+  const incidentIds = rawIncidentIds.filter((id) => eligibleIncidents.some((i) => i.id === id));
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [latitude, setLatitude] = useState(initialIncident?.location.lat ?? 6.9271);
@@ -282,11 +288,11 @@ function CreateEventModal({
       )}
       <div className="field">
         <span className="field-label">{t('events.createModal.eligibleIncidents')}</span>
-        {approvedIncidents.length === 0 ? (
+        {eligibleIncidents.length === 0 ? (
           <p className="hint">{t('events.createModal.noIncidents')}</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 140, overflowY: 'auto' }}>
-            {approvedIncidents.map((i) => (
+            {eligibleIncidents.map((i) => (
               <label key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 400, fontSize: 13.5 }}>
                 <input type="checkbox" checked={incidentIds.includes(i.id)} aria-describedby={incidentsValidation.error ? 'event-incidents-error' : undefined} onChange={() => toggleIncident(i.id)} onBlur={() => incidentsValidation.onBlur(incidentIds.join(','))} />
                 {i.title}

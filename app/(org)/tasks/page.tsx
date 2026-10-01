@@ -81,6 +81,17 @@ function TasksPageInner() {
     useApiGet<Paginated<IncidentSummary>>(approvedIncidentsPath);
   const approvedIncidents = approvedIncidentsPage?.items;
 
+  // The "Create task" picker only offers incidents the Workflow Stage Rules allow a
+  // task from (on the required stage, not final). The full approved list above
+  // still backs the table's "Linked incident" titles.
+  const eligibleIncidentsPath = activeOrgId
+    ? `/organisations/${activeOrgId}/incidents?status=approved&eligibleFor=taskCreation&limit=100`
+    : null;
+
+  const { data: eligibleIncidentsPage, mutate: mutateEligibleIncidents } =
+    useApiGet<Paginated<IncidentSummary>>(eligibleIncidentsPath);
+  const eligibleIncidents = eligibleIncidentsPage?.items;
+
   const volunteersPath = activeOrgId
     ? `/organisations/${activeOrgId}/members?role=volunteer&limit=100`
     : null;
@@ -270,12 +281,12 @@ function TasksPageInner() {
         open={showCreate}
         onClose={() => setShowCreate(false)}
         organisationId={activeOrgId ?? ''}
-        approvedIncidents={approvedIncidents ?? []}
+        eligibleIncidents={eligibleIncidents ?? []}
         volunteers={volunteers ?? []}
         initialIncidentId={preselectedIncidentId}
         onCreated={async (taskId) => {
           setShowCreate(false);
-          await mutate();
+          await Promise.all([mutate(), mutateEligibleIncidents()]);
           router.push(`/tasks/${taskId}`);
         }}
         api={api}
@@ -288,7 +299,7 @@ function CreateTaskModal({
   open,
   onClose,
   organisationId,
-  approvedIncidents,
+  eligibleIncidents,
   volunteers,
   initialIncidentId,
   onCreated,
@@ -297,7 +308,7 @@ function CreateTaskModal({
   open: boolean;
   onClose: () => void;
   organisationId: string;
-  approvedIncidents: IncidentSummary[];
+  eligibleIncidents: IncidentSummary[];
   volunteers: OrganisationMember[];
   initialIncidentId?: string | null;
   onCreated: (taskId: string) => void;
@@ -305,9 +316,14 @@ function CreateTaskModal({
 }) {
   const { t } = useTranslation();
 
-  const [incidentId, setIncidentId] = useState(
+  const [rawIncidentId, setIncidentId] = useState(
     initialIncidentId ?? ''
   );
+  // A preselected incident (?incidentId= from the incident page) that isn't
+  // eligible for a task right now is dropped rather than submitted into a 422.
+  const incidentId = eligibleIncidents.some((i) => i.id === rawIncidentId)
+    ? rawIncidentId
+    : '';
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
@@ -332,7 +348,7 @@ function CreateTaskModal({
     required('A due date is required')
   );
 
-  const selectedIncident = approvedIncidents.find(
+  const selectedIncident = eligibleIncidents.find(
     (i) => i.id === incidentId
   );
 
@@ -433,7 +449,7 @@ function CreateTaskModal({
             {t('tasksList.createModal.selectIncident')}
           </option>
 
-          {approvedIncidents.map((i) => (
+          {eligibleIncidents.map((i) => (
             <option key={i.id} value={i.id}>
               {i.title}
             </option>
@@ -444,7 +460,7 @@ function CreateTaskModal({
           message={incidentValidation.error}
         />
 
-        {approvedIncidents.length === 0 && (
+        {eligibleIncidents.length === 0 && (
           <p className="hint">
             {t('tasksList.createModal.noIncidents')}
           </p>
