@@ -83,6 +83,9 @@ export const IconColumns = (p: IconProps) => (
 export const IconLogout = (p: IconProps) => (
   <Icon {...p} d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
 );
+export const IconLocation = (p: IconProps) => (
+  <Icon {...p} d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />
+);
 export const IconPin = ({ className, style, label }: IconProps & { style?: React.CSSProperties; label?: string }) => (
   <svg
     className={`map-pin ${className ?? ''}`}
