@@ -333,6 +333,7 @@
     "claiming": "Claiming…",
     "claimError": "Could not claim this incident",
     "close": "Close",
+    "noPhotos": "No photos attached to this report.",
     "filters": {
       "searchLabel": "Search the incident pool",
       "searchPlaceholder": "Search by title or address",
