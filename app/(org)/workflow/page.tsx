@@ -225,8 +225,8 @@ export default function WorkflowPage() {
             <HelpHint text={t('workflow.addModal.colorHint')} />
           </label>
           <div style={{ display: 'flex', gap: 6 }}>
-            <input id="new-stage-color" type="color" value={isColorHex(newStage.color) ? newStage.color : DEFAULT_COLOR} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} style={{ width: 42, height: 42, padding: 3 }} />
-            <input value={newStage.color} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} aria-label={t('workflow.addModal.colorHexLabel')} />
+            <input id="new-stage-color" type="color" value={isColorHex(newStage.color) ? newStage.color : DEFAULT_COLOR} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} style={{ width: 42, height: 42, padding: 3, flex: 'none' }} />
+            <input type="text" style={{ minWidth: 0 }} value={newStage.color} onChange={(event) => setNewStage({ ...newStage, color: event.target.value })} aria-label={t('workflow.addModal.colorHexLabel')} />
           </div>
         </div>
       </div>
@@ -258,8 +258,8 @@ export default function WorkflowPage() {
               <HelpHint text={t('workflow.addModal.colorHint')} />
             </label>
             <div style={{ display: 'flex', gap: 6 }}>
-              <input id="edit-stage-color" type="color" value={isColorHex(edit.color) ? edit.color : DEFAULT_COLOR} onChange={(event) => setEdit({ ...edit, color: event.target.value })} style={{ width: 42, height: 42, padding: 3 }} />
-              <input value={edit.color} onChange={(event) => setEdit({ ...edit, color: event.target.value })} aria-label={t('workflow.addModal.colorHexLabel')} />
+              <input id="edit-stage-color" type="color" value={isColorHex(edit.color) ? edit.color : DEFAULT_COLOR} onChange={(event) => setEdit({ ...edit, color: event.target.value })} style={{ width: 42, height: 42, padding: 3, flex: 'none' }} />
+              <input type="text" style={{ minWidth: 0 }} value={edit.color} onChange={(event) => setEdit({ ...edit, color: event.target.value })} aria-label={t('workflow.addModal.colorHexLabel')} />
             </div>
           </div>
         </div>
