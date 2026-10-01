@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useApiGet, useAuthedFetch } from '@/lib/use-org-api';
 import { Avatar, Button, Card, Chip, DetailHeader, ErrorBanner, Modal, SectionTitle, Spinner, StatusChip, TableThumb } from '@/components/ui';
-import type { IncidentSummary, OrganisationMember, Paginated, Task, TaskPriority } from '@/lib/types';
+import type { Incident, OrganisationMember, Paginated, Task, TaskPriority } from '@/lib/types';
 import { ApiError, absoluteUrl } from '@/lib/api';
 import { thumbGradient } from '@/lib/thumb-gradients';
 
@@ -17,8 +17,10 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   const detailPath = activeOrgId ? `/organisations/${activeOrgId}/tasks/${id}` : null;
   const { data: task, error, mutate } = useApiGet<Task>(detailPath);
-  const incidentPath = activeOrgId && task ? `/organisations/${activeOrgId}/incidents/${task.incidentId}` : null;
-  const { data: incident } = useApiGet<IncidentSummary>(incidentPath);
+  // The org-scoped incidents route has no :id GET -- the detail endpoint is
+  // GET /incidents/:id (RLS-scoped), the same one the incident page uses.
+  const incidentPath = activeOrgId && task ? `/incidents/${task.incidentId}` : null;
+  const { data: incident, error: incidentError } = useApiGet<Incident>(incidentPath);
   // limit=100: this feeds the reassignment dropdown, which needs every
   // volunteer, not just the first page.
   const volunteersPath = activeOrgId ? `/organisations/${activeOrgId}/members?role=volunteer&limit=100` : null;
@@ -78,7 +80,17 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             style={{ padding: 12, display: 'flex', gap: 10, cursor: 'pointer' }}
             onClick={() => router.push(`/incidents/${incident.id}`)}
           >
-            <TableThumb gradient={thumbGradient(0)} />
+            {incident.images?.[0] ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                className="media-thumb"
+                src={absoluteUrl(incident.images[0].url)}
+                alt=""
+                style={{ width: 38, height: 38, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+              />
+            ) : (
+              <TableThumb gradient={thumbGradient(0)} />
+            )}
             <div>
               <b style={{ fontSize: 13 }}>{incident.title}</b>
               <div style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
@@ -86,6 +98,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
           </Card>
+        ) : incidentError ? (
+          <p style={{ fontSize: 13, color: 'var(--text-3)' }}>Linked incident unavailable.</p>
         ) : (
           <Spinner />
         )}
