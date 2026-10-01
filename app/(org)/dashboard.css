@@ -777,8 +777,11 @@ html:has(.eco) ::-webkit-scrollbar-thumb { background: var(--border-strong); bor
 /* ===== Charts (components/charts.tsx) ===== */
 .eco .chart-empty { font-size: var(--fs-body-sm); color: var(--text-3); padding: 24px 0; text-align: center; margin: 0; }
 
-.eco .bar-chart { display: flex; flex-direction: column; gap: 10px; }
-.eco .bar-chart-row { display: grid; grid-template-columns: minmax(90px, auto) 1fr auto; align-items: center; gap: 10px; }
+/* One grid shared by every row (subgrid) so the label column is sized once, to
+ * the longest label -- per-row grids started each track at a different x,
+ * making equal values look like different-length bars. */
+.eco .bar-chart { display: grid; grid-template-columns: fit-content(45%) 1fr auto; gap: 10px; }
+.eco .bar-chart-row { display: grid; grid-template-columns: subgrid; grid-column: 1 / -1; align-items: center; }
 .eco .bar-chart-label { font-size: var(--fs-body-sm); color: var(--text-2); text-transform: capitalize; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .eco .bar-chart-track { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
 .eco .bar-fill { height: 100%; border-radius: 999px; transition: width .3s ease; }

@@ -17,12 +17,13 @@ import {
   PageHeader,
   Pagination,
   SearchInput,
+  Skeleton,
   Spinner,
   UrgencyBadge,
 } from '@/components/ui';
 import { IncidentMap, LocationMap } from '@/components/incident-map';
-import type { IncidentCategory, IncidentSeverity, Organisation, PoolIncident } from '@/lib/types';
-import { ApiError } from '@/lib/api';
+import type { Incident, IncidentCategory, IncidentSeverity, Organisation, PoolIncident } from '@/lib/types';
+import { ApiError, absoluteUrl } from '@/lib/api';
 import { thumbGradient } from '@/lib/thumb-gradients';
 import { filterPool, paginate, sortPool, type PoolFilters, type PoolSort } from '@/lib/pool-filters';
 import { relativeAge } from '@/lib/format';
@@ -299,7 +300,12 @@ function IncidentDetailModal({
   onClaim: () => void;
 }) {
   const { t } = useTranslation();
+  // The pool list carries no images (signing every photo URL for the whole
+  // pool up front would be wasted work), so the selected incident's photos
+  // are fetched on open from the same detail endpoint the incident page uses.
+  const { data: detail, error: detailError } = useApiGet<Incident>(incident ? `/incidents/${incident.id}` : null);
   if (!incident) return null;
+  const images = detail?.id === incident.id ? detail.images : undefined;
 
   return (
     <Modal
@@ -322,6 +328,36 @@ function IncidentDetailModal({
       </div>
 
       <p style={{ fontSize: 13.5, color: 'var(--text-2)', marginBottom: 16 }}>{incident.description}</p>
+
+      {detailError ? null : !images ? (
+        <Skeleton height={200} style={{ marginBottom: 16 }} />
+      ) : images.length === 0 ? (
+        <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 16 }}>{t('incidentPool.noPhotos')}</p>
+      ) : (
+        <div style={{ marginBottom: 16 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="media-thumb"
+            src={absoluteUrl(images[0].url)}
+            alt={incident.title}
+            style={{ width: '100%', height: 200, borderRadius: 10, objectFit: 'cover' }}
+          />
+          {images.length > 1 && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+              {images.slice(1).map((img) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={img.id}
+                  className="media-thumb"
+                  src={absoluteUrl(img.url)}
+                  alt={`${incident.title} evidence`}
+                  style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover' }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <LocationMap
         id={incident.id}
