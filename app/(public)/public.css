@@ -376,9 +376,8 @@ html.js .kg-count[data-pending="true"] { visibility: hidden; animation: kg-show 
 .kg-fake-btn--primary { color: var(--kg-on-grad); background: var(--kg-grad-button); border-color: transparent; }
 .kg-imgs { display: flex; gap: 8px; margin: 14px 0 12px; }
 .kg-img {
-  width: 50px; height: 50px; border-radius: 12px; display: grid; place-items: center;
-  font-family: var(--font-mono), ui-monospace, monospace; font-size: 10px; color: var(--text-3);
-  background: var(--kg-glass); border: 1px solid var(--kg-glass-border-strong);
+  width: 50px; height: 50px; border-radius: 12px; display: block;
+  border: 1px solid var(--kg-glass-border-strong);
 }
 .kg-quote { font-size: 13.5px; color: var(--text-2); }
 

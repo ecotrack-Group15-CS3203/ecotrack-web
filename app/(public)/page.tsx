@@ -167,8 +167,39 @@ export default async function LandingPage() {
                   <span className="kg-tag kg-tag--lime">New</span>
                 </div>
                 <div className="kg-imgs">
-                  <span className="kg-img">IMG</span>
-                  <span className="kg-img">IMG</span>
+                  <svg className="kg-img" viewBox="0 0 50 50" role="img" aria-label="Oil sheen on the water">
+                    <defs>
+                      <linearGradient id="kg-thumb-water" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stopColor="#3E8FA3" />
+                        <stop offset="1" stopColor="#0F4C5C" />
+                      </linearGradient>
+                      <linearGradient id="kg-thumb-sheen" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stopColor="#F9C74F" />
+                        <stop offset="0.35" stopColor="#F3722C" />
+                        <stop offset="0.65" stopColor="#B5179E" />
+                        <stop offset="1" stopColor="#4CC9F0" />
+                      </linearGradient>
+                    </defs>
+                    <rect width="50" height="50" fill="url(#kg-thumb-water)" />
+                    <path d="M0 12q6-3 12 0t12 0 12 0 14 0M0 42q6-3 12 0t12 0 12 0 14 0" fill="none" stroke="#fff" strokeOpacity="0.25" />
+                    <path d="M9 27c3-9 15-12 25-8 8 3 10 11 3 15-8 5-22 4-27-1-2-2-2-4-1-6z" fill="url(#kg-thumb-sheen)" opacity="0.85" />
+                    <path d="M16 27c3-4 10-5 15-3 4 2 4 5 0 7-5 2-12 1-15-1-1-1-1-2 0-3z" fill="#0F4C5C" opacity="0.45" />
+                  </svg>
+                  <svg className="kg-img" viewBox="0 0 50 50" role="img" aria-label="Marina jetty">
+                    <defs>
+                      <linearGradient id="kg-thumb-sky" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stopColor="#BFE3EA" />
+                        <stop offset="1" stopColor="#F4E9D2" />
+                      </linearGradient>
+                    </defs>
+                    <rect width="50" height="24" fill="url(#kg-thumb-sky)" />
+                    <rect y="24" width="50" height="26" fill="#2A7F92" />
+                    <path d="M0 33q6-2 12 0t12 0 12 0 14 0M0 44q6-2 12 0t12 0 12 0 14 0" fill="none" stroke="#fff" strokeOpacity="0.3" />
+                    <path d="M0 26h34v4H0z" fill="#8B5E3C" />
+                    <path d="M5 30h3v14H5zM17 30h3v12h-3zM29 30h3v10h-3z" fill="#5C3D26" />
+                    <ellipse cx="38" cy="38" rx="9" ry="3" fill="#B5179E" opacity="0.5" />
+                    <ellipse cx="39" cy="38" rx="5" ry="1.5" fill="#F9C74F" opacity="0.7" />
+                  </svg>
                 </div>
                 <p className="kg-quote">“Oil sheen near the marina jetty.”</p>
               </div>
