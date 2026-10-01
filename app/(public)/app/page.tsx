@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {
   IconEvents,
   IconIncidents,
-  IconPin,
+  IconLocation,
   IconPlus,
   IconTasks,
   IconVolunteers,
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 const MOBILE_APP_URL = process.env.NEXT_PUBLIC_MOBILE_APP_URL;
 
 const FEATURES = [
-  { icon: IconPin, title: 'Report a hazard', body: 'Report a hazard in seconds, with a photo and its exact location.' },
+  { icon: IconLocation, title: 'Report a hazard', body: 'Report a hazard in seconds, with a photo and its exact location.' },
   { icon: IconVolunteers, title: 'Join an organisation', body: 'Join an organisation covering your area to take on cleanup tasks near you.' },
   { icon: IconTasks, title: 'Take on tasks', body: 'Pick up cleanup tasks your organisation assigns and mark them done.' },
   { icon: IconEvents, title: 'RSVP to events', body: 'RSVP to volunteer events and track your impact over time.' },

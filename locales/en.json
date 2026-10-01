@@ -226,8 +226,8 @@
     "createModal": {
       "title": "Create cleanup task",
       "linkedIncident": "Linked incident",
-      "selectIncident": "Select an approved incident…",
-      "noIncidents": "No approved incidents available yet — verify an incident first.",
+      "selectIncident": "Select an eligible incident…",
+      "noIncidents": "No incidents are at the stage required to create a task (see Workflow Stage Rules).",
       "incidentRequired": "Select the incident this task is for.",
       "location": "Location: {{lat}}, {{lng}}",
       "titleLabel": "Title",
@@ -285,7 +285,7 @@
         "label": "Event Completion",
         "hint": "What happens to the incident when its event is marked complete."
       },
-      "minimumLabel": "Requires incident to have reached",
+      "minimumLabel": "Requires incident to be at",
       "anyStage": "Any stage",
       "targetLabel": "Moves incident to",
       "automatic": "Automatic"
@@ -369,7 +369,7 @@
     "createModal": {
       "title": "Create event",
       "eligibleIncidents": "Eligible incidents",
-      "noIncidents": "No approved incidents available yet — verify an incident first.",
+      "noIncidents": "No incidents are at the stage required to create an event (see Workflow Stage Rules).",
       "incidentsRequired": "Select at least one incident.",
       "creating": "Creating…",
       "submit": "Create event",
