@@ -18,4 +18,31 @@ describe('Organisation registration', () => {
       });
     });
   });
+
+  // Issue #54: the service area is set with a map picker; the manual-coordinate fallback
+  // and the radius chips must still reach the API unchanged.
+  it('submits manually entered coordinates and the chosen radius', () => {
+    cy.newUser('founder').then((founder: TestUser) => {
+      cy.loginAs(founder);
+      cy.intercept('POST', '**/organisations').as('createOrg');
+      cy.visit('/organisations/new');
+      cy.get('#org-name').type(`E2E Picker Org ${founder.sub.slice(-6)}`);
+      cy.get('#org-contact-email').type(`picker-${founder.sub}@e2e.test`);
+
+      // Without a Mapbox token the manual section starts open; with one it starts collapsed.
+      cy.get('details.loc-picker-manual').then(($details) => {
+        if (!$details.prop('open')) cy.wrap($details).find('summary').click();
+      });
+      cy.get('.loc-picker-manual input').eq(0).clear().type('6.7801');
+      cy.get('.loc-picker-manual input').eq(1).clear().type('79.9056');
+      cy.contains('[role="radio"]', '10 km').click().should('have.attr', 'aria-checked', 'true');
+      cy.contains('button', 'Register organisation').click();
+
+      cy.wait('@createOrg').its('request.body').should((body) => {
+        expect(body.serviceAreaCenter).to.deep.eq({ lat: 6.7801, lng: 79.9056 });
+        expect(body.serviceAreaRadiusKm).to.eq(10);
+      });
+      cy.location('pathname', { timeout: 15000 }).should('eq', '/dashboard');
+    });
+  });
 });

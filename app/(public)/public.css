@@ -536,3 +536,52 @@ html.js .kg-reveal[data-visible="true"] { opacity: 1; transform: none; }
   .kg-card, .kg .btn, .kg-arrow { transition: none; }
   .kg-card:hover, .kg .btn-primary:hover, .kg .btn:hover .kg-arrow { transform: none; }
 }
+
+/* Maps on public pages: dashboard.css (.eco) isn't loaded under this layout, so without
+   these the map container is 0px tall. */
+.kg .map-placeholder { display: flex; align-items: center; justify-content: center; width: 100%; padding: 20px;
+  border-radius: 14px; color: var(--text-3); text-align: center; background: var(--kg-glass); border: 1px dashed var(--border-strong); }
+.kg .incident-map { width: 100%; height: 260px; border-radius: 14px; overflow: hidden; }
+
+/* ===== Location picker (components/location-picker.tsx) ===== */
+.kg .loc-picker { display: flex; flex-direction: column; gap: 10px; }
+.kg .loc-picker-toolbar { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
+.kg .loc-picker-search { position: relative; flex: 1 1 220px; min-width: 0; }
+.kg .loc-picker-search input { width: 100%; }
+.kg .loc-picker-results { position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; right: 0; margin: 0; padding: 4px; list-style: none;
+  background: var(--kg-menu-bg); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: 0 12px 28px -12px rgba(0,0,0,.35); }
+.kg .loc-picker-results li { padding: 8px 10px; font-size: 13.5px; color: var(--text); border-radius: 8px; cursor: pointer; }
+.kg .loc-picker-results li:hover, .kg .loc-picker-results li.is-active { background: var(--primary-tint); }
+.kg .loc-picker-results .loc-picker-empty { color: var(--text-3); cursor: default; }
+.kg .loc-picker-results .loc-picker-empty:hover { background: none; }
+.kg .loc-picker-locate { padding: 0 14px; min-height: 42px; font-size: 13.5px; font-weight: 600; color: var(--primary);
+  background: var(--primary-tint); border: 1px solid transparent; border-radius: 12px; cursor: pointer; white-space: nowrap; }
+.kg .loc-picker-locate:disabled { opacity: .6; cursor: progress; }
+.kg .loc-picker-locate:focus-visible, .kg .loc-picker-chip:focus-visible { outline: 2px solid var(--kg-focus); outline-offset: 2px; }
+.kg .loc-picker-error { font-size: 13px; color: var(--rejected); }
+.kg .loc-picker-map { width: 100%; height: 320px; border-radius: 14px; overflow: hidden; border: 1px solid var(--border-strong); }
+.kg .loc-picker-map .mapboxgl-canvas-container { cursor: crosshair; }
+.kg .loc-picker-map--empty { height: 120px; }
+/* Teardrop pin. The shape is on the child because Mapbox sets the marker element's
+   inline transform; 34px tall puts the rotated tip on the bottom anchor. The shadow
+   stays literal because it falls on a map tile. */
+.kg .loc-picker-pin { position: relative; width: 30px; height: 34px; cursor: grab; }
+.kg .loc-picker-pin:active { cursor: grabbing; }
+.kg .loc-picker-pin-head { position: absolute; top: 2px; left: 2px; width: 26px; height: 26px; background: var(--primary);
+  border: 3px solid #fff; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+/* Reference dot for a related place (e.g. a ticked incident); clicking it moves the pin there. */
+.kg .loc-picker-ref { width: 14px; height: 14px; padding: 0; border: 2px solid #fff; border-radius: 50%;
+  background: var(--pending, #B45309); box-shadow: 0 1px 4px rgba(0,0,0,.35); cursor: pointer; }
+.kg .loc-picker-ref:hover { outline: 3px solid var(--primary-tint); }
+.kg .loc-picker-ref:focus-visible { outline: 3px solid var(--kg-focus); outline-offset: 2px; }
+.kg .loc-picker-readout { font-size: 13px; color: var(--text-2); overflow-wrap: anywhere; }
+.kg .loc-picker-coords { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 600; }
+.kg .loc-picker-radius { display: flex; flex-wrap: wrap; gap: 6px; }
+.kg .loc-picker-chip { padding: 6px 14px; font-size: 13px; font-weight: 600; color: var(--text-2); background: transparent;
+  border: 1px solid var(--border-strong); border-radius: 999px; cursor: pointer; }
+.kg .loc-picker-chip.is-active { color: var(--primary); background: var(--primary-tint); border-color: var(--primary); }
+.kg .loc-picker-manual summary { font-size: 13px; color: var(--text-2); cursor: pointer; }
+.kg .loc-picker-manual-row { display: flex; gap: 8px; margin-top: 8px; }
+.kg .loc-picker-coord { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; font-weight: 500; }
+.kg .loc-picker-coord input { width: 100%; }
+.kg .loc-picker-coord input[aria-invalid="true"] { border-color: var(--rejected); }

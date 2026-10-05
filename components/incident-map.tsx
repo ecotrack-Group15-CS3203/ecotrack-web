@@ -5,6 +5,7 @@ import mapboxgl from 'mapbox-gl';
 import type { VerificationStatus } from '@/lib/types';
 import { mapThemeFor, statusMarkerColor } from '@/lib/map-theme';
 import { useThemeMode } from '@/lib/use-theme-mode';
+import { circleBounds, createCircle } from '@/lib/service-area';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -138,7 +139,7 @@ function MapView({
         instance.addSource('service-area', { type: 'geojson', data: createCircle(longitude, latitude, radiusKm) });
         instance.addLayer({ id: 'service-area-fill', type: 'fill', source: 'service-area', paint: { 'fill-color': accentColor, 'fill-opacity': 0.12 } });
         instance.addLayer({ id: 'service-area-line', type: 'line', source: 'service-area', paint: { 'line-color': accentColor, 'line-width': 2 } });
-        instance.fitBounds(new mapboxgl.LngLatBounds([longitude, latitude], [longitude, latitude]).extend([longitude + radiusKm / 80, latitude + radiusKm / 111]), { padding: 48, maxZoom: 12, duration: 0 });
+        instance.fitBounds(circleBounds(longitude, latitude, radiusKm), { padding: 48, maxZoom: 12, duration: 0 });
       };
       if (instance.isStyleLoaded()) addServiceArea();
       else instance.once('load', addServiceArea);
@@ -155,16 +156,6 @@ function MapView({
   }
 
   return <div ref={mapContainer} className="incident-map" aria-label="Map" />;
-}
-
-function createCircle(longitude: number, latitude: number, radiusKm: number) {
-  const coordinates = Array.from({ length: 65 }, (_, index) => {
-    const angle = (index / 64) * Math.PI * 2;
-    const latitudeOffset = (radiusKm / 111) * Math.sin(angle);
-    const longitudeOffset = (radiusKm / (111 * Math.cos((latitude * Math.PI) / 180))) * Math.cos(angle);
-    return [longitude + longitudeOffset, latitude + latitudeOffset];
-  });
-  return { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [coordinates] } };
 }
 
 function escapeHtml(value: string): string {
