@@ -22,36 +22,59 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 const SOURCE_ID = 'service-area';
 const FILL_LAYER = 'service-area-fill';
 const LINE_LAYER = 'service-area-line';
+/** Street-level zoom for picking a single point (no radius to fit). */
+const POINT_ZOOM = 13;
 
 export interface LatLng {
   lat: number;
   lng: number;
 }
 
-interface ServiceAreaPickerProps {
+/** A fixed, clickable marker shown for context, e.g. an incident an event will address. */
+export interface ReferencePoint extends LatLng {
+  id: string;
+  title: string;
+}
+
+interface LocationPickerProps {
   latitude: number;
   longitude: number;
-  radiusKm: number;
-  onChange: (center: LatLng) => void;
-  onRadiusChange: (km: number) => void;
-  /** Accessible name for the draggable pin, e.g. the organisation's name. */
+  onChange: (point: LatLng) => void;
+  /** With a radius the picker edits an area: it draws the circle and shows radius chips. */
+  radiusKm?: number;
+  onRadiusChange?: (km: number) => void;
+  referencePoints?: ReferencePoint[];
+  /** Accessible name for the draggable pin, e.g. the organisation's or event's name. */
   title?: string;
 }
 
 /**
- * Interactive service-area editor: search a place, click the map or drag the pin
- * to set the centre, pick a radius. Unlike LocationMap, the Mapbox instance is
+ * Interactive location editor: search a place, click the map or drag the pin, use
+ * the browser's location, or type coordinates. Pass `radiusKm` to edit a service
+ * area instead of a single point. Unlike LocationMap, the Mapbox instance is
  * created once and updated in place, so dragging doesn't rebuild the map.
  */
-export function ServiceAreaPicker({ latitude, longitude, radiusKm, onChange, onRadiusChange, title }: ServiceAreaPickerProps) {
+export function LocationPicker({
+  latitude,
+  longitude,
+  onChange,
+  radiusKm,
+  onRadiusChange,
+  referencePoints,
+  title,
+}: LocationPickerProps) {
   const { t, i18n } = useTranslation();
   const mode = useThemeMode();
   const theme = mapThemeFor(mode);
   const baseId = useId();
+  const hasRadius = radiusKm !== undefined;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
+  // What the camera is framed on. Set when the map is created, so the sync effect
+  // moves the camera only for a genuinely new point/radius.
+  const framedRef = useRef<{ lat: number; lng: number; km: number | undefined } | null>(null);
   // Latest values for the long-lived Mapbox handlers, which are bound once at mount.
   const latest = useRef({ latitude, longitude, radiusKm, accentColor: theme.accentColor, onChange });
   useEffect(() => {
@@ -67,25 +90,27 @@ export function ServiceAreaPicker({ latitude, longitude, radiusKm, onChange, onR
   // light basemap only to swap it out mid-load for dark.
   const themeKnown = mode !== null;
   useEffect(() => {
-    if (!MAPBOX_TOKEN || !containerRef.current || !themeKnown) return;
+    const container = containerRef.current;
+    if (!MAPBOX_TOKEN || !container || !themeKnown) return;
     mapboxgl.accessToken = MAPBOX_TOKEN;
     const start = latest.current;
 
     const map = new mapboxgl.Map({
-      container: containerRef.current,
+      container,
       style: mapThemeFor(mode).mapStyle,
-      bounds: circleBounds(start.longitude, start.latitude, start.radiusKm),
-      fitBoundsOptions: { padding: 32 },
+      ...(start.radiusKm !== undefined
+        ? { bounds: circleBounds(start.longitude, start.latitude, start.radiusKm), fitBoundsOptions: { padding: 32 } }
+        : { center: [start.longitude, start.latitude] as [number, number], zoom: POINT_ZOOM }),
       attributionControl: true,
     });
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
 
     const pin = document.createElement('div');
-    pin.className = 'sa-picker-pin';
+    pin.className = 'loc-picker-pin';
     pin.setAttribute('role', 'img');
-    pin.setAttribute('aria-label', title ?? 'Service area centre');
+    pin.setAttribute('aria-label', title ?? t('locationPicker.pinLabel'));
     // The shape lives on a child: Mapbox owns the marker element's inline transform.
-    pin.appendChild(document.createElement('span')).className = 'sa-picker-pin-head';
+    pin.appendChild(document.createElement('span')).className = 'loc-picker-pin-head';
     const marker = new mapboxgl.Marker({ element: pin, draggable: true, anchor: 'bottom' })
       .setLngLat([start.longitude, start.latitude])
       .addTo(map);
@@ -95,6 +120,8 @@ export function ServiceAreaPicker({ latitude, longitude, radiusKm, onChange, onR
 
     marker.on('dragend', () => emit(marker.getLngLat()));
     map.on('click', (event) => {
+      // A click on a reference marker is handled by the marker itself.
+      if ((event.originalEvent.target as Element | null)?.closest?.('.loc-picker-ref')) return;
       marker.setLngLat(event.lngLat);
       emit(event.lngLat);
     });
@@ -104,6 +131,7 @@ export function ServiceAreaPicker({ latitude, longitude, radiusKm, onChange, onR
     // what's missing and re-apply the current accent either way.
     map.on('style.load', () => {
       const { longitude: lng, latitude: lat, radiusKm: km, accentColor } = latest.current;
+      if (km === undefined) return;
       const data = createCircle(lng, lat, km);
       const source = map.getSource(SOURCE_ID) as GeoJSONSource | undefined;
       if (source) source.setData(data);
@@ -114,9 +142,16 @@ export function ServiceAreaPicker({ latitude, longitude, radiusKm, onChange, onR
       map.setPaintProperty(LINE_LAYER, 'line-color', accentColor);
     });
 
+    // A modal's open animation or a late layout pass can resize the container after
+    // the map measured it; without this the canvas stays at the stale size.
+    const resizeObserver = new ResizeObserver(() => map.resize());
+    resizeObserver.observe(container);
+
     mapRef.current = map;
     markerRef.current = marker;
+    framedRef.current = { lat: start.latitude, lng: start.longitude, km: start.radiusKm };
     return () => {
+      resizeObserver.disconnect();
       marker.remove();
       map.remove();
       mapRef.current = null;
@@ -140,19 +175,59 @@ export function ServiceAreaPicker({ latitude, longitude, radiusKm, onChange, onR
     map.setStyle(theme.mapStyle);
   }, [theme.mapStyle]);
 
-  // ---- Centre / radius changes: move the pin, redraw the circle, refit ----
-  const firstSync = useRef(true);
+  // ---- Centre / radius changes: move the pin, redraw the circle, reframe ----
+  // Also runs once the map exists (themeKnown), in case values changed before that.
   useEffect(() => {
     const map = mapRef.current;
+    const framed = framedRef.current;
     if (!map || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+    if (framed && framed.lat === latitude && framed.lng === longitude && framed.km === radiusKm) return;
+    framedRef.current = { lat: latitude, lng: longitude, km: radiusKm };
     markerRef.current?.setLngLat([longitude, latitude]);
-    (map.getSource(SOURCE_ID) as GeoJSONSource | undefined)?.setData(createCircle(longitude, latitude, radiusKm));
-    if (firstSync.current) {
-      firstSync.current = false;
-      return;
+    if (radiusKm !== undefined) {
+      (map.getSource(SOURCE_ID) as GeoJSONSource | undefined)?.setData(createCircle(longitude, latitude, radiusKm));
     }
-    map.fitBounds(circleBounds(longitude, latitude, radiusKm), { padding: 32, duration: 500 });
-  }, [latitude, longitude, radiusKm]);
+    if (radiusKm !== undefined) {
+      map.fitBounds(circleBounds(longitude, latitude, radiusKm), { padding: 32, duration: 500 });
+    } else if (!map.getBounds()?.contains([longitude, latitude])) {
+      // A point picked by clicking or dragging is already in view, so the map stays
+      // still; one from search, geolocation, typing or the parent may not be.
+      map.easeTo({ center: [longitude, latitude], duration: 500 });
+    }
+  }, [latitude, longitude, radiusKm, themeKnown]);
+
+  // ---- Reference markers (e.g. the incidents an event addresses) ----
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !referencePoints?.length) return;
+    const markers = referencePoints.map((point) => {
+      const element = document.createElement('button');
+      element.type = 'button';
+      element.className = 'loc-picker-ref';
+      const label = t('locationPicker.referenceMarker', { title: point.title });
+      element.title = label;
+      element.setAttribute('aria-label', label);
+      element.addEventListener('click', (event) => {
+        event.stopPropagation();
+        latest.current.onChange({ lat: roundCoordinate(point.lat), lng: roundCoordinate(point.lng) });
+      });
+      return new mapboxgl.Marker({ element }).setLngLat([point.lng, point.lat]).addTo(map);
+    });
+    // Keep the pin above the reference dots so it stays draggable where they overlap.
+    markerRef.current?.getElement().parentElement?.appendChild(markerRef.current.getElement());
+    // Bring every reference point into view alongside the pin, without zooming in past
+    // street level when they're all close together.
+    const { latitude: lat, longitude: lng } = latest.current;
+    const view = map.getBounds();
+    if (view && referencePoints.some((point) => !view.contains([point.lng, point.lat]))) {
+      const bounds = referencePoints.reduce(
+        (result, point) => result.extend([point.lng, point.lat]),
+        new mapboxgl.LngLatBounds([lng, lat], [lng, lat]),
+      );
+      map.fitBounds(bounds, { padding: 40, maxZoom: POINT_ZOOM, duration: 500 });
+    }
+    return () => markers.forEach((marker) => marker.remove());
+  }, [referencePoints, themeKnown, t]);
 
   // ---- Readable place name under the map ----
   useEffect(() => {
@@ -174,7 +249,7 @@ export function ServiceAreaPicker({ latitude, longitude, radiusKm, onChange, onR
 
   function locateMe() {
     if (!('geolocation' in navigator)) {
-      setLocationError(t('serviceAreaPicker.locationUnavailable'));
+      setLocationError(t('locationPicker.locationUnavailable'));
       return;
     }
     setLocating(true);
@@ -186,7 +261,7 @@ export function ServiceAreaPicker({ latitude, longitude, radiusKm, onChange, onR
       },
       () => {
         setLocating(false);
-        setLocationError(t('serviceAreaPicker.locationDenied'));
+        setLocationError(t('locationPicker.locationDenied'));
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
@@ -195,66 +270,73 @@ export function ServiceAreaPicker({ latitude, longitude, radiusKm, onChange, onR
   const coordsText = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
 
   return (
-    <div className="sa-picker">
+    <div className="loc-picker">
       {MAPBOX_TOKEN && (
-        <div className="sa-picker-toolbar">
+        <div className="loc-picker-toolbar">
           <PlaceSearch
             proximity={{ lat: latitude, lng: longitude }}
             language={i18n.language}
             onPick={(result) => onChange({ lat: roundCoordinate(result.lat), lng: roundCoordinate(result.lng) })}
           />
-          <button type="button" className="sa-picker-locate" onClick={locateMe} disabled={locating}>
-            {locating ? t('serviceAreaPicker.locating') : t('serviceAreaPicker.useMyLocation')}
+          <button type="button" className="loc-picker-locate" onClick={locateMe} disabled={locating}>
+            {locating ? t('locationPicker.locating') : t('locationPicker.useMyLocation')}
           </button>
         </div>
       )}
       {locationError && (
-        <div className="sa-picker-error" role="alert">
+        <div className="loc-picker-error" role="alert">
           {locationError}
         </div>
       )}
 
       {MAPBOX_TOKEN ? (
-        <div ref={containerRef} className="sa-picker-map" aria-label={t('serviceAreaPicker.mapLabel')} />
+        <div ref={containerRef} className="loc-picker-map" aria-label={t('locationPicker.mapLabel')} />
       ) : (
-        <div className="map-placeholder map-token-missing sa-picker-map--empty">{t('serviceAreaPicker.mapTokenMissing')}</div>
+        <div className="map-placeholder map-token-missing loc-picker-map--empty">{t('locationPicker.mapTokenMissing')}</div>
       )}
 
-      <div className="sa-picker-readout" aria-live="polite">
-        <span className="sa-picker-coords">{coordsText}</span>
-        {placeLabel && <span className="sa-picker-place"> · {placeLabel}</span>}
+      <div className="loc-picker-readout" aria-live="polite">
+        <span className="loc-picker-coords">{coordsText}</span>
+        {placeLabel && <span className="loc-picker-place"> · {placeLabel}</span>}
       </div>
-      {MAPBOX_TOKEN && <div className="hint">{t('serviceAreaPicker.clickToPlace')}</div>}
+      {MAPBOX_TOKEN && (
+        <div className="hint">
+          {t(hasRadius ? 'locationPicker.clickToPlaceArea' : 'locationPicker.clickToPlacePoint')}
+          {referencePoints?.length ? ` ${t('locationPicker.referenceHint')}` : ''}
+        </div>
+      )}
 
-      <div className="sa-picker-radius" role="radiogroup" aria-label={t('serviceAreaPicker.radiusLabel')}>
-        {RADIUS_OPTIONS.map((km) => (
-          <button
-            key={km}
-            type="button"
-            role="radio"
-            aria-checked={radiusKm === km}
-            className={`sa-picker-chip${radiusKm === km ? ' is-active' : ''}`}
-            onClick={() => onRadiusChange(km)}
-          >
-            {t('serviceAreaPicker.radiusOption', { km })}
-          </button>
-        ))}
-      </div>
+      {hasRadius && (
+        <div className="loc-picker-radius" role="radiogroup" aria-label={t('locationPicker.radiusLabel')}>
+          {RADIUS_OPTIONS.map((km) => (
+            <button
+              key={km}
+              type="button"
+              role="radio"
+              aria-checked={radiusKm === km}
+              className={`loc-picker-chip${radiusKm === km ? ' is-active' : ''}`}
+              onClick={() => onRadiusChange?.(km)}
+            >
+              {t('locationPicker.radiusOption', { km })}
+            </button>
+          ))}
+        </div>
+      )}
 
-      <details className="sa-picker-manual" open={!MAPBOX_TOKEN}>
-        <summary>{t('serviceAreaPicker.manualCoords')}</summary>
-        <div className="sa-picker-manual-row">
+      <details className="loc-picker-manual" open={!MAPBOX_TOKEN}>
+        <summary>{t('locationPicker.manualCoords')}</summary>
+        <div className="loc-picker-manual-row">
           <CoordinateInput
             id={`${baseId}-lat`}
             axis="lat"
-            label={t('serviceAreaPicker.latitude')}
+            label={t('locationPicker.latitude')}
             value={latitude}
             onCommit={(lat) => onChange({ lat, lng: longitude })}
           />
           <CoordinateInput
             id={`${baseId}-lng`}
             axis="lng"
-            label={t('serviceAreaPicker.longitude')}
+            label={t('locationPicker.longitude')}
             value={longitude}
             onCommit={(lng) => onChange({ lat: latitude, lng })}
           />
@@ -291,7 +373,7 @@ function CoordinateInput({
   const invalid = parseCoordinate(draft, axis) === null;
 
   return (
-    <label htmlFor={id} className="sa-picker-coord">
+    <label htmlFor={id} className="loc-picker-coord">
       <span>{label}</span>
       <input
         id={id}
@@ -365,7 +447,7 @@ function PlaceSearch({
   const showList = open && query.trim().length >= 2 && (results.length > 0 || searched);
 
   return (
-    <div className="sa-picker-search">
+    <div className="loc-picker-search">
       <input
         type="search"
         role="combobox"
@@ -373,8 +455,8 @@ function PlaceSearch({
         aria-controls={listId}
         aria-autocomplete="list"
         aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
-        aria-label={t('serviceAreaPicker.searchLabel')}
-        placeholder={t('serviceAreaPicker.searchPlaceholder')}
+        aria-label={t('locationPicker.searchLabel')}
+        placeholder={t('locationPicker.searchPlaceholder')}
         value={query}
         onChange={(event) => {
           setQuery(event.target.value);
@@ -404,9 +486,9 @@ function PlaceSearch({
         }}
       />
       {showList && (
-        <ul id={listId} role="listbox" className="sa-picker-results">
+        <ul id={listId} role="listbox" className="loc-picker-results">
           {results.length === 0 ? (
-            <li className="sa-picker-empty">{t('serviceAreaPicker.noResults')}</li>
+            <li className="loc-picker-empty">{t('locationPicker.noResults')}</li>
           ) : (
             results.map((result, index) => (
               <li

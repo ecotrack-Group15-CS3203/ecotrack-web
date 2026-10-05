@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useAuthedFetch } from '@/lib/use-org-api';
 import { ApiError } from '@/lib/api';
 import { Button, Card, ErrorBanner, FieldError, Spinner } from '@/components/ui';
-import { ServiceAreaPicker } from '@/components/service-area-picker';
+import { LocationPicker } from '@/components/location-picker';
 import { useFieldValidation, required, requiredEmail } from '@/lib/use-field-validation';
 import type { CreateOrganisationResult } from '@/lib/types';
 
@@ -153,7 +153,7 @@ export default function RegisterOrganisationPage() {
           <label>
             {t('orgRegistration.serviceArea')} <span className="req">*</span>
           </label>
-          <ServiceAreaPicker
+          <LocationPicker
             title={name || t('orgRegistration.serviceArea')}
             latitude={latitude}
             longitude={longitude}
