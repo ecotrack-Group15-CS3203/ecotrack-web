@@ -9,10 +9,8 @@ import type { DataTableColumn } from '@/components/ui';
 import { IconPlus } from '@/components/icons';
 import type { CreateInviteLinkResult, InviteLink, Organisation, OrganisationMember, Paginated } from '@/lib/types';
 import { ApiError } from '@/lib/api';
-import { LocationMap } from '@/components/incident-map';
+import { ServiceAreaPicker } from '@/components/service-area-picker';
 import { inviteStatus } from '@/lib/invite-helpers';
-
-const RADIUS_OPTIONS = [1, 5, 10, 25, 50];
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -239,22 +237,17 @@ export default function SettingsPage() {
 
           <Card style={{ padding: 20 }}>
             <SectionTitle>{t('settings.serviceArea')}</SectionTitle>
-            <LocationMap
-              id={activeOrgId ?? 'service-area'}
+            <ServiceAreaPicker
               title={org.name}
               latitude={latitude}
               longitude={longitude}
               radiusKm={radiusKm}
+              onChange={({ lat, lng }) => {
+                setLatitude(lat);
+                setLongitude(lng);
+              }}
+              onRadiusChange={setRadiusKm}
             />
-            <div style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 8 }}>
-              <input type="number" step="0.0001" value={latitude} onChange={(e) => setLatitude(Number(e.target.value))} placeholder={t('settings.latitudePlaceholder')} />
-              <input type="number" step="0.0001" value={longitude} onChange={(e) => setLongitude(Number(e.target.value))} placeholder={t('settings.longitudePlaceholder')} />
-            </div>
-            <select value={radiusKm} onChange={(e) => setRadiusKm(Number(e.target.value))}>
-              {RADIUS_OPTIONS.map((km) => (
-                <option key={km} value={km}>{t('settings.radiusOption', { km })}</option>
-              ))}
-            </select>
             <div className="hint">{t('settings.serviceAreaHint')}</div>
           </Card>
 

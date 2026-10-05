@@ -8,12 +8,10 @@ import { useAuth } from '@/lib/auth-context';
 import { useAuthedFetch } from '@/lib/use-org-api';
 import { ApiError } from '@/lib/api';
 import { Button, Card, ErrorBanner, FieldError, Spinner } from '@/components/ui';
-import { LocationMap } from '@/components/incident-map';
+import { ServiceAreaPicker } from '@/components/service-area-picker';
 import { useFieldValidation, required, requiredEmail } from '@/lib/use-field-validation';
-import { useThemeMode } from '@/lib/use-theme-mode';
 import type { CreateOrganisationResult } from '@/lib/types';
 
-const RADIUS_OPTIONS = [1, 5, 10, 25, 50];
 const DEFAULT_LAT = 6.9271;
 const DEFAULT_LNG = 79.8612;
 
@@ -37,7 +35,6 @@ export default function RegisterOrganisationPage() {
   const emailValidation = useFieldValidation(
     requiredEmail(t('orgRegistration.contactEmailRequired'), t('orgRegistration.contactEmailInvalid')),
   );
-  const isDark = useThemeMode() === 'dark';
 
   if (loading) return <Spinner />;
 
@@ -156,40 +153,17 @@ export default function RegisterOrganisationPage() {
           <label>
             {t('orgRegistration.serviceArea')} <span className="req">*</span>
           </label>
-          <LocationMap
-            id="new-organisation"
-            title={name || 'Your organisation'}
+          <ServiceAreaPicker
+            title={name || t('orgRegistration.serviceArea')}
             latitude={latitude}
             longitude={longitude}
             radiusKm={radiusKm}
-            mapStyle={isDark ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11'}
-            accentColor={isDark ? '#4CAF50' : '#2E7D32'}
+            onChange={({ lat, lng }) => {
+              setLatitude(lat);
+              setLongitude(lng);
+            }}
+            onRadiusChange={setRadiusKm}
           />
-          <div style={{ display: 'flex', gap: 8, margin: '8px 0' }}>
-            <input
-              type="number"
-              step="0.0001"
-              value={latitude}
-              onChange={(e) => setLatitude(Number(e.target.value))}
-              placeholder="Latitude"
-              aria-label={t('orgRegistration.radiusLabel')}
-            />
-            <input
-              type="number"
-              step="0.0001"
-              value={longitude}
-              onChange={(e) => setLongitude(Number(e.target.value))}
-              placeholder="Longitude"
-              aria-label="Service area longitude"
-            />
-          </div>
-          <select value={radiusKm} onChange={(e) => setRadiusKm(Number(e.target.value))} aria-label={t('orgRegistration.radiusLabel')}>
-            {RADIUS_OPTIONS.map((km) => (
-              <option key={km} value={km}>
-                {km} km radius
-              </option>
-            ))}
-          </select>
           <div className="hint">
             {t('orgRegistration.serviceAreaHint')}
           </div>
