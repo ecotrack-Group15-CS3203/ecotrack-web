@@ -1,5 +1,5 @@
 {
-  "serviceAreaPicker": {
+  "locationPicker": {
     "searchLabel": "Search for a place",
     "searchPlaceholder": "Search a place, e.g. Moratuwa",
     "noResults": "No matching places",
@@ -7,9 +7,13 @@
     "locating": "Locating…",
     "locationDenied": "Couldn't get your location. Allow location access, or search or click the map instead.",
     "locationUnavailable": "Your browser doesn't support location access. Search or click the map instead.",
-    "mapLabel": "Service area map. Click to move the centre pin.",
+    "mapLabel": "Map. Click to move the pin.",
+    "pinLabel": "Selected location",
     "mapTokenMissing": "The map is unavailable. Enter the coordinates below.",
-    "clickToPlace": "Click the map or drag the pin to set the centre of your service area.",
+    "clickToPlaceArea": "Click the map or drag the pin to set the centre of your service area.",
+    "clickToPlacePoint": "Click the map or drag the pin to set where the event happens.",
+    "referenceHint": "Dots mark the selected incidents; click one to move the pin there.",
+    "referenceMarker": "Incident: {{title}}",
     "radiusLabel": "Service area radius",
     "radiusOption": "{{km}} km",
     "manualCoords": "Enter coordinates manually",
@@ -399,9 +403,6 @@
       "descriptionPlaceholder": "What will volunteers do at this event?",
       "descriptionRequired": "Enter a description for this event.",
       "locationLabel": "Location",
-      "locationHint": "Drag-to-place map pin isn't available in this build — enter coordinates directly.",
-      "latitudePlaceholder": "Latitude",
-      "longitudePlaceholder": "Longitude",
       "addressPlaceholder": "Address (optional)",
       "endRequired": "An end time is required",
       "createError": "Could not create event",

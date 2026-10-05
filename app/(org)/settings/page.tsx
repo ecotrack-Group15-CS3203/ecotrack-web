@@ -9,7 +9,7 @@ import type { DataTableColumn } from '@/components/ui';
 import { IconPlus } from '@/components/icons';
 import type { CreateInviteLinkResult, InviteLink, Organisation, OrganisationMember, Paginated } from '@/lib/types';
 import { ApiError } from '@/lib/api';
-import { ServiceAreaPicker } from '@/components/service-area-picker';
+import { LocationPicker } from '@/components/location-picker';
 import { inviteStatus } from '@/lib/invite-helpers';
 
 function formatDate(value: string) {
@@ -237,7 +237,7 @@ export default function SettingsPage() {
 
           <Card style={{ padding: 20 }}>
             <SectionTitle>{t('settings.serviceArea')}</SectionTitle>
-            <ServiceAreaPicker
+            <LocationPicker
               title={org.name}
               latitude={latitude}
               longitude={longitude}

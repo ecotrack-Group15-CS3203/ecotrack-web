@@ -30,11 +30,11 @@ describe('Organisation registration', () => {
       cy.get('#org-contact-email').type(`picker-${founder.sub}@e2e.test`);
 
       // Without a Mapbox token the manual section starts open; with one it starts collapsed.
-      cy.get('details.sa-picker-manual').then(($details) => {
+      cy.get('details.loc-picker-manual').then(($details) => {
         if (!$details.prop('open')) cy.wrap($details).find('summary').click();
       });
-      cy.get('.sa-picker-manual input').eq(0).clear().type('6.7801');
-      cy.get('.sa-picker-manual input').eq(1).clear().type('79.9056');
+      cy.get('.loc-picker-manual input').eq(0).clear().type('6.7801');
+      cy.get('.loc-picker-manual input').eq(1).clear().type('79.9056');
       cy.contains('[role="radio"]', '10 km').click().should('have.attr', 'aria-checked', 'true');
       cy.contains('button', 'Register organisation').click();
 

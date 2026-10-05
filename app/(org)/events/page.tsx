@@ -27,7 +27,8 @@ import type { EventStatus, EventSummary, IncidentSummary, Paginated } from '@/li
 import { ApiError } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import { useFieldValidation, required } from '@/lib/use-field-validation';
-import { LocationMap } from '@/components/incident-map';
+import { LocationPicker, type ReferencePoint } from '@/components/location-picker';
+import { autoEventLocation } from '@/lib/event-location';
 
 const STATUS_FILTERS: EventStatus[] = ['scheduled', 'ongoing', 'completed', 'cancelled'];
 
@@ -219,6 +220,8 @@ function CreateEventModal({
   const [description, setDescription] = useState('');
   const [latitude, setLatitude] = useState(initialIncident?.location.lat ?? 6.9271);
   const [longitude, setLongitude] = useState(initialIncident?.location.lng ?? 79.8612);
+  // Until the organiser places the pin themselves, it follows the first ticked incident.
+  const [locationTouched, setLocationTouched] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');
   const [endsAt, setEndsAt] = useState('');
   const [maxAttendees, setMaxAttendees] = useState('');
@@ -230,8 +233,24 @@ function CreateEventModal({
   const startValidation = useFieldValidation(required(t('events.createModal.startRequired')));
   const endValidation = useFieldValidation(required(t('events.createModal.endRequired')));
 
+  const referencePoints = useMemo<ReferencePoint[]>(
+    () =>
+      eligibleIncidents
+        .filter((i) => incidentIds.includes(i.id))
+        .map((i) => ({ id: i.id, title: i.title, lat: i.location.lat, lng: i.location.lng })),
+    [eligibleIncidents, incidentIds],
+  );
+
   function toggleIncident(id: string) {
-    setIncidentIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    const next = incidentIds.includes(id) ? incidentIds.filter((x) => x !== id) : [...incidentIds, id];
+    setIncidentIds(next);
+    if (!locationTouched) {
+      const auto = autoEventLocation(next, eligibleIncidents);
+      if (auto) {
+        setLatitude(auto.lat);
+        setLongitude(auto.lng);
+      }
+    }
   }
 
   async function handleSubmit() {
@@ -249,6 +268,7 @@ function CreateEventModal({
         maxAttendees: maxAttendees ? Number(maxAttendees) : undefined,
       });
       setIncidentIds([]);
+      setLocationTouched(false);
       setTitle('');
       setDescription('');
       setScheduledAt('');
@@ -322,23 +342,17 @@ function CreateEventModal({
       </div>
       <div className="field">
         <label>{t('events.createModal.locationLabel')}</label>
-        <LocationMap id="new-event" title={title || t('events.createModal.newEventTitle')} latitude={latitude} longitude={longitude} />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input
-            type="number"
-            step="0.0001"
-            value={latitude}
-            onChange={(e) => setLatitude(Number(e.target.value))}
-            placeholder={t('events.createModal.latitudePlaceholder')}
-          />
-          <input
-            type="number"
-            step="0.0001"
-            value={longitude}
-            onChange={(e) => setLongitude(Number(e.target.value))}
-            placeholder={t('events.createModal.longitudePlaceholder')}
-          />
-        </div>
+        <LocationPicker
+          title={title || t('events.createModal.newEventTitle')}
+          latitude={latitude}
+          longitude={longitude}
+          referencePoints={referencePoints}
+          onChange={({ lat, lng }) => {
+            setLocationTouched(true);
+            setLatitude(lat);
+            setLongitude(lng);
+          }}
+        />
       </div>
       <div className="field">
         <label htmlFor="create-event-start">{t('events.createModal.startsLabel')}</label>
