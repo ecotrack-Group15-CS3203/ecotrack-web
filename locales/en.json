@@ -1,4 +1,21 @@
 {
+  "serviceAreaPicker": {
+    "searchLabel": "Search for a place",
+    "searchPlaceholder": "Search a place, e.g. Moratuwa",
+    "noResults": "No matching places",
+    "useMyLocation": "Use my location",
+    "locating": "Locating…",
+    "locationDenied": "Couldn't get your location. Allow location access, or search or click the map instead.",
+    "locationUnavailable": "Your browser doesn't support location access. Search or click the map instead.",
+    "mapLabel": "Service area map. Click to move the centre pin.",
+    "mapTokenMissing": "The map is unavailable. Enter the coordinates below.",
+    "clickToPlace": "Click the map or drag the pin to set the centre of your service area.",
+    "radiusLabel": "Service area radius",
+    "radiusOption": "{{km}} km",
+    "manualCoords": "Enter coordinates manually",
+    "latitude": "Latitude",
+    "longitude": "Longitude"
+  },
   "common": {
     "cancel": "Cancel",
     "close": "Close",
